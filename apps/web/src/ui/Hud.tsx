@@ -8,9 +8,27 @@ import { cssDriftColor } from '../render/theme.js'
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 const TICKS_PER_DAY = TICKS_PER_HOUR * 8
 
+/**
+ * How long a line may go without shipping before the HUD says so.
+ *
+ * Deliberately short, and deliberately without hysteresis. A flicker during a
+ * legitimate two-day stall under abusive WIP settings is not a false positive —
+ * it is the feedback the player came for.
+ */
+const STALL_WARN_TICKS = TICKS_PER_DAY * 2
+
+/** Before this, a run that has never shipped is starting up, not stalled. */
+const STARTUP_GRACE_TICKS = TICKS_PER_DAY * 5
+
 export function Hud({ sim }: { sim: SimHandle }) {
   const { snapshot: snap, dispatch } = sim
   const stale = snap.items.filter((it) => it.stale)
+  const blocked = snap.stations.filter((s) => s.blocked)
+
+  const sinceShip = snap.lastShipTick === null ? snap.tick : snap.tick - snap.lastShipTick
+  const stalled =
+    sinceShip > STALL_WARN_TICKS &&
+    (snap.shippedTotal > 0 || snap.tick > STARTUP_GRACE_TICKS)
 
   return (
     <>
@@ -27,6 +45,12 @@ export function Hud({ sim }: { sim: SimHandle }) {
           value={`${(snap.recentLeadTimeTicks / TICKS_PER_HOUR).toFixed(1)}h`}
         />
         <Stat label="Throughput" value={`${snap.throughputPerDay}/day`} />
+        <Stat
+          label="Oldest"
+          // Lead time averages only what shipped. This one counts what has not.
+          value={`${(snap.oldestInFlightTicks / TICKS_PER_HOUR).toFixed(0)}h`}
+          alarm={stalled}
+        />
         <Stat label="WIP" value={snap.items.filter((i) => i.location.where !== 'backlog').length} />
         <Stat label="Backlog" value={snap.backlog} />
 
@@ -61,6 +85,8 @@ export function Hud({ sim }: { sim: SimHandle }) {
       </header>
 
       <aside className="panel">
+        {stalled && <StallAlarm days={sinceShip / TICKS_PER_DAY} stale={stale.length} blocked={blocked} />}
+
         <section>
           <h2>WIP limits</h2>
           <p className="hint">
@@ -89,7 +115,11 @@ export function Hud({ sim }: { sim: SimHandle }) {
             Stale work <span className="count">{stale.length}</span>
           </h2>
           {stale.length === 0 ? (
-            <p className="hint">Nothing has drifted past the point of no return. Yet.</p>
+            <p className="hint">
+              {stalled
+                ? 'Nothing is stale — so whatever is jamming the line is capacity, not drift.'
+                : 'Nothing has drifted past the point of no return. Yet.'}
+            </p>
           ) : (
             <p className="hint">
               The trunk moved on while these were open. They are holding their slots until you
@@ -200,11 +230,62 @@ function WipSlider({
   )
 }
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+function Stat({
+  label,
+  value,
+  alarm = false,
+}: {
+  label: string
+  value: string | number
+  alarm?: boolean
+}) {
   return (
     <div className="stat">
       <span className="stat__label">{label}</span>
-      <span className="stat__value">{value}</span>
+      <span className={alarm ? 'stat__value stat__value--alarm' : 'stat__value'}>{value}</span>
+    </div>
+  )
+}
+
+/**
+ * A stalled line reads as a *fast* line on this dashboard: lead time and
+ * throughput are both computed over shipped items, so when nothing ships they
+ * stop moving rather than getting worse. That is exactly the shape of metric
+ * the game is about, so the fix is not to launder the number — it is to say out
+ * loud that the line has stopped, and to name the thing holding it.
+ */
+function StallAlarm({
+  days,
+  stale,
+  blocked,
+}: {
+  days: number
+  stale: number
+  blocked: { id: StationId }[]
+}) {
+  return (
+    <div className="alarm" role="status">
+      <div className="alarm__head">Nothing shipped in {days.toFixed(1)} days</div>
+      <p className="alarm__body">
+        {stale > 0 ? (
+          <>
+            {stale === 1 ? '1 item is' : `${stale} items are`} stale and holding{' '}
+            {stale === 1 ? 'its slot' : 'their slots'} until you decide below. Nothing behind{' '}
+            {stale === 1 ? 'it' : 'them'} can move.
+          </>
+        ) : blocked.length > 0 ? (
+          <>
+            {blocked.map((s) => STATION_LABELS[s.id]).join(', ')} finished work{' '}
+            {blocked.length === 1 ? 'it' : 'they'} cannot hand off. The constraint is the station
+            after {blocked.length === 1 ? 'it' : 'them'}.
+          </>
+        ) : (
+          <>
+            The line has stopped. Lead time and throughput only count what shipped, so neither
+            number above is measuring this.
+          </>
+        )}
+      </p>
     </div>
   )
 }

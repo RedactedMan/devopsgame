@@ -54,3 +54,18 @@ export function driftColor(score: number): number {
 export function cssDriftColor(score: number): string {
   return `#${driftColor(score).toString(16).padStart(6, '0')}`
 }
+
+/**
+ * Backlog items cannot drift — they have no branch to drift from — but they are
+ * aging, and that wait is most of a lead time. Tinting them on the same ramp
+ * keeps one rule on the board: colour means age, wherever it appears.
+ *
+ * Ten sim-days to full tint. Short enough that a jammed backlog pins at rust,
+ * long enough that a healthy one still shows a gradient instead of a red wall.
+ * A view concern, so it lives here rather than in the Tuning schema.
+ */
+export const WAIT_FULL_TINT_TICKS = 800
+
+export function waitScore(ageTicks: number): number {
+  return Math.min(1, Math.max(0, ageTicks / WAIT_FULL_TINT_TICKS))
+}

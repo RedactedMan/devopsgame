@@ -1,7 +1,7 @@
 import { Application, Container, Graphics, Text } from 'pixi.js'
-import { STATION_LABELS, STATION_IDS, type StationId } from '@flow/content'
+import { DEFAULT_TUNING, STATION_LABELS, STATION_IDS, type StationId } from '@flow/content'
 import type { Snapshot, SnapshotItem } from '@flow/sim'
-import { COLORS, driftColor } from './theme.js'
+import { COLORS, driftColor, waitScore } from './theme.js'
 
 /**
  * M0's renderer: rectangles that redden. Deliberately crude — the gate this
@@ -19,6 +19,7 @@ const ITEM_H = 20
 const TOP_PAD = 12
 const MIN_ROWS_DRAWN = 7
 const MAX_ROWS_DRAWN = 20
+const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 
 type ItemView = {
   container: Container
@@ -35,7 +36,7 @@ export class BoardScene {
   private disposed = false
   private stage = new Container()
   private panels = new Graphics()
-  private headers = new Map<ColumnId, { title: Text; detail: Text }>()
+  private headers = new Map<ColumnId, { title: Text; detail: Text; status: Text }>()
   private views = new Map<string, ItemView>()
   private overflow!: Text
   private getSnapshot: () => Snapshot = () => {
@@ -65,8 +66,9 @@ export class BoardScene {
     for (const id of COLUMNS) {
       const title = text(id === 'backlog' ? 'Backlog' : STATION_LABELS[id as StationId], 13, COLORS.text)
       const detail = text('', 11, COLORS.muted)
-      this.stage.addChild(title, detail)
-      this.headers.set(id, { title, detail })
+      const status = text('', 11, COLORS.drift)
+      this.stage.addChild(title, detail, status)
+      this.headers.set(id, { title, detail, status })
     }
     this.overflow = text('', 11, COLORS.muted)
     this.stage.addChild(this.overflow)
@@ -134,6 +136,13 @@ export class BoardScene {
           ? `${station.occupancy} / ${station.wipLimit} wip · ${station.inService}/${station.servers} busy`
           : `${snap.backlog} waiting`
         header.detail.style.fill = over ? COLORS.overLimit : COLORS.muted
+
+        // "Busy" and "blocked" look identical if you only count occupancy, and
+        // the difference is the whole diagnosis. Say it in words.
+        header.status.x = x + 12
+        header.status.y = TOP_PAD + 48
+        header.status.text =
+          station && station.blocked ? `BLOCKED · ${station.outbound} parked` : ''
       }
     }
 
@@ -216,11 +225,29 @@ export class BoardScene {
   }
 
   private paintItem(view: ItemView, item: SnapshotItem, width: number): void {
-    const color = driftColor(item.driftScore)
+    const inBacklog = item.location.where === 'backlog'
+    // Finished here, and going nowhere: the station downstream has no room.
+    const parked = item.location.where === 'station' && item.location.phase === 'outbound'
+
+    // One ramp, two clocks. In-flight work reddens as it drifts from the trunk;
+    // backlog work has no branch yet, so it reddens on wall-clock wait instead.
+    // Either way red means the same thing — this is old, and it is costing you.
+    const score = inBacklog ? waitScore(item.ageTicks) : item.driftScore
+    const color = driftColor(score)
+
     view.body.clear()
-    view.body
-      .roundRect(-width / 2, -ITEM_H / 2, width, ITEM_H, 4)
-      .fill({ color, alpha: item.location.where === 'backlog' ? 0.35 : 1 })
+    if (parked) {
+      // Hollow, so a column of parked work reads as a wall rather than as a
+      // station getting things done.
+      view.body
+        .roundRect(-width / 2, -ITEM_H / 2, width, ITEM_H, 4)
+        .fill({ color, alpha: 0.16 })
+        .stroke({ color, width: 1.5 })
+    } else {
+      view.body
+        .roundRect(-width / 2, -ITEM_H / 2, width, ITEM_H, 4)
+        .fill({ color, alpha: inBacklog ? 0.28 + 0.3 * score : 1 })
+    }
 
     if (item.stale) {
       view.body
@@ -237,8 +264,14 @@ export class BoardScene {
     view.label.x = -width / 2 + 8
     view.label.text = item.stale
       ? `${item.id}  STALE`
-      : `${item.id}  ${item.size.toFixed(0)}u  ${Math.round(item.driftScore * 100)}%`
-    view.label.style.fill = item.driftScore > 0.6 ? 0xf5efe9 : COLORS.ground
+      : inBacklog
+        ? `${item.id}  ${Math.round(item.ageTicks / TICKS_PER_HOUR)}h waiting`
+        : parked
+          ? `${item.id}  ${item.size.toFixed(0)}u  held`
+          : `${item.id}  ${item.size.toFixed(0)}u  ${Math.round(item.driftScore * 100)}%`
+    // Only a solid fill can carry dark text.
+    view.label.style.fill =
+      inBacklog || parked ? COLORS.text : score > 0.6 ? 0xf5efe9 : COLORS.ground
   }
 }
 

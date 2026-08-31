@@ -1,6 +1,6 @@
 import { STATION_IDS, type StationId } from '@flow/content'
 import type { AreaId, GameState, ItemId, ItemLocation, ItemType, MetricSample } from './state.js'
-import { locateItem } from './state.js'
+import { inFlightItems, locateItem } from './state.js'
 import { recentLeadTime } from './systems/metrics.js'
 
 /**
@@ -40,6 +40,14 @@ export type SnapshotStation = {
   queue: number
   inService: number
   outbound: number
+  /**
+   * Finished work parked with nowhere to go while a server sits idle. This is
+   * the difference between "busy" and "blocked", and on a pull system's board
+   * it is the single most important thing to be able to read at a glance: a
+   * blocked station is not the problem, it is the station *after* it reporting
+   * one upstream.
+   */
+  blocked: boolean
 }
 
 export type Snapshot = {
@@ -54,6 +62,19 @@ export type Snapshot = {
   recentLeadTimeTicks: number
   throughputPerDay: number
   staleItems: ItemId[]
+  /** Tick of the most recent ship, or null if nothing has shipped yet. */
+  lastShipTick: number | null
+  /**
+   * Age of the oldest item that has entered the pipeline, measured from arrival
+   * — the same clock `leadTimeTicks` uses.
+   *
+   * Lead time averages only what *shipped*, so a line that has stopped shipping
+   * reports a flattering number forever and keeps reporting it. This one only
+   * grows. Backlog items are excluded on purpose: arrivals are unbounded by
+   * design, so the oldest item in the backlog rises in any loaded run and says
+   * nothing the player can act on.
+   */
+  oldestInFlightTicks: number
 }
 
 export function snapshot(state: GameState): Snapshot {
@@ -108,6 +129,7 @@ export function snapshot(state: GameState): Snapshot {
         queue: s.queue.length,
         inService: s.inService.length,
         outbound: s.outbound.length,
+        blocked: s.outbound.length > 0 && s.inService.length < s.servers,
       }
     }),
     items,
@@ -118,6 +140,11 @@ export function snapshot(state: GameState): Snapshot {
     recentLeadTimeTicks: recentLeadTime(state),
     throughputPerDay: recent.length,
     staleItems: items.filter((it) => it.stale).map((it) => it.id),
+    lastShipTick: shipped.at(-1)?.tickShipped ?? null,
+    oldestInFlightTicks: inFlightItems(state).reduce(
+      (oldest, it) => Math.max(oldest, state.tick - it.createdTick),
+      0,
+    ),
   }
 }
 

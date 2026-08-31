@@ -40,7 +40,7 @@ body {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 18px;
   padding: 0 16px;
   border-bottom: 1px solid var(--edge);
   background: var(--panel);
@@ -76,6 +76,33 @@ body {
 .stat__value {
   font: 500 13px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
   font-variant-numeric: tabular-nums;
+}
+
+.stat__value--alarm {
+  color: #ffb59b;
+}
+
+/* Stall alarm -------------------------------------------------------------- */
+
+/* The dashboard's own numbers go quiet when the line stops — lead time and
+   throughput both average shipped items — so something has to say it out loud. */
+.alarm {
+  border: 1px solid var(--stale);
+  border-left: 3px solid var(--stale);
+  border-radius: 4px;
+  padding: 9px 10px;
+  background: color-mix(in srgb, var(--stale) 14%, transparent);
+}
+
+.alarm__head {
+  font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #ffb59b;
+  margin-bottom: 4px;
+}
+
+.alarm__body {
+  margin: 0;
+  font-size: 11px;
 }
 
 .controls {
