@@ -1,0 +1,8 @@
+{
+  "name": "@flow/headless",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": { "flow-sweep": "./src/cli.ts" },
+  "dependencies": { "@flow/sim": "workspace:*", "@flow/content": "workspace:*" }
+}
