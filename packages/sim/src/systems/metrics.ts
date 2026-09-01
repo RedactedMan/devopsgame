@@ -47,6 +47,13 @@ export type RunSummary = {
   reworks: number
   rebases: number
   avgLeadTimeTicks: number
+  /**
+   * Age of the oldest item still open, from arrival. Lead time averages only
+   * what shipped, so a run that stalls reports a flattering number and keeps
+   * reporting it; this one keeps climbing. A sweep row where lead time looks
+   * good and this looks terrible is a stalled line, not a fast one.
+   */
+  oldestOpenTicks: number
   throughputPerDay: number
   avgTrueQuality: number
   backlog: number
@@ -63,6 +70,10 @@ export function summarize(state: GameState): RunSummary {
     reworks: state.metrics.reworkCount,
     rebases: state.metrics.rebaseCount,
     avgLeadTimeTicks: mean(shipped.map((s) => s.leadTimeTicks)),
+    oldestOpenTicks: inFlightItems(state).reduce(
+      (oldest, it) => Math.max(oldest, state.tick - it.createdTick),
+      0,
+    ),
     throughputPerDay: state.tick === 0 ? 0 : (shipped.length * ticksPerDay(state)) / state.tick,
     avgTrueQuality: mean(shipped.map((s) => s.trueQuality)),
     backlog: state.backlog.length,

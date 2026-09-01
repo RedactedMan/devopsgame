@@ -32,20 +32,35 @@ pnpm sweep      # headless balance sweep across WIP settings
 ```
 
 `pnpm sweep` prints the lesson as a table — throughput and lead time against WIP,
-averaged over a dozen seeds. Same capacity in every row; only the WIP limits move:
+averaged over a dozen seeds. Same capacity in every row; only the WIP limits move.
+**`1` is the setting the game starts you on**, so every other row is a move a
+player could make on the sliders:
 
 ```
- wip×  shipped  lead(t)   rework   rebase      wip  backlog  quality
- 0.75      165      707       54        1      7.8       81     0.94
-    1      165      708       59        1      9.1       74     0.92
-  1.5      132      932       65        7     13.0      113     0.89
-    2      115      950       67       16     17.0      118     0.87
-    3      102      942       68       45     24.9      128     0.87
-    4      101      923       62       88     32.7      117     0.87
+ wip×  shipped  lead(t)   oldest   rework   rebase      wip  backlog  quality
+  0.2      133      925     1844       31        0      4.8      111     0.97
+  0.3      134      917     1878       31        0      4.6      104     0.97
+  0.4      165      707     1454       54        1      7.8       81     0.94
+  0.5      165      708     1533       59        1      9.1       74     0.92
+ 0.75      132      932     2204       65        7     13.0      113     0.89
+    1      115      950     2464       67       16     17.0      118     0.87
+  1.5      102      942     2889       68       45     24.9      128     0.87
+    2      101      923     2976       62       88     32.7      117     0.87
+    3      102      863     3311       59      176     48.5      100     0.88
 ```
 
-Tightening the line ships 60% more work at two-thirds the lead time. Loosening it
-past a point stops helping at all — there is an optimum, not a monotone slope.
+Tightening the line to 0.4× ships **43% more work at 26% lower lead time**, with
+nobody working faster and nobody added. Loosening it never helps. But there is a
+floor as well as a ceiling: at 0.2–0.3× the line starves and gives most of it
+back, so the lesson is *there is a right amount of WIP and it is lower than you
+think*, not *lower is always better*.
+
+`oldest` is the age of the oldest item still open, and it is in the table for the
+same reason it is on the HUD. Lead time averages only what *shipped*, so a line
+that has stopped shipping reports a flattering number and keeps reporting it —
+read row 3 against row 9 and note that `lead(t)` barely moves while `oldest`
+more than doubles. A metric that improves as the system dies is the game's thesis,
+so it is not allowed to go unlabelled in the project's own README.
 
 ## How it is built
 
