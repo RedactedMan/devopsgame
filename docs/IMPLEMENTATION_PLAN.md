@@ -108,10 +108,12 @@ Each milestone ends in something playable. Small batches — the plan practices 
 If that fails, the design is wrong and no amount of Pixi will save it. Fix the design before writing another line.
 
 ### M1 — Agency
-Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log.
+Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log · **area-collision legibility** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4 — the overlap term is 46% of drift at default WIP and has no representation on screen).
+
+The moving constraint is what makes this milestone more than a construction set: staffing and placement decisions relocate the bottleneck, so "find the constraint" becomes a loop rather than a one-time answer.
 
 ### M2 — Feedback
-CI station with coverage/speed dials · **defect classes** · defect injection and escapes · production incidents and preemption · **DORA dashboard** (reading displayed quality only) · the money/revenue loop.
+CI station with coverage/speed dials · **defect classes** · defect injection and escapes · production incidents and preemption · **DORA dashboard** (reading displayed quality only) · the money/revenue loop · **dispatch as a player decision** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §5 — gated on item value and deadlines, which is why it is here and not in M1).
 
 ### M3 — Diagnosis
 **VSM overlay** (freeze-frame, touch vs. wait, %C/A, flow efficiency) · tutorial · Act I's five levels · objective and scoring framework · **hard-fail conditions, danger states, and the VSM-as-failure-screen** · instant same-seed restart.
