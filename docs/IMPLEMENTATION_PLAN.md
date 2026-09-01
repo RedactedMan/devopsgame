@@ -110,7 +110,7 @@ If that fails, the design is wrong and no amount of Pixi will save it. Fix the d
 ### M1 — Agency
 Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log · **area-collision legibility** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4 — the overlap term is 46% of drift at default WIP and has no representation on screen).
 
-The moving constraint is what makes this milestone more than a construction set: staffing and placement decisions relocate the bottleneck, so "find the constraint" becomes a loop rather than a one-time answer.
+**The moving constraint is the milestone's headline** — see [CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md). Staffing relocates the bottleneck, and capacity is coupled to WIP policy: measured against the M0 sim, one server at the constraint is worth +15% while one anywhere else is worth ~0%, hiring alone plateaus after a single hire, and a player who invests without re-tuning their WIP limits gives back 24% of the gain. Two levers, neither solvable alone, and the optimum moves because of what the player did rather than because of dice.
 
 ### M2 — Feedback
 CI station with coverage/speed dials · **defect classes** · defect injection and escapes · production incidents and preemption · **DORA dashboard** (reading displayed quality only) · the money/revenue loop · **dispatch as a player decision** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §5 — gated on item value and deadlines, which is why it is here and not in M1).
