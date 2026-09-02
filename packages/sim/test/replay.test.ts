@@ -50,7 +50,13 @@ describe('replay', () => {
   it('does not mutate the state it is given', () => {
     const before = initState({ seed: 12 })
     const snapshotOfInput = JSON.stringify(before)
-    step(before, [{ kind: 'setWipLimit', station: 'ci', limit: 99 }])
+    // Every command shape, because the failure this guards against is a shallow
+    // copy in `cloneState`: a shared array would let one step's mutation leak
+    // backwards, and nothing would go red until a replay quietly diverged.
+    step(before, [
+      { kind: 'setWipLimit', station: 'ci', limit: 99 },
+      { kind: 'assignWorker', workerId: 'W1', to: 'review' },
+    ])
     expect(JSON.stringify(before)).toBe(snapshotOfInput)
   })
 })

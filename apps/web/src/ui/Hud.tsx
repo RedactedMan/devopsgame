@@ -346,7 +346,12 @@ function StaffRow({
   onHold: (id: string) => void
   onDrop: () => void
 }) {
-  const droppable = held !== null && !workers.some((w) => w.id === held)
+  const heldHere = workers.find((w) => w.id === held)
+  const droppable = held !== null && heldHere === undefined
+  // Someone already on their way out can be kept: assigning a worker to the
+  // station they are standing in is how a pending move is called off.
+  const cancellable = heldHere !== undefined && heldHere.pendingStation !== null
+
   return (
     <div className={constraint ? 'staff staff--constraint' : 'staff'}>
       <div className="staff__head">
@@ -383,9 +388,9 @@ function StaffRow({
           </button>
         ))}
         {workers.length === 0 && <span className="staff__empty">nobody</span>}
-        {droppable && (
+        {(droppable || cancellable) && (
           <button type="button" className="chip chip--drop" onClick={onDrop}>
-            move {held} here
+            {cancellable ? 'keep' : 'move'} {held} here
           </button>
         )}
       </div>
