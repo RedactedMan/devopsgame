@@ -294,10 +294,10 @@ function Constraint({ snap }: { snap: Snapshot }) {
   if (snap.constraint === null) {
     return (
       <div className="constraint constraint--quiet" role="status">
-        <div className="constraint__head">Measuring…</div>
+        <div className="constraint__head">Finding the constraint…</div>
         <p className="constraint__body">
-          Utilisation is averaged over a shift, so the bottleneck cannot be named from the first few
-          hours. A busy moment is not a constraint.
+          A busy moment is not a constraint. Nothing is named until the line has filled and
+          utilisation has averaged out over several days — the sliders are the lever until then.
         </p>
       </div>
     )
@@ -316,7 +316,7 @@ function Constraint({ snap }: { snap: Snapshot }) {
       </div>
       <p className="constraint__body">
         {fresh
-          ? 'Whatever you changed worked, and it expired your own answer. The bottleneck is somewhere else now.'
+          ? 'The bottleneck is not where it was. Whatever was holding the line back before is not what is holding it back now.'
           : 'Capacity added anywhere else buys you almost nothing. This is the station the whole line runs at.'}
       </p>
     </div>

@@ -68,7 +68,19 @@ export const TuningSchema = z.object({
     windowTicks: z.number().int().positive(),
     /** A challenger must beat the incumbent by this much to be named the constraint. */
     switchMargin: z.number().min(0).max(1),
-    /** No constraint is named before this tick: the rolling average has to warm up first. */
+    /**
+     * And must hold that lead for this long. Two stations running neck and neck
+     * trade places all day on a noisy line; a margin alone only asks for a
+     * bigger swing, not a sustained one, and the difference is a HUD that cries
+     * wolf about the most important event in the game.
+     */
+    switchDwellTicks: z.number().int().nonnegative(),
+    /**
+     * No constraint is named before this tick. Long enough for the pipeline to
+     * fill, not just for the average to converge — a line that is still filling
+     * has a bottleneck that walks downstream as the work reaches each station,
+     * and reporting that as news is reporting the startup transient.
+     */
     graceTicks: z.number().int().nonnegative(),
     /**
      * If no station is busier than this while work is piling up, the bottleneck
@@ -113,7 +125,11 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
   constraint: {
     windowTicks: 80,
     switchMargin: 0.05,
-    graceTicks: 240,
+    switchDwellTicks: 160,
+    // Ten sim-days. Measured, not guessed: across 48 unattended runs a 480-tick
+    // grace named the wrong station 5 times and 640 named it twice, while 800
+    // names Review every time and never reports a move that did not happen.
+    graceTicks: 800,
     policySlackBelow: 0.7,
   },
 

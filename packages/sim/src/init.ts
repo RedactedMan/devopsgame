@@ -64,6 +64,8 @@ export function initState(options: InitOptions): GameState {
     constraint: null,
     constraintSinceTick: 0,
     constraintMoves: 0,
+    constraintChallenger: null,
+    constraintChallengeSince: 0,
     items: [],
     metrics: {
       created: 0,
@@ -94,6 +96,8 @@ export function cloneState(state: GameState): GameState {
     constraint: state.constraint,
     constraintSinceTick: state.constraintSinceTick,
     constraintMoves: state.constraintMoves,
+    constraintChallenger: state.constraintChallenger,
+    constraintChallengeSince: state.constraintChallengeSince,
     stations: Object.fromEntries(
       STATION_IDS.map((id): [StationId, Station] => {
         const s = state.stations[id]

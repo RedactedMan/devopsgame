@@ -166,6 +166,9 @@ export type GameState = {
    * tell the player, and the HUD is not able to work it out on its own.
    */
   constraintMoves: number
+  /** The station currently making a sustained case for the title, and since when. */
+  constraintChallenger: StationId | null
+  constraintChallengeSince: number
   /** Every live item: in the backlog or somewhere in a station. */
   items: WorkItem[]
   metrics: Metrics

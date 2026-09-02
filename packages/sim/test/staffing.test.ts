@@ -126,7 +126,7 @@ describe('the roster', () => {
 
 describe('the constraint', () => {
   it('names the station the design built as the bottleneck', () => {
-    const state = run(initState({ seed: 3, wipLimits: limitsAt(0.4) }), 1500, rebaseEverything)
+    const state = run(initState({ seed: 3, wipLimits: limitsAt(0.4) }), 2000, rebaseEverything)
     expect(state.constraint).toBe('review')
     expect(snapshot(state).constraint).toBe('review')
     // Left alone, it was named once and never moved.
@@ -137,7 +137,7 @@ describe('the constraint', () => {
     // Two reviewers instead of one, paid for out of CI's slack.
     let state = initState({ seed: 3, staffing: move(['ci', 'review']), wipLimits: limitsAt(0.4) })
     const moved: Array<string | null> = []
-    for (let i = 0; i < 1500; i++) {
+    for (let i = 0; i < 2500; i++) {
       const result = step(state, rebaseEverything(state))
       state = result.state
       for (const event of result.events) {
@@ -151,16 +151,35 @@ describe('the constraint', () => {
     expect(state.constraintMoves).toBeGreaterThan(0)
   })
 
+  it('never reports a move on a line nobody touched', () => {
+    // The regression that made this a test: at a 240-tick grace the board
+    // announced "the constraint moved to Review" on day 8.6 of a run where the
+    // player had done nothing — it was the pipeline filling, and then two tied
+    // stations trading places on noise. A false report of the single most
+    // important event in the milestone is worse than no report at all.
+    // 20260830 is the seed the app boots on, and it is in this list because it
+    // is the one that broke: at the end of the grace period Implement and
+    // Review are both pinned near 100% and have not separated yet. A run every
+    // player sees on first load is not a seed to leave to a sample.
+    for (const seed of [1, 2, 3, 4, 5, 6, 7, 8, 20260830]) {
+      for (const wip of [0.4, 1]) {
+        const state = run(initState({ seed, wipLimits: limitsAt(wip) }), 4000, rebaseEverything)
+        expect(state.constraint, `seed ${seed} at wip x${wip}`).toBe('review')
+        expect(state.constraintMoves, `seed ${seed} at wip x${wip}`).toBe(0)
+      }
+    }
+  })
+
   it('reports a policy constraint when every station has slack and work still piles up', () => {
     // Strangle the limits: nobody is busy, and the backlog grows anyway.
     const starved = run(
       initState({ seed: 3, wipLimits: { spec: 1, implement: 1, review: 1, ci: 1, deploy: 1 } }),
-      1500,
+      2000,
       rebaseEverything,
     )
     expect(snapshot(starved).constraintIsPolicy).toBe(true)
 
-    const healthy = run(initState({ seed: 3, wipLimits: limitsAt(0.4) }), 1500, rebaseEverything)
+    const healthy = run(initState({ seed: 3, wipLimits: limitsAt(0.4) }), 2000, rebaseEverything)
     expect(snapshot(healthy).constraintIsPolicy).toBe(false)
   })
 })

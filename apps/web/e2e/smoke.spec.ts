@@ -92,6 +92,7 @@ test('the WIP slider moves and the sim accepts it', async ({ page }) => {
 })
 
 test('names the constraint and lets a worker be moved to it', async ({ page }) => {
+  test.setTimeout(180_000)
   // M1's whole loop in one pass: the sim finds the bottleneck, the panel says
   // which station it is, and the player can put someone else on it.
   const problems = watchForErrors(page)
@@ -101,9 +102,10 @@ test('names the constraint and lets a worker be moved to it', async ({ page }) =
 
   // Nothing is named until utilisation has averaged over a shift — a busy
   // moment is not a constraint, and the HUD says so while it waits.
-  await expect(page.locator('.constraint')).toContainText(/Measuring/i)
+  await expect(page.locator('.constraint')).toContainText(/Finding the constraint/i)
+  // Ten sim-days of grace before anything is named, which is forty seconds at 4×.
   await expect(page.locator('.constraint')).toContainText(/constraint (is|moved to) Review/i, {
-    timeout: 60_000,
+    timeout: 120_000,
   })
 
   const row = (name: string) => page.locator('.staff').filter({ hasText: name })

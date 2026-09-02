@@ -78,29 +78,74 @@ export function updateUtilisation(state: GameState): void {
 }
 
 /**
- * Name the constraint, stickily.
+ * Name the constraint, and be slow about changing your mind.
  *
- * A challenger has to beat the incumbent by a margin, so the marker does not
- * flicker between two stations a percentage point apart. When it does move, it
- * means something — and saying so is the highest-value feedback in this
- * milestone, because it is the moment the player learns the answer they just
- * found has expired.
+ * The constraint moving is the most valuable thing this milestone can tell the
+ * player, which makes a false one the most expensive. Both ways it can be false
+ * were seen on a real run before this guard existed:
+ *
+ *  - **The startup transient.** A line that is still filling has a bottleneck
+ *    that walks downstream as work reaches each station in turn. Naming it at
+ *    240 ticks meant announcing spec → implement → review as though something
+ *    had happened. Nothing had; the pipeline was filling.
+ *  - **A tie.** Two stations running neck and neck swap places on noise — one
+ *    seed traded them ten times in a run. A margin alone does not fix this: it
+ *    asks for a bigger swing, not a sustained one.
+ *
+ * So a challenger must beat the incumbent by a margin *and hold that lead* for
+ * a couple of shifts. What survives that is a constraint that actually moved.
  */
 export function updateConstraint(state: GameState, events: SimEvent[]): void {
-  if (state.tick < state.tuning.constraint.graceTicks) return
+  const { graceTicks, switchMargin, switchDwellTicks } = state.tuning.constraint
+  if (state.tick < graceTicks) return
 
   let hottest: StationId = STATION_IDS[0]
   for (const id of STATION_IDS) {
     if (state.stations[id].utilisation > state.stations[hottest].utilisation) hottest = id
   }
 
+  const clear = () => {
+    state.constraintChallenger = null
+    state.constraintChallengeSince = 0
+  }
+
   const current = state.constraint
-  if (current === hottest) return
+  if (current === null) {
+    // The first naming is not a move — nobody's answer expired — but it earns
+    // the same dwell, and for a sharper reason. On the seed the game boots
+    // with, Implement and Review are both pinned near 100% at the end of the
+    // grace period and have not separated yet; whichever is a point ahead gets
+    // named, and then "moves" a few days later when they do separate. Waiting
+    // for one station to *stay* hottest is the difference between reporting a
+    // constraint and reporting a coin toss.
+    if (state.constraintChallenger !== hottest) {
+      state.constraintChallenger = hottest
+      state.constraintChallengeSince = state.tick
+      return
+    }
+    if (state.tick - state.constraintChallengeSince < switchDwellTicks) return
 
-  const incumbent = current === null ? -1 : state.stations[current].utilisation
-  if (state.stations[hottest].utilisation < incumbent + state.tuning.constraint.switchMargin) return
+    clear()
+    state.constraint = hottest
+    state.constraintSinceTick = state.tick
+    events.push({ kind: 'constraintMoved', from: null, to: hottest })
+    return
+  }
 
-  if (current !== null) state.constraintMoves++
+  if (hottest === current) return clear()
+  if (state.stations[hottest].utilisation < state.stations[current].utilisation + switchMargin) {
+    return clear()
+  }
+
+  if (state.constraintChallenger !== hottest) {
+    state.constraintChallenger = hottest
+    state.constraintChallengeSince = state.tick
+    return
+  }
+  if (state.tick - state.constraintChallengeSince < switchDwellTicks) return
+
+  clear()
+  state.constraintMoves++
   state.constraint = hottest
   state.constraintSinceTick = state.tick
   events.push({ kind: 'constraintMoved', from: current, to: hottest })

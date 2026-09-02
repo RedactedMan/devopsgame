@@ -137,6 +137,22 @@ something averaged.
 - **A "the constraint moved" moment.** When the hottest station changes, say so.
   This is the single highest-value feedback event in M1: it is the instant the
   player learns that the answer they just found has expired.
+
+  > **Which makes a false one the most expensive thing on the screen.** Built
+  > naively — name the argmax after the average converges, switch on a margin —
+  > it fires twice for reasons that are not the mechanic. A line that is still
+  > *filling* has a bottleneck that walks downstream as work reaches each
+  > station, so the first minute announces spec → implement → review as though
+  > something had happened. And two stations running neck and neck trade places
+  > on noise: one seed did it ten times in a run. A margin does not fix the
+  > second, because it asks for a bigger swing rather than a sustained one.
+  >
+  > What works: name nothing for ten sim-days, and require a challenger to hold
+  > its lead for two shifts before the title changes hands. Measured across 48
+  > unattended runs, that reports the constraint correctly every time and
+  > reports zero moves — which is right, because nobody did anything. Locked in
+  > as a test, because the failure mode is a game that cries wolf about its own
+  > headline.
 - **Flag when the constraint is a policy, not a station** — every station below
   some utilisation while throughput is flat is §3's plateau, and it should read
   as "your WIP limits are the bottleneck now", not as a station's fault.
