@@ -93,7 +93,7 @@ Enforce it in the type system: the snapshot type omits the field, so a renderer 
 
 Each milestone ends in something playable. Small batches — the plan practices what the game teaches, and that is not a joke: a 4-month big-design-up-front build of a game about small batches would be the funniest possible failure.
 
-### M0 — Prove the core loop *(the gate)*
+### M0 — Prove the core loop *(the gate)* — **passed, 2026-09-01**
 
 **No building mode. No campaign. No art.** A fixed five-station pipeline, rectangles and text.
 
@@ -106,6 +106,8 @@ Each milestone ends in something playable. Small batches — the plan practices 
 > An unbriefed playtester over-fills WIP, gets measurably worse results, and can explain *why* without being told.
 
 If that fails, the design is wrong and no amount of Pixi will save it. Fix the design before writing another line.
+
+**Result: passed.** The design is sound enough to build on. Two things were fixed on the way to it, both found by playing rather than by testing, and both worth remembering as a pattern: the board could not distinguish a *blocked* station from a *busy* one, and the dashboard's lead time — averaging only what shipped — improved as the line died. Neither was a simulation bug. Both were the game failing to say what it already knew, which is the failure mode to watch for in every milestone after this one.
 
 ### M1 — Agency
 Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log · **area-collision legibility** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4 — the overlap term is 46% of drift at default WIP and has no representation on screen).

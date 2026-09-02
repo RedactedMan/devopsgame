@@ -11,15 +11,23 @@ decays against a moving trunk: the more you start, the less you finish.
 
 ## Status
 
-**M0 — playtest build.** A fixed five-station pipeline, rectangles and text, drift
-implemented and visible. No building mode, no campaign, no art.
+**M0 complete — the core loop holds.** A fixed five-station pipeline, rectangles
+and text, drift implemented and visible. No building mode, no campaign, no art.
 
-M0 is not finished until an unbriefed playtester over-fills WIP, gets measurably
-worse results, and can explain *why* without being told. The mechanical half of
-that is asserted in `packages/sim/test/flow.test.ts`; the human half is the gate.
+M0's gate was that an unbriefed playtester over-fills WIP, gets measurably worse
+results, and can explain *why* without being told. The mechanical half is
+asserted in `packages/sim/test/flow.test.ts`; the human half was played on
+2026-09-01 and passed. The design is sound enough to build on, which is the only
+question M0 existed to answer.
+
+**Next: M1 — agency.** Board building, staffing, and the attention pool. The
+headline is the moving constraint: capacity and WIP policy are coupled levers,
+and neither is solvable alone.
 
 - [Game Design Document](docs/GAME_DESIGN.md) — mechanics, campaign, pedagogy
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) — architecture, milestones, testing
+- [The Moving Constraint](docs/CONSTRAINT_AND_CAPACITY.md) — M1's headline mechanic, measured
+- [Dispatch and Area Collisions](docs/DISPATCH_AND_COLLISIONS.md) — what M1 gets, and what waits for M2
 
 ## Running it
 
