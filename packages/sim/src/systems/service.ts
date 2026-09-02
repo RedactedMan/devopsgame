@@ -71,11 +71,28 @@ export function advanceService(state: GameState, events: SimEvent[]): void {
   }
 }
 
-/** Fill idle servers from the queue, skipping STALE items rather than head-blocking on them. */
+/**
+ * Fill idle workers from the queue, skipping STALE items rather than
+ * head-blocking on them.
+ *
+ * Workers are taken in roster order, which is arbitrary but fixed — the binding
+ * has to be deterministic or two replays of the same command log could staff
+ * the same work differently and diverge.
+ *
+ * A worker with a move pending does not pick anything new up. Otherwise a busy
+ * station could keep handing them work and the move would never land.
+ */
 export function startService(state: GameState, events: SimEvent[]): void {
   for (const stationId of STATION_IDS) {
     const station = state.stations[stationId]
-    while (station.inService.length < station.servers) {
+    const free = state.workers.filter(
+      (w) =>
+        w.station === stationId &&
+        w.pendingStation === null &&
+        !station.inService.some((slot) => slot.workerId === w.id),
+    )
+
+    while (free.length > 0) {
       const at = station.queue.findIndex((id) => {
         const item = state.items.find((it) => it.id === id)
         return item !== undefined && !item.stale
@@ -87,8 +104,9 @@ export function startService(state: GameState, events: SimEvent[]): void {
       const item = state.items.find((it) => it.id === itemId)
       if (!item) continue
 
+      const worker = free.shift() as (typeof free)[number]
       const ticks = serviceTicksFor(item, stationId, state.tuning)
-      station.inService.push({ itemId, remainingTicks: ticks, totalTicks: ticks })
+      station.inService.push({ itemId, workerId: worker.id, remainingTicks: ticks, totalTicks: ticks })
 
       const visit = [...item.history].reverse().find((v) => v.station === stationId && v.exitedTick === null)
       if (visit) visit.startedTick = state.tick

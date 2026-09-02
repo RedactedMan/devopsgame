@@ -8,7 +8,7 @@ import { STATION_IDS } from './stations.js'
  */
 
 const StationTuning = z.object({
-  /** How many items this station can work on at once. */
+  /** Starting head count. Capacity after that is whatever the player's roster says. */
   servers: z.number().int().positive(),
   /** Starting WIP limit: queue + in-service + outbound, capped. */
   defaultWipLimit: z.number().int().positive(),
@@ -63,6 +63,21 @@ export const TuningSchema = z.object({
     reworkSizeFraction: z.number().min(0).max(1),
   }),
 
+  constraint: z.object({
+    /** Smoothing window for station utilisation, in ticks. Roughly one sim-day. */
+    windowTicks: z.number().int().positive(),
+    /** A challenger must beat the incumbent by this much to be named the constraint. */
+    switchMargin: z.number().min(0).max(1),
+    /** No constraint is named before this tick: the rolling average has to warm up first. */
+    graceTicks: z.number().int().nonnegative(),
+    /**
+     * If no station is busier than this while work is piling up, the bottleneck
+     * is not a station at all — it is the WIP limits. See
+     * docs/CONSTRAINT_AND_CAPACITY.md §3.
+     */
+    policySlackBelow: z.number().min(0).max(1),
+  }),
+
   /** How often the metrics sampler appends a point to the chart series. */
   sampleEveryTicks: z.number().int().positive(),
 })
@@ -81,6 +96,10 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
     areasMax: 2,
   },
 
+  // The starting WIP limits are deliberately too loose — the sweep in the README
+  // puts 1× among the worst rows on the board. Design rule 3: the intuitive move
+  // must be the wrong move, and a player who never touches the sliders must be
+  // able to feel that. Do not "fix" these to the sweep optimum.
   stations: {
     // Review is the bottleneck by construction: one server, and only humans
     // can staff it. That is the constraint the whole campaign is built around.
@@ -89,6 +108,13 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
     review: { servers: 1, defaultWipLimit: 4, baseTicks: 4, ticksPerUnit: 1.5, reworkBase: 0.05 },
     ci: { servers: 2, defaultWipLimit: 6, baseTicks: 12, ticksPerUnit: 0, reworkBase: 0.08 },
     deploy: { servers: 1, defaultWipLimit: 4, baseTicks: 5, ticksPerUnit: 0, reworkBase: 0 },
+  },
+
+  constraint: {
+    windowTicks: 80,
+    switchMargin: 0.05,
+    graceTicks: 240,
+    policySlackBelow: 0.7,
   },
 
   drift: {

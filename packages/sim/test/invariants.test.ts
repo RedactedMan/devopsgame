@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { STATION_IDS } from '@flow/content'
-import { initState, locateItem, run, step, type GameState } from '@flow/sim'
+import { initState, locateItem, run, serversAt, step, type GameState } from '@flow/sim'
 
 /**
  * Properties that must hold for every seed and every tick. These are the tests
@@ -22,7 +22,7 @@ function checkInvariants(state: GameState): void {
     const s = state.stations[stationId]
     expect(s.queue.length).toBeGreaterThanOrEqual(0)
     expect(s.outbound.length).toBeGreaterThanOrEqual(0)
-    expect(s.inService.length).toBeLessThanOrEqual(s.servers)
+    expect(s.inService.length).toBeLessThanOrEqual(serversAt(state, stationId))
     for (const id of [...s.queue, ...s.outbound, ...s.inService.map((x) => x.itemId)]) {
       placements.set(id, (placements.get(id) ?? 0) + 1)
     }
@@ -33,6 +33,20 @@ function checkInvariants(state: GameState): void {
   }
   // No orphans holding a slot after being shipped or abandoned.
   for (const id of placements.keys()) expect(ids).toContain(id)
+
+  // Nobody is in two places, and nobody is doing two things at once.
+  const workerIds = state.workers.map((w) => w.id)
+  expect(new Set(workerIds).size).toBe(workerIds.length)
+  const working = new Map<string, number>()
+  for (const stationId of STATION_IDS) {
+    for (const slot of state.stations[stationId].inService) {
+      expect(workerIds).toContain(slot.workerId)
+      // A worker can only serve at the station they are assigned to.
+      expect(state.workers.find((w) => w.id === slot.workerId)?.station).toBe(stationId)
+      working.set(slot.workerId, (working.get(slot.workerId) ?? 0) + 1)
+    }
+  }
+  for (const [id, n] of working) expect(n, `worker ${id} slot count`).toBe(1)
 
   for (const item of state.items) {
     expect(item.size).toBeGreaterThan(0)

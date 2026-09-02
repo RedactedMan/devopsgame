@@ -3,6 +3,7 @@ import type { RngState } from './rng.js'
 
 export type ItemId = string
 export type AreaId = number
+export type WorkerId = string
 
 /** M0 only produces features. The other four types arrive with M2. */
 export type ItemType = 'feature' | 'bug' | 'incident' | 'chore' | 'improvement'
@@ -53,8 +54,31 @@ export type WorkItem = {
   reworks: number
 }
 
+/**
+ * Humans and agents are the same shape and differ only in `kind`. M1 ships the
+ * roster and the ability to move it; the two kinds do not yet behave
+ * differently, which is why every worker starts human. Agents arrive with the
+ * attention pool, because an agent that costs nothing to supervise would be a
+ * strictly better human and the design's central trade would be gone.
+ */
+export type WorkerKind = 'human' | 'agent'
+
+export type Worker = {
+  id: WorkerId
+  kind: WorkerKind
+  station: StationId
+  /**
+   * Where the player has asked this worker to go. Applied by `systems/staffing`
+   * once they are no longer mid-item — you cannot yank someone off work in
+   * progress, and the wait is the honest cost of the decision.
+   */
+  pendingStation: StationId | null
+}
+
 export type ServiceSlot = {
   itemId: ItemId
+  /** Who is doing it. A slot without a worker cannot exist. */
+  workerId: WorkerId
   remainingTicks: number
   totalTicks: number
 }
@@ -63,10 +87,19 @@ export type Station = {
   id: StationId
   /** Player-controlled. Caps queue + inService + outbound. */
   wipLimit: number
-  servers: number
   queue: ItemId[]
   inService: ServiceSlot[]
   outbound: ItemId[]
+  /**
+   * Rolling share of this station's servers that were busy, as an exponential
+   * moving average over roughly one sim-day (see `systems/staffing`).
+   *
+   * Occupancy is an instantaneous sample and says almost nothing; utilisation
+   * averaged over a shift is the number that identifies a constraint. The
+   * distinction is the whole diagnosis, so the sim computes it rather than
+   * leaving the HUD to guess.
+   */
+  utilisation: number
 }
 
 export type ShippedRecord = {
@@ -119,6 +152,14 @@ export type GameState = {
   nextArrivalTick: number
   backlog: ItemId[]
   stations: Record<StationId, Station>
+  workers: Worker[]
+  nextWorkerSerial: number
+  /**
+   * The station the sim currently believes is the bottleneck, or null before
+   * the utilisation average has warmed up. Sticky: see `systems/staffing`.
+   */
+  constraint: StationId | null
+  constraintSinceTick: number
   /** Every live item: in the backlog or somewhere in a station. */
   items: WorkItem[]
   metrics: Metrics
@@ -130,6 +171,24 @@ export function findItem(state: GameState, id: ItemId): WorkItem | undefined {
 
 export function stationOccupancy(station: Station): number {
   return station.queue.length + station.inService.length + station.outbound.length
+}
+
+export function workersAt(state: GameState, station: StationId): Worker[] {
+  return state.workers.filter((w) => w.station === station)
+}
+
+/** A station's capacity is its roster. There is no separate server count to fall out of sync. */
+export function serversAt(state: GameState, station: StationId): number {
+  let n = 0
+  for (const w of state.workers) if (w.station === station) n++
+  return n
+}
+
+export function workerIsBusy(state: GameState, id: WorkerId): boolean {
+  for (const stationId of Object.keys(state.stations) as StationId[]) {
+    if (state.stations[stationId].inService.some((slot) => slot.workerId === id)) return true
+  }
+  return false
 }
 
 /** Items that have entered the pipeline. Backlog items have no branch yet, so they cannot drift. */
