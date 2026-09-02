@@ -11,10 +11,87 @@ decays against a moving trunk: the more you start, the less you finish.
 
 ## Status
 
-Design phase. No code yet.
+**M0 complete — the core loop holds.** A fixed five-station pipeline, rectangles
+and text, drift implemented and visible. No building mode, no campaign, no art.
+
+M0's gate was that an unbriefed playtester over-fills WIP, gets measurably worse
+results, and can explain *why* without being told. The mechanical half is
+asserted in `packages/sim/test/flow.test.ts`; the human half was played on
+2026-09-01 and passed. The design is sound enough to build on, which is the only
+question M0 existed to answer.
+
+**Next: M1 — agency.** Board building, staffing, and the attention pool. The
+headline is the moving constraint: capacity and WIP policy are coupled levers,
+and neither is solvable alone.
 
 - [Game Design Document](docs/GAME_DESIGN.md) — mechanics, campaign, pedagogy
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) — architecture, milestones, testing
+- [The Moving Constraint](docs/CONSTRAINT_AND_CAPACITY.md) — M1's headline mechanic, measured
+- [Dispatch and Area Collisions](docs/DISPATCH_AND_COLLISIONS.md) — what M1 gets, and what waits for M2
+
+## Running it
+
+```sh
+pnpm install
+pnpm dev        # the playtest build
+pnpm test       # unit, invariant, and golden-replay tests (~2s)
+pnpm test:e2e   # Playwright smoke test: load it, play it, fail on console noise
+pnpm typecheck
+pnpm sweep      # headless balance sweep across WIP settings
+```
+
+`pnpm test:e2e` uses the Chrome already on your machine (`channel: 'chrome'`)
+rather than downloading its own, and starts the dev server itself. It exists
+because the unit suite structurally cannot see the renderer: the worst bug in M0
+so far — StrictMode tearing down the Pixi application mid-`init()`, taking the
+whole React tree with it — passed every unit test and was only ever caught by
+driving a real browser.
+
+`pnpm sweep` prints the lesson as a table — throughput and lead time against WIP,
+averaged over a dozen seeds. Same capacity in every row; only the WIP limits move.
+**`1` is the setting the game starts you on**, so every other row is a move a
+player could make on the sliders:
+
+```
+ wip×  shipped  lead(t)   oldest   rework   rebase      wip  backlog  quality
+  0.2      133      925     1844       31        0      4.8      111     0.97
+  0.3      134      917     1878       31        0      4.6      104     0.97
+  0.4      165      707     1454       54        1      7.8       81     0.94
+  0.5      165      708     1533       59        1      9.1       74     0.92
+ 0.75      132      932     2204       65        7     13.0      113     0.89
+    1      115      950     2464       67       16     17.0      118     0.87
+  1.5      102      942     2889       68       45     24.9      128     0.87
+    2      101      923     2976       62       88     32.7      117     0.87
+    3      102      863     3311       59      176     48.5      100     0.88
+```
+
+Tightening the line to 0.4× ships **43% more work at 26% lower lead time**, with
+nobody working faster and nobody added. Loosening it never helps. But there is a
+floor as well as a ceiling: at 0.2–0.3× the line starves and gives most of it
+back, so the lesson is *there is a right amount of WIP and it is lower than you
+think*, not *lower is always better*.
+
+`oldest` is the age of the oldest item still open, and it is in the table for the
+same reason it is on the HUD. Lead time averages only what *shipped*, so a line
+that has stopped shipping reports a flattering number and keeps reporting it —
+read row 3 against row 9 and note that `lead(t)` barely moves while `oldest`
+more than doubles. A metric that improves as the system dies is the game's thesis,
+so it is not allowed to go unlabelled in the project's own README.
+
+## How it is built
+
+The simulation is a pure, deterministic, headless function; everything else is a
+view of it. `packages/sim` touches no DOM, no timers, no `Math.random`, and no
+`Date.now`. That buys invariant tests, balance sweeps, kilobyte save files, and
+bug reports that reproduce exactly — see the [implementation plan](docs/IMPLEMENTATION_PLAN.md)
+for why each of those is load-bearing.
+
+| Package | What it is |
+|---|---|
+| `packages/sim` | The tick function, the systems, and the types. Pure. |
+| `packages/content` | Stations and tuning, as zod-validated data |
+| `packages/headless` | Balance sweeps with no browser involved |
+| `apps/web` | PixiJS board, React HUD, and the bridge between them |
 
 ## License
 

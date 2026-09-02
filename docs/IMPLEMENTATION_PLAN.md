@@ -93,7 +93,7 @@ Enforce it in the type system: the snapshot type omits the field, so a renderer 
 
 Each milestone ends in something playable. Small batches — the plan practices what the game teaches, and that is not a joke: a 4-month big-design-up-front build of a game about small batches would be the funniest possible failure.
 
-### M0 — Prove the core loop *(the gate)*
+### M0 — Prove the core loop *(the gate)* — **passed, 2026-09-01**
 
 **No building mode. No campaign. No art.** A fixed five-station pipeline, rectangles and text.
 
@@ -107,11 +107,15 @@ Each milestone ends in something playable. Small batches — the plan practices 
 
 If that fails, the design is wrong and no amount of Pixi will save it. Fix the design before writing another line.
 
+**Result: passed.** The design is sound enough to build on. Two things were fixed on the way to it, both found by playing rather than by testing, and both worth remembering as a pattern: the board could not distinguish a *blocked* station from a *busy* one, and the dashboard's lead time — averaging only what shipped — improved as the line died. Neither was a simulation bug. Both were the game failing to say what it already knew, which is the failure mode to watch for in every milestone after this one.
+
 ### M1 — Agency
-Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log.
+Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log · **area-collision legibility** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4 — the overlap term is 46% of drift at default WIP and has no representation on screen).
+
+**The moving constraint is the milestone's headline** — see [CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md). Staffing relocates the bottleneck, and capacity is coupled to WIP policy: measured against the M0 sim, one server at the constraint is worth +15% while one anywhere else is worth ~0%, hiring alone plateaus after a single hire, and a player who invests without re-tuning their WIP limits gives back 24% of the gain. Two levers, neither solvable alone, and the optimum moves because of what the player did rather than because of dice.
 
 ### M2 — Feedback
-CI station with coverage/speed dials · **defect classes** · defect injection and escapes · production incidents and preemption · **DORA dashboard** (reading displayed quality only) · the money/revenue loop.
+CI station with coverage/speed dials · **defect classes** · defect injection and escapes · production incidents and preemption · **DORA dashboard** (reading displayed quality only) · the money/revenue loop · **dispatch as a player decision** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §5 — gated on item value and deadlines, which is why it is here and not in M1).
 
 ### M3 — Diagnosis
 **VSM overlay** (freeze-frame, touch vs. wait, %C/A, flow efficiency) · tutorial · Act I's five levels · objective and scoring framework · **hard-fail conditions, danger states, and the VSM-as-failure-screen** · instant same-seed restart.
