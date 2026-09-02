@@ -100,6 +100,7 @@ export function updateConstraint(state: GameState, events: SimEvent[]): void {
   const incumbent = current === null ? -1 : state.stations[current].utilisation
   if (state.stations[hottest].utilisation < incumbent + state.tuning.constraint.switchMargin) return
 
+  if (current !== null) state.constraintMoves++
   state.constraint = hottest
   state.constraintSinceTick = state.tick
   events.push({ kind: 'constraintMoved', from: current, to: hottest })

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { STATION_LABELS, DEFAULT_TUNING, type StationId } from '@flow/content'
+import type { Snapshot } from '@flow/sim'
 import type { SimHandle } from '../bridge/useSim.js'
 import { SPEEDS } from '../bridge/useSim.js'
 import { Chart } from './Chart.js'
@@ -20,10 +21,21 @@ const STALL_WARN_TICKS = TICKS_PER_DAY * 2
 /** Before this, a run that has never shipped is starting up, not stalled. */
 const STARTUP_GRACE_TICKS = TICKS_PER_DAY * 5
 
+/**
+ * How long a change of constraint stays news.
+ *
+ * The constraint moving is the highest-value feedback in this milestone: it is
+ * the moment the player learns that the answer they just found has expired. A
+ * marker that quietly relocates on the board is easy to miss, so the panel says
+ * it in words for a day and then settles back into reporting.
+ */
+const CONSTRAINT_NEWS_TICKS = TICKS_PER_DAY
+
 export function Hud({ sim }: { sim: SimHandle }) {
   const { snapshot: snap, dispatch } = sim
   const stale = snap.items.filter((it) => it.stale)
   const blocked = snap.stations.filter((s) => s.blocked)
+  const [held, setHeld] = useState<string | null>(null)
 
   const sinceShip = snap.lastShipTick === null ? snap.tick : snap.tick - snap.lastShipTick
   const stalled =
@@ -34,7 +46,7 @@ export function Hud({ sim }: { sim: SimHandle }) {
     <>
       <header className="topbar">
         <div className="brand">
-          Flow State <span className="brand__tag">M0</span>
+          Flow State <span className="brand__tag">M1</span>
         </div>
 
         <Stat label="Day" value={(snap.tick / TICKS_PER_DAY + 1).toFixed(1)} />
@@ -87,6 +99,8 @@ export function Hud({ sim }: { sim: SimHandle }) {
       <aside className="panel">
         {stalled && <StallAlarm days={sinceShip / TICKS_PER_DAY} stale={stale.length} blocked={blocked} />}
 
+        <Constraint snap={snap} />
+
         <section>
           <h2>WIP limits</h2>
           <p className="hint">
@@ -101,6 +115,30 @@ export function Hud({ sim }: { sim: SimHandle }) {
               limit={station.wipLimit}
               occupancy={station.occupancy}
               onChange={(limit) => dispatch({ kind: 'setWipLimit', station: station.id, limit })}
+            />
+          ))}
+        </section>
+
+        <section>
+          <h2>Staffing</h2>
+          <p className="hint">
+            {held === null
+              ? 'Click someone to pick them up, then click a station to move them there. Moving is free; knowing where to move them is not.'
+              : `Where should ${held} go? Click a station, or click ${held} again to put them down.`}
+          </p>
+          {snap.stations.map((station) => (
+            <StaffRow
+              key={station.id}
+              station={station}
+              workers={snap.workers.filter((w) => w.station === station.id)}
+              constraint={snap.constraint === station.id}
+              held={held}
+              onHold={(id) => setHeld((current) => (current === id ? null : id))}
+              onDrop={() => {
+                if (held === null) return
+                dispatch({ kind: 'assignWorker', workerId: held, to: station.id })
+                setHeld(null)
+              }}
             />
           ))}
         </section>
@@ -227,6 +265,131 @@ function WipSlider({
         {occupancy}/{value}
       </span>
     </label>
+  )
+}
+
+/**
+ * The bottleneck, named, and the moment it moves.
+ *
+ * Theory of Constraints is only a lesson if the player can find the constraint;
+ * the sim has always known which station it is, and until now had no way to
+ * say. The second case matters more than the first: a line where every station
+ * has slack and work is still piling up has no station to blame, and pointing
+ * at the warmest one would send the player to staff a station that is already
+ * idle a third of the time.
+ */
+function Constraint({ snap }: { snap: Snapshot }) {
+  if (snap.constraintIsPolicy) {
+    return (
+      <div className="constraint constraint--policy" role="status">
+        <div className="constraint__head">The constraint is your WIP limits</div>
+        <p className="constraint__body">
+          No station is working near capacity and work is still piling up. Staffing will not fix
+          this — nobody is short-handed. The limits are holding the line back.
+        </p>
+      </div>
+    )
+  }
+
+  if (snap.constraint === null) {
+    return (
+      <div className="constraint constraint--quiet" role="status">
+        <div className="constraint__head">Measuring…</div>
+        <p className="constraint__body">
+          Utilisation is averaged over a shift, so the bottleneck cannot be named from the first few
+          hours. A busy moment is not a constraint.
+        </p>
+      </div>
+    )
+  }
+
+  // Naming the bottleneck for the first time is not the same event as watching
+  // it relocate, and only the second one means the player's answer expired.
+  const moved = snap.constraintMoves > 0
+  const fresh = moved && snap.tick - snap.constraintSinceTick < CONSTRAINT_NEWS_TICKS
+
+  return (
+    <div className={fresh ? 'constraint constraint--news' : 'constraint'} role="status">
+      <div className="constraint__head">
+        {fresh ? 'The constraint moved to ' : 'The constraint is '}
+        {STATION_LABELS[snap.constraint]}
+      </div>
+      <p className="constraint__body">
+        {fresh
+          ? 'Whatever you changed worked, and it expired your own answer. The bottleneck is somewhere else now.'
+          : 'Capacity added anywhere else buys you almost nothing. This is the station the whole line runs at.'}
+      </p>
+    </div>
+  )
+}
+
+/**
+ * One station's roster, and the utilisation that says whether it needs one.
+ *
+ * Pick a worker up, put them down somewhere else. There is no cost and no
+ * limit, on purpose: this milestone is about the diagnosis, not the budget. If
+ * moving people were rationed, a player who guessed wrong would learn that
+ * guessing is expensive rather than that they guessed wrong.
+ */
+function StaffRow({
+  station,
+  workers,
+  constraint,
+  held,
+  onHold,
+  onDrop,
+}: {
+  station: Snapshot['stations'][number]
+  workers: Snapshot['workers']
+  constraint: boolean
+  held: string | null
+  onHold: (id: string) => void
+  onDrop: () => void
+}) {
+  const droppable = held !== null && !workers.some((w) => w.id === held)
+  return (
+    <div className={constraint ? 'staff staff--constraint' : 'staff'}>
+      <div className="staff__head">
+        <span className="staff__name">{STATION_LABELS[station.id]}</span>
+        <span className="staff__util">{Math.round(station.utilisation * 100)}%</span>
+      </div>
+      <div className="staff__bar">
+        <span style={{ width: `${Math.min(100, station.utilisation * 100)}%` }} />
+      </div>
+      <div className="staff__crew">
+        {workers.map((worker) => (
+          <button
+            key={worker.id}
+            type="button"
+            className={[
+              'chip',
+              worker.busy ? 'chip--busy' : '',
+              held === worker.id ? 'chip--held' : '',
+              worker.pendingStation ? 'chip--moving' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            title={
+              worker.pendingStation
+                ? `Finishing up, then moving to ${STATION_LABELS[worker.pendingStation]}`
+                : worker.busy
+                  ? 'Working. A move lands when they finish.'
+                  : 'Idle.'
+            }
+            onClick={() => onHold(worker.id)}
+          >
+            {worker.id}
+            {worker.pendingStation ? ' →' : ''}
+          </button>
+        ))}
+        {workers.length === 0 && <span className="staff__empty">nobody</span>}
+        {droppable && (
+          <button type="button" className="chip chip--drop" onClick={onDrop}>
+            move {held} here
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
 

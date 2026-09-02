@@ -105,6 +105,152 @@ body {
   font-size: 11px;
 }
 
+/* Constraint ---------------------------------------------------------------- */
+
+/* The bottleneck is a permanent piece of the board's furniture, so its readout
+   is a permanent piece of the panel's — quiet while it is only reporting, loud
+   for the day after it moves. */
+.constraint {
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--drift);
+  border-radius: 4px;
+  padding: 9px 10px;
+}
+
+.constraint--quiet {
+  border-left-color: var(--edge);
+}
+
+.constraint--news {
+  background: color-mix(in srgb, var(--drift) 14%, transparent);
+}
+
+.constraint--policy {
+  border-left-color: var(--flow);
+  background: color-mix(in srgb, var(--flow) 12%, transparent);
+}
+
+.constraint__head {
+  font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--drift);
+  margin-bottom: 4px;
+}
+
+.constraint--quiet .constraint__head {
+  color: var(--muted);
+}
+
+.constraint--policy .constraint__head {
+  color: var(--flow);
+}
+
+.constraint__body {
+  margin: 0;
+  font-size: 11px;
+}
+
+/* Staffing ------------------------------------------------------------------ */
+
+.staff {
+  padding: 7px 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  margin-bottom: 4px;
+}
+
+.staff--constraint {
+  border-color: var(--drift);
+}
+
+.staff__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.staff__name {
+  font-size: 11px;
+}
+
+.staff__util {
+  font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.staff__bar {
+  height: 4px;
+  border-radius: 2px;
+  background: #232c2e;
+  margin: 5px 0 6px;
+  overflow: hidden;
+}
+
+.staff__bar span {
+  display: block;
+  height: 100%;
+  background: var(--muted);
+}
+
+.staff--constraint .staff__bar span {
+  background: var(--drift);
+}
+
+.staff__crew {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.staff__empty {
+  color: var(--muted);
+  font-size: 10px;
+  font-style: italic;
+}
+
+.chip {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  padding: 2px 5px;
+  font: 500 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--flow);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 1px;
+}
+
+/* Filled means occupied. An outline is someone standing available, which is
+   what a station with slack actually looks like. */
+.chip--busy {
+  background: #232c2e;
+  color: var(--text);
+}
+
+.chip--held {
+  border-color: var(--flow);
+  color: var(--flow);
+}
+
+.chip--moving {
+  border-style: dashed;
+  color: var(--drift);
+  border-color: var(--drift);
+}
+
+.chip--drop {
+  border-style: dashed;
+  border-color: var(--flow);
+  color: var(--flow);
+}
+
 .controls {
   margin-left: auto;
   display: flex;

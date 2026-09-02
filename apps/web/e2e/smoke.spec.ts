@@ -91,6 +91,35 @@ test('the WIP slider moves and the sim accepts it', async ({ page }) => {
   expect(problems, problems.join('\n')).toEqual([])
 })
 
+test('names the constraint and lets a worker be moved to it', async ({ page }) => {
+  // M1's whole loop in one pass: the sim finds the bottleneck, the panel says
+  // which station it is, and the player can put someone else on it.
+  const problems = watchForErrors(page)
+  await page.goto('/')
+  await expect(page.locator('.board canvas')).toBeVisible()
+  await page.getByRole('button', { name: '4×', exact: true }).click()
+
+  // Nothing is named until utilisation has averaged over a shift — a busy
+  // moment is not a constraint, and the HUD says so while it waits.
+  await expect(page.locator('.constraint')).toContainText(/Measuring/i)
+  await expect(page.locator('.constraint')).toContainText(/constraint (is|moved to) Review/i, {
+    timeout: 60_000,
+  })
+
+  const row = (name: string) => page.locator('.staff').filter({ hasText: name })
+  const review = row('Review')
+  await expect(review.locator('.chip')).toHaveCount(1)
+
+  await row('CI').locator('.chip').first().click()
+  await review.locator('.chip--drop').click()
+
+  // A worker mid-item finishes it first, so the move lands within a few ticks
+  // rather than instantly. Either way it lands.
+  await expect(review.locator('.chip')).toHaveCount(2, { timeout: 30_000 })
+
+  expect(problems, problems.join('\n')).toEqual([])
+})
+
 test('a stalled line says so instead of reporting a good lead time', async ({ page }) => {
   // The alarm is the answer to a real playtest failure: the dashboard reported
   // 39.2h lead time while nothing had shipped for nine days. Drive the line

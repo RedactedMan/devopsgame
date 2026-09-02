@@ -160,7 +160,48 @@ Assert shapes, not point values, per plan §5.
 4. **Retuning beats the second hire** at `+1 review`. The relationship, not the
    number.
 
-## 8. Why this and not dispatch
+## 8. Built: the zero-sum version *(M1)*
+
+Everything in §2–§4 measures a **hire** — capacity added from outside. What
+shipped first is **reallocation**, which is zero-sum: a worker moved to Review
+leaves a hole where they were standing. That is a weaker move by construction,
+so it was measured before being built rather than assumed to inherit the numbers
+above. Same method, 12 seeds × 4000 ticks, wip 0.4×:
+
+| move | shipped | Δ | lead |
+|---|---|---|---|
+| baseline | 165 | — | 707t |
+| implement → spec | 163 | −1.2% | 704t |
+| implement → ci | 163 | −1.1% | 771t |
+| implement → deploy | 163 | −1.1% | 771t |
+| ci → spec | 166 | +1.0% | 666t |
+| ci → implement | 166 | +0.5% | 705t |
+| ci → deploy | 165 | +0.4% | 707t |
+| implement → review | 179 | +8.9% | 585t |
+| **ci → review** | **184** | **+11.7%** | **508t** |
+
+The lesson survives the weaker move, at an 11:1 ratio against §7's 5:1 target.
+It also gains an axis the hiring version does not have: **where the worker comes
+from matters as much as where they go.** CI has slack to donate and Implement
+does not, so the same destination pays 11.7% or 8.9% depending on the donor.
+That is Theory of Constraints and its converse in one decision, and it is free.
+
+Of §7's four targets, reallocation delivers 1, 2 and 4 with room to spare. It
+delivers **3 only weakly**: after `ci → review` the WIP optimum shifts from
+0.4× to 0.5× (+2.3%, against the baseline's +0.2% for the same change), where the
+`+1 review` hire shifts it by +11.6% and two hires walk it to 0.75×. The reason
+is mechanical — total capacity did not grow, so the line cannot absorb much more
+work in flight.
+
+**So target 3 is the argument for `hire`,** and it is the reason the milestone is
+not finished without one. It is deliberately not in the first slice: a head-count
+currency invented before the economy exists is one that gets deleted when money
+arrives in M2, and §5's own point is that reassignment is the move that makes
+diagnosis the valuable skill. The assertion in `staffing.test.ts` is written at
+the strength reallocation actually supports, with a comment saying why, so that
+strengthening it is a deliberate act rather than an accident.
+
+## 9. Why this and not dispatch
 
 Both were measured against the same sim with the same method. Dispatch produced
 +11% and was dominated by a heuristic that ignores the mechanic entirely

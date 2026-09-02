@@ -160,6 +160,12 @@ export type GameState = {
    */
   constraint: StationId | null
   constraintSinceTick: number
+  /**
+   * How many times it has changed hands. Zero means the sim has named a
+   * bottleneck but has never seen one relocate — which is a different thing to
+   * tell the player, and the HUD is not able to work it out on its own.
+   */
+  constraintMoves: number
   /** Every live item: in the backlog or somewhere in a station. */
   items: WorkItem[]
   metrics: Metrics

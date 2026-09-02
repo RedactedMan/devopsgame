@@ -11,8 +11,11 @@ decays against a moving trunk: the more you start, the less you finish.
 
 ## Status
 
-**M0 complete — the core loop holds.** A fixed five-station pipeline, rectangles
-and text, drift implemented and visible. No building mode, no campaign, no art.
+**M1 in progress — the constraint moves.** A fixed five-station pipeline,
+rectangles and text, drift implemented and visible. On top of M0's WIP sliders,
+the line now has a *roster*: workers stand at stations, the sim reports rolling
+utilisation, it names the bottleneck out loud, and the player can move people to
+it. No building mode, no campaign, no art.
 
 M0's gate was that an unbriefed playtester over-fills WIP, gets measurably worse
 results, and can explain *why* without being told. The mechanical half is
@@ -20,9 +23,11 @@ asserted in `packages/sim/test/flow.test.ts`; the human half was played on
 2026-09-01 and passed. The design is sound enough to build on, which is the only
 question M0 existed to answer.
 
-**Next: M1 — agency.** Board building, staffing, and the attention pool. The
-headline is the moving constraint: capacity and WIP policy are coupled levers,
-and neither is solvable alone.
+M1's headline is the moving constraint: capacity and WIP policy are coupled
+levers, and neither is solvable alone. Shipped so far — the roster,
+`assignWorker`, utilisation, and the constraint named on the board. Still to
+come in M1: area-collision legibility, the attention pool and context decay,
+save/load from the command log, and board building.
 
 - [Game Design Document](docs/GAME_DESIGN.md) — mechanics, campaign, pedagogy
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) — architecture, milestones, testing
@@ -37,7 +42,7 @@ pnpm dev        # the playtest build
 pnpm test       # unit, invariant, and golden-replay tests (~2s)
 pnpm test:e2e   # Playwright smoke test: load it, play it, fail on console noise
 pnpm typecheck
-pnpm sweep      # headless balance sweep across WIP settings
+pnpm sweep      # headless balance sweep: WIP settings, then staffing
 ```
 
 `pnpm test:e2e` uses the Chrome already on your machine (`channel: 'chrome'`)
@@ -77,6 +82,32 @@ that has stopped shipping reports a flattering number and keeps reporting it —
 read row 3 against row 9 and note that `lead(t)` barely moves while `oldest`
 more than doubles. A metric that improves as the system dies is the game's thesis,
 so it is not allowed to go unlabelled in the project's own README.
+
+The second table is the other lever. Same nine people in every row — one of them
+just stands somewhere else:
+
+```
+                  move  shipped       Δ%  lead(t)   oldest      wip
+      implement → spec      163     -1.2      704     1560      7.5
+    implement → review      179      8.9      585     1232      7.3
+        implement → ci      163     -1.1      771     1503      7.6
+    implement → deploy      163     -1.1      771     1503      7.6
+             ci → spec      166      1.0      666     1455      7.5
+        ci → implement      166      0.5      705     1455      7.9
+           ci → review      184     11.7      508     1137      7.7
+           ci → deploy      165      0.4      707     1488      7.6
+```
+
+Review is the constraint. Moving one person to it is worth **+11.7%**; moving
+one anywhere else is worth between **−1.2% and +1.0%**. That ratio is the Theory
+of Constraints, and it was measured rather than designed — the mechanic was
+already in the sim and had no way of reaching the screen. Note also *where* the
+worker comes from: CI has slack to donate and Implement does not, so the same
+destination pays 11.7% or 8.9% depending on who you take.
+
+What the table cannot show is the part that makes it a game rather than a lookup:
+a second move to Review gives most of the gain back, and after the first move the
+WIP sliders want retuning — which is worth more than moving anyone else at all.
 
 ## How it is built
 

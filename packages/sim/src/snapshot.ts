@@ -104,6 +104,8 @@ export type Snapshot = {
   /** The station the sim believes is the bottleneck. Null until the average warms up. */
   constraint: StationId | null
   constraintSinceTick: number
+  /** Times the constraint has changed hands. Zero means it has never moved. */
+  constraintMoves: number
   /** Every station has slack and work is still piling up: the WIP limits are the bottleneck. */
   constraintIsPolicy: boolean
 }
@@ -187,6 +189,7 @@ export function snapshot(state: GameState): Snapshot {
     })),
     constraint: state.constraint,
     constraintSinceTick: state.constraintSinceTick,
+    constraintMoves: state.constraintMoves,
     constraintIsPolicy: constraintIsPolicy(state),
   }
 }

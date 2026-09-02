@@ -109,8 +109,21 @@ If that fails, the design is wrong and no amount of Pixi will save it. Fix the d
 
 **Result: passed.** The design is sound enough to build on. Two things were fixed on the way to it, both found by playing rather than by testing, and both worth remembering as a pattern: the board could not distinguish a *blocked* station from a *busy* one, and the dashboard's lead time — averaging only what shipped — improved as the line died. Neither was a simulation bug. Both were the game failing to say what it already knew, which is the failure mode to watch for in every milestone after this one.
 
-### M1 — Agency
-Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log · **area-collision legibility** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4 — the overlap term is 46% of drift at default WIP and has no representation on screen).
+### M1 — Agency *(in progress)*
+
+Shipped: the roster (workers are first-class, and a station's capacity *is* the
+people standing at it), `assignWorker`, rolling per-station utilisation, and the
+constraint named on the board and in the panel — including the case where the
+constraint is a *policy* rather than a station. Measured first, per §6: the
+zero-sum version of the lesson holds at 11:1 (see
+[CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md) §8).
+
+Still to come: `hire` — the WIP optimum only moves *weakly* for a zero-sum
+reallocation, and the strong version of that coupling needs capacity to grow —
+plus area-collision legibility, the attention pool, context decay, save/load via
+the command log, and board building.
+
+Original scope: Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log · **area-collision legibility** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4 — the overlap term is 46% of drift at default WIP and has no representation on screen).
 
 **The moving constraint is the milestone's headline** — see [CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md). Staffing relocates the bottleneck, and capacity is coupled to WIP policy: measured against the M0 sim, one server at the constraint is worth +15% while one anywhere else is worth ~0%, hiring alone plateaus after a single hire, and a player who invests without re-tuning their WIP limits gives back 24% of the gain. Two levers, neither solvable alone, and the optimum moves because of what the player did rather than because of dice.
 

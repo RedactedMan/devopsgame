@@ -63,6 +63,7 @@ export function initState(options: InitOptions): GameState {
     nextWorkerSerial: workers.length + 1,
     constraint: null,
     constraintSinceTick: 0,
+    constraintMoves: 0,
     items: [],
     metrics: {
       created: 0,
@@ -92,6 +93,7 @@ export function cloneState(state: GameState): GameState {
     nextWorkerSerial: state.nextWorkerSerial,
     constraint: state.constraint,
     constraintSinceTick: state.constraintSinceTick,
+    constraintMoves: state.constraintMoves,
     stations: Object.fromEntries(
       STATION_IDS.map((id): [StationId, Station] => {
         const s = state.stations[id]

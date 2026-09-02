@@ -129,6 +129,8 @@ describe('the constraint', () => {
     const state = run(initState({ seed: 3, wipLimits: limitsAt(0.4) }), 1500, rebaseEverything)
     expect(state.constraint).toBe('review')
     expect(snapshot(state).constraint).toBe('review')
+    // Left alone, it was named once and never moved.
+    expect(state.constraintMoves).toBe(0)
   })
 
   it('moves when the player relieves it, and says so', () => {
@@ -144,6 +146,9 @@ describe('the constraint', () => {
     }
     expect(state.constraint).not.toBe('review')
     expect(moved.at(-1)).toBe(state.constraint)
+    // Naming a bottleneck for the first time is not the same event as watching
+    // it relocate. Only the second one means the player's answer expired.
+    expect(state.constraintMoves).toBeGreaterThan(0)
   })
 
   it('reports a policy constraint when every station has slack and work still piles up', () => {

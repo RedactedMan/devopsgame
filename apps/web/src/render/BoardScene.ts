@@ -13,7 +13,7 @@ import { COLORS, driftColor, waitScore } from './theme.js'
 const COLUMNS = ['backlog', ...STATION_IDS] as const
 type ColumnId = (typeof COLUMNS)[number]
 
-const HEADER_H = 74
+const HEADER_H = 88
 const ROW_H = 26
 const ITEM_H = 20
 const TOP_PAD = 12
@@ -36,7 +36,7 @@ export class BoardScene {
   private disposed = false
   private stage = new Container()
   private panels = new Graphics()
-  private headers = new Map<ColumnId, { title: Text; detail: Text; status: Text }>()
+  private headers = new Map<ColumnId, { title: Text; detail: Text; status: Text; mark: Text }>()
   private views = new Map<string, ItemView>()
   private overflow!: Text
   private getSnapshot: () => Snapshot = () => {
@@ -67,8 +67,9 @@ export class BoardScene {
       const title = text(id === 'backlog' ? 'Backlog' : STATION_LABELS[id as StationId], 13, COLORS.text)
       const detail = text('', 11, COLORS.muted)
       const status = text('', 11, COLORS.drift)
-      this.stage.addChild(title, detail, status)
-      this.headers.set(id, { title, detail, status })
+      const mark = text('', 10, COLORS.drift)
+      this.stage.addChild(title, detail, status, mark)
+      this.headers.set(id, { title, detail, status, mark })
     }
     this.overflow = text('', 11, COLORS.muted)
     this.stage.addChild(this.overflow)
@@ -110,11 +111,16 @@ export class BoardScene {
       const x = this.columnX(i) - panelWidth / 2
       const station = snap.stations.find((s) => s.id === id)
       const over = station ? station.occupancy > station.wipLimit : false
+      // The constraint is a permanent part of a column's identity, not a
+      // tooltip. It has to be visible at a glance, and it has to be visible
+      // *moving* — that moment is the whole lesson.
+      const isConstraint = station !== undefined && snap.constraint === id
 
+      const edge = over ? COLORS.overLimit : isConstraint ? COLORS.drift : COLORS.panelEdge
       this.panels
         .roundRect(x, TOP_PAD, panelWidth, panelHeight, 8)
         .fill({ color: COLORS.panel })
-        .stroke({ color: over ? COLORS.overLimit : COLORS.panelEdge, width: over ? 2 : 1 })
+        .stroke({ color: edge, width: over || isConstraint ? 2 : 1 })
 
       // WIP limit as a physical line on the column: slots below it are yours to
       // fill, and the board goes red-edged the moment rework pushes past it.
@@ -133,16 +139,35 @@ export class BoardScene {
         header.detail.x = x + 12
         header.detail.y = TOP_PAD + 32
         header.detail.text = station
-          ? `${station.occupancy} / ${station.wipLimit} wip · ${station.inService}/${station.servers} busy`
+          ? `${station.occupancy}/${station.wipLimit} wip · ${station.servers} staff · ${Math.round(
+              station.utilisation * 100,
+            )}%`
           : `${snap.backlog} waiting`
         header.detail.style.fill = over ? COLORS.overLimit : COLORS.muted
 
         // "Busy" and "blocked" look identical if you only count occupancy, and
         // the difference is the whole diagnosis. Say it in words.
         header.status.x = x + 12
-        header.status.y = TOP_PAD + 48
+        header.status.y = TOP_PAD + 62
         header.status.text =
           station && station.blocked ? `BLOCKED · ${station.outbound} parked` : ''
+
+        header.mark.text = isConstraint ? 'CONSTRAINT' : ''
+        header.mark.x = x + panelWidth - 12 - header.mark.width
+        header.mark.y = TOP_PAD + 14
+      }
+
+      // Utilisation, as a bar, because it is a share and reads as one. Occupancy
+      // is already three numbers on the line above; this is the one that says
+      // how hard the station has actually been worked.
+      if (station) {
+        const barX = x + 12
+        const barW = panelWidth - 24
+        this.panels
+          .roundRect(barX, TOP_PAD + 50, barW, 4, 2)
+          .fill({ color: COLORS.slot })
+          .roundRect(barX, TOP_PAD + 50, Math.max(2, barW * station.utilisation), 4, 2)
+          .fill({ color: isConstraint ? COLORS.drift : COLORS.muted })
       }
     }
 
