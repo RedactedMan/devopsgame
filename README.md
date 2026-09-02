@@ -26,10 +26,18 @@ that is asserted in `packages/sim/test/flow.test.ts`; the human half is the gate
 ```sh
 pnpm install
 pnpm dev        # the playtest build
-pnpm test       # unit, invariant, and golden-replay tests
+pnpm test       # unit, invariant, and golden-replay tests (~2s)
+pnpm test:e2e   # Playwright smoke test: load it, play it, fail on console noise
 pnpm typecheck
 pnpm sweep      # headless balance sweep across WIP settings
 ```
+
+`pnpm test:e2e` uses the Chrome already on your machine (`channel: 'chrome'`)
+rather than downloading its own, and starts the dev server itself. It exists
+because the unit suite structurally cannot see the renderer: the worst bug in M0
+so far — StrictMode tearing down the Pixi application mid-`init()`, taking the
+whole React tree with it — passed every unit test and was only ever caught by
+driving a real browser.
 
 `pnpm sweep` prints the lesson as a table — throughput and lead time against WIP,
 averaged over a dozen seeds. Same capacity in every row; only the WIP limits move.

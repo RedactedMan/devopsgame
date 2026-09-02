@@ -8,9 +8,11 @@
     "typecheck": "tsc -b --pretty false",
     "dev": "pnpm --filter @flow/web dev",
     "build": "pnpm --filter @flow/web build",
-    "sweep": "tsx packages/headless/src/cli.ts"
+    "sweep": "tsx packages/headless/src/cli.ts",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/node": "^22.10.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",

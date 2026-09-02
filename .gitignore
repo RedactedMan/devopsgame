@@ -3,3 +3,7 @@ dist/
 *.tsbuildinfo
 .vite/
 dist-types/
+test-results/
+playwright-report/
+blob-report/
+.playwright/
