@@ -126,9 +126,10 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
     windowTicks: 80,
     switchMargin: 0.05,
     switchDwellTicks: 160,
-    // Ten sim-days. Measured, not guessed: across 48 unattended runs a 480-tick
-    // grace named the wrong station 5 times and 640 named it twice, while 800
-    // names Review every time and never reports a move that did not happen.
+    // Ten sim-days. Measured, not guessed: over 61 seeds × two WIP settings, a
+    // 480- or 560-tick grace still misnames the constraint on three runs, while
+    // 800 names Review on all 122 and reports zero moves — which is the right
+    // answer, because nobody touched those lines.
     graceTicks: 800,
     policySlackBelow: 0.7,
   },

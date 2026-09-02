@@ -147,12 +147,23 @@ something averaged.
   > on noise: one seed did it ten times in a run. A margin does not fix the
   > second, because it asks for a bigger swing rather than a sustained one.
   >
-  > What works: name nothing for ten sim-days, and require a challenger to hold
-  > its lead for two shifts before the title changes hands. Measured across 48
-  > unattended runs, that reports the constraint correctly every time and
-  > reports zero moves — which is right, because nobody did anything. Locked in
-  > as a test, because the failure mode is a game that cries wolf about its own
-  > headline.
+  > What works: name nothing for ten sim-days, and require a station to hold the
+  > lead for two shifts — before the *first* naming as well as before any later
+  > change. The first naming needs it for a sharper reason than the others: on
+  > the seed the game boots with, Implement and Review are both pinned near 100%
+  > when the grace period ends and have not separated yet, so whichever is a
+  > point ahead gets named and then "moves" a few days later when they do.
+  >
+  > Measured over 61 seeds × two WIP settings: a 480- or 560-tick grace still
+  > misnames three of the 122 runs; 800 names the constraint correctly on every
+  > one and reports zero moves — which is right, because nobody did anything.
+  > Locked in as a test, with the boot seed named explicitly, because the
+  > failure mode is a game that cries wolf about its own headline.
+  >
+  > The cost is real and belongs in a playtest rather than in a decision made
+  > here: the panel reads "Finding the constraint…" for the first twelve sim-days
+  > or so, about forty seconds at 4×. That is dead air in the opening minute,
+  > chosen over a marker that lies.
 - **Flag when the constraint is a policy, not a station** — every station below
   some utilisation while throughput is flat is §3's plateau, and it should read
   as "your WIP limits are the bottleneck now", not as a station's fault.
