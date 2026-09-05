@@ -47,6 +47,14 @@ export type WorkItem = {
   /** Cached each tick by systems/drift.ts. Never assign these by hand. */
   drift: number
   driftScore: number
+  /**
+   * How many other in-flight items are touching at least one of this item's
+   * areas. It is the second of drift's two multiplying terms and, at the WIP
+   * limits the game starts you on, nearly half of all drift — so the number is
+   * cached rather than recomputed and discarded, because the renderer has to be
+   * able to show it.
+   */
+  overlap: number
   stale: boolean
   /** Set by a "ship it anyway" decision: this item will never block again. */
   ignoreStale: boolean

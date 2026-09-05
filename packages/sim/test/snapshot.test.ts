@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { STATION_IDS } from '@flow/content'
+import { DEFAULT_TUNING, STATION_IDS } from '@flow/content'
 import { initState, run, snapshot } from '@flow/sim'
 
 describe('snapshot', () => {
@@ -70,6 +70,47 @@ describe('snapshot', () => {
     expect(inFlight.length).toBeGreaterThan(0)
     expect(snap.oldestInFlightTicks).toBe(
       Math.max(...inFlight.map((it) => state.tick - it.createdTick)),
+    )
+  })
+
+  it('reports contention the renderer can draw, and reconciles it with drift', () => {
+    const state = run(initState({ seed: 6 }), 1200)
+    const snap = snapshot(state)
+    const { overlapWeight } = DEFAULT_TUNING.drift
+
+    const contended = snap.items.filter((it) => it.overlap > 0)
+    expect(contended.length, 'a loaded line has items sharing areas').toBeGreaterThan(0)
+
+    for (const item of snap.items) {
+      // The share attributable to contention is the item's drift minus what it
+      // would have been alone. It cannot exceed the drift it is a part of.
+      expect(item.driftFromOverlap).toBeCloseTo(
+        item.drift - item.drift / (1 + overlapWeight * item.overlap),
+        6,
+      )
+      expect(item.driftFromOverlap).toBeLessThanOrEqual(item.drift + 1e-9)
+      // Backlog work has no branch, so it has nothing to contend over either.
+      if (item.location.where === 'backlog') {
+        expect(item.overlap).toBe(0)
+        expect(item.driftFromOverlap).toBe(0)
+      }
+    }
+  })
+
+  it('counts every area of the codebase, cold ones included', () => {
+    const state = run(initState({ seed: 6 }), 1200)
+    const snap = snapshot(state)
+
+    // Stable cells, varying weight: the strip is only glanceable if the cells
+    // stay where they were the last time the player looked.
+    expect(snap.hotAreas).toHaveLength(DEFAULT_TUNING.arrival.areaCount)
+    expect(snap.hotAreas.map((a) => a.area)).toEqual(
+      snap.hotAreas.map((_, i) => i),
+    )
+
+    const inFlight = state.items.filter((it) => it.startedTick !== null)
+    expect(snap.hotAreas.reduce((a, h) => a + h.inFlight, 0)).toBe(
+      inFlight.reduce((a, it) => a + it.areas.length, 0),
     )
   })
 

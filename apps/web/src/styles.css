@@ -445,6 +445,27 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* The fact of drift was always here; this is the cause. The swatch is the same
+   colour the item's chip carries on the board, so "area 7" is followable. */
+.stale__cause {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.stale__area {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: -1px;
+  /* Big enough that the area's colour is what you see, rather than the outline
+     that keeps it off the panel's own background. */
+  box-shadow: inset 0 0 0 1px rgba(13, 18, 19, 0.55);
+}
+
 .stale__actions {
   display: flex;
   gap: 5px;

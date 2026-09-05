@@ -66,6 +66,33 @@ describe('drift', () => {
     expect(reworkProbability(0.9, 1, DEFAULT_TUNING)).toBeLessThanOrEqual(1)
   })
 
+  it('makes an item drift faster for sharing an area with work in flight', () => {
+    // The coupling *is* the mechanic — at the WIP limits the game starts you
+    // on, contention is nearly half of all drift — and until now only the pure
+    // `driftOf` arithmetic was tested. This drives it through a real tick, on a
+    // real line, which is where it is actually load-bearing.
+    let state = initState({ seed: 7 })
+    for (let i = 0; i < 400 && !state.items.some((it) => it.startedTick !== null && it.overlap > 0); i++) {
+      state = step(state).state
+    }
+    const contended = state.items.find((it) => it.startedTick !== null && it.overlap > 0)
+    expect(contended, 'the run should produce an item sharing an area').toBeDefined()
+
+    // The counterfactual: the same item, at the same tick, on the same trunk,
+    // touching an area nobody else does. Nothing validates area ids, and drift
+    // is recomputed before anything consumes the RNG, so the two ticks differ
+    // by exactly one thing.
+    const alone = step({
+      ...state,
+      items: state.items.map((it) => (it.id === contended?.id ? { ...it, areas: [999] } : it)),
+    }).state
+
+    const shared = step(state).state.items.find((it) => it.id === contended?.id)
+    const isolated = alone.items.find((it) => it.id === contended?.id)
+    expect(isolated?.overlap).toBe(0)
+    expect(shared?.drift).toBeGreaterThan(isolated?.drift as number)
+  })
+
   it('leaves backlog items alone — unstarted work has no branch to rot', () => {
     let state = initState({ seed: 4, wipLimits: { spec: 1, implement: 1, review: 1, ci: 1, deploy: 1 } })
     for (let i = 0; i < 600; i++) state = step(state).state

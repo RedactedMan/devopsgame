@@ -4,7 +4,7 @@ import type { Snapshot } from '@flow/sim'
 import type { SimHandle } from '../bridge/useSim.js'
 import { SPEEDS } from '../bridge/useSim.js'
 import { Chart } from './Chart.js'
-import { cssDriftColor } from '../render/theme.js'
+import { cssAreaColor, cssDriftColor } from '../render/theme.js'
 
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 const TICKS_PER_DAY = TICKS_PER_HOUR * 8
@@ -176,6 +176,7 @@ export function Hud({ sim }: { sim: SimHandle }) {
                     {item.reworks} rework
                   </span>
                 </div>
+                <Contention item={item} hotAreas={snap.hotAreas} />
                 <div className="stale__actions">
                   <button
                     type="button"
@@ -216,6 +217,43 @@ export function Hud({ sim }: { sim: SimHandle }) {
         <footer className="seed">seed {sim.seed}</footer>
       </aside>
     </>
+  )
+}
+
+/**
+ * Why this one went stale, and not the one sitting next to it.
+ *
+ * The list has always reported the *fact* of drift and never its cause, and the
+ * larger of drift's two causes is contention — nearly half of it at the limits
+ * the game starts you on — which had no representation anywhere. Naming the
+ * area and colouring it to match the board's chips is what lets the player
+ * follow the answer from the panel back to the work that caused it.
+ */
+function Contention({
+  item,
+  hotAreas,
+}: {
+  item: Snapshot['items'][number]
+  hotAreas: Snapshot['hotAreas']
+}) {
+  if (item.overlap === 0) {
+    return (
+      <p className="stale__cause">
+        Nothing else is touching its areas. This one drifted on trunk movement alone.
+      </p>
+    )
+  }
+
+  const heatOf = (area: number) => hotAreas.find((h) => h.area === area)?.inFlight ?? 0
+  const hottest = [...item.areas].sort((a, b) => heatOf(b) - heatOf(a))[0] as number
+  const contended = heatOf(hottest)
+  const share = item.drift > 0 ? Math.round((item.driftFromOverlap / item.drift) * 100) : 0
+
+  return (
+    <p className="stale__cause">
+      <span className="stale__area" style={{ background: cssAreaColor(hottest) }} />
+      {contended} items are touching area {hottest} · {share}% of its drift is contention
+    </p>
   )
 }
 
