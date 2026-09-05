@@ -24,6 +24,7 @@ export function createItem(state: GameState, type: ItemType = 'feature'): WorkIt
     history: [],
     drift: 0,
     driftScore: 0,
+    overlap: 0,
     stale: false,
     ignoreStale: false,
     rebases: 0,

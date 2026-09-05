@@ -15,7 +15,9 @@ decays against a moving trunk: the more you start, the less you finish.
 rectangles and text, drift implemented and visible. On top of M0's WIP sliders,
 the line now has a *roster*: workers stand at stations, the sim reports rolling
 utilisation, it names the bottleneck out loud, and the player can move people to
-it. No building mode, no campaign, no art.
+it. Drift's other half is on the screen too — items show which areas of the
+codebase they touch, and the board shows which of those areas are crowded. No
+building mode, no campaign, no art.
 
 M0's gate was that an unbriefed playtester over-fills WIP, gets measurably worse
 results, and can explain *why* without being told. The mechanical half is
@@ -29,10 +31,13 @@ playable on its own:
 
 1. **The moving constraint** — built. The roster, `assignWorker`, rolling
    utilisation, and the bottleneck named on the board.
-2. **Area-collision legibility** — next. The overlap term is 46% of drift at
-   default WIP and has no representation on screen.
-3. **Hire and the attention pool** — human vs. agent workers, and the scarcity
-   that bounds hiring.
+2. **Area-collision legibility** — built. The overlap term is 46% of drift at
+   default WIP and had no representation on screen. Now every item carries a
+   chip per area it touches, the board has a contention strip, hovering an item
+   dims everything it is *not* fighting, and the stale list names the cause
+   beside the fact.
+3. **Hire and the attention pool** — next. Human vs. agent workers, and the
+   scarcity that bounds hiring.
 4. **Save / load** from the command log.
 5. **Board building and placement.**
 

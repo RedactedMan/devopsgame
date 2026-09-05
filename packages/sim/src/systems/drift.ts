@@ -71,6 +71,7 @@ export function updateDrift(state: GameState, events: SimEvent[]): void {
 
   for (const item of live) {
     const overlap = overlaps.get(item.id) ?? 0
+    item.overlap = overlap
     item.drift = driftOf(item, state.trunkVersion, state.tick, overlap, state.tuning)
     item.driftScore = driftScoreOf(item.drift, state.tuning)
 

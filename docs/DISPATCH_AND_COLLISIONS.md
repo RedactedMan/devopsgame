@@ -120,13 +120,12 @@ they exist, dispatch is an ordering problem with a known answer.
 
 ---
 
-## 4. Phase 1 — make collisions visible *(M1, slice 2 — next)*
+## 4. Phase 1 — make collisions visible *(M1, slice 2 — built)*
 
-Not started. The moving constraint went first as the milestone's headline; this
-is the slice after it. Nothing below has changed since it was written, and one
-line of it is now cheaper than it looks: `WorkItem` already carries cached
-`drift` and `driftScore` fields that `systems/drift.ts` writes every tick, so
-caching `overlap` beside them is the same pattern in the same loop.
+Built on `m1/collision-legibility`, as specified below, with no mechanic and
+no tuning added.
+The golden replay's hash did not move, which is the proof that it is what the
+next line claims.
 
 Pure legibility. No behaviour change, no tuning change, no balance change; the
 golden replay is unaffected because nothing in `fingerprint()` moves.
@@ -160,7 +159,27 @@ golden replay is unaffected because nothing in `fingerprint()` moves.
   in-flight item.
 
 **Acceptance**: a playtester who has never been told about areas can say why one
-item is drifting faster than another sitting beside it.
+item is drifting faster than another sitting beside it. **Not yet played.** The
+build is up and looked at, and the mechanical half is under test, but the
+sentence above is a claim about a person and only a person can settle it.
+
+### As built
+
+Two decisions worth recording, because both went against the obvious reading of
+the spec above:
+
+- **The strip emits every area, cold ones included.** Ranking the cells by heat
+  is a different picture every glance, and the whole value of a strip is that it
+  is glanceable. Cells hold their positions; only their weight moves.
+- **Hover dims the innocent rather than outlining the guilty.** On a full column
+  the outlines run together and stop separating anything. Negative space is what
+  reads. Hovering a *backlog* item is allowed and answers a question the spec did
+  not ask: what this work would collide with if it were admitted now.
+
+The area palette sits a full lightness band above the drift ramp rather than
+picking different hues from it. Chips are drawn on item bodies that are
+themselves teal, amber, or rust, and a chip chosen to contrast with teal
+disappears on rust; pale-on-saturated separates from all three at once.
 
 ## 5. Phase 2 — make dispatch a decision *(M2, after the economy)*
 

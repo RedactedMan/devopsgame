@@ -27,6 +27,33 @@ export const CSS_COLORS = {
   stale: '#b4451f',
 }
 
+/**
+ * One colour per area of the codebase, so two items fighting over the same
+ * ground carry a chip of the same colour and the collision is readable without
+ * clicking anything.
+ *
+ * Deliberately a full lightness band above the drift ramp rather than a
+ * different set of hues. Chips sit *on* item bodies that are themselves teal,
+ * amber, or rust, and a chip picked to contrast with teal disappears on rust.
+ * Pale-on-saturated separates from all three at once, whatever the hue — which
+ * is also why every chip is drawn with a dark stroke around it.
+ *
+ * Ten entries because `tuning.arrival.areaCount` is ten. Area ids run from
+ * zero, and this is indexed modulo its length so a wider codebase still paints.
+ */
+export const AREA_COLORS = [
+  0xf09789, 0xf0d589, 0xcef089, 0x90f089, 0x89f0c0, 0x89e3f0, 0x89a5f0, 0xab89f0, 0xea89f0,
+  0xf089b9,
+] as const
+
+export function areaColor(area: number): number {
+  return AREA_COLORS[((area % AREA_COLORS.length) + AREA_COLORS.length) % AREA_COLORS.length] as number
+}
+
+export function cssAreaColor(area: number): string {
+  return `#${areaColor(area).toString(16).padStart(6, '0')}`
+}
+
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 
 function mix(a: number, b: number, t: number): number {

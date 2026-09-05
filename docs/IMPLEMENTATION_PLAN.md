@@ -127,8 +127,8 @@ about. Each slice is playable on its own.
 | # | Slice | State |
 |---|---|---|
 | 1 | **The moving constraint** — the roster as first-class state, `assignWorker`, rolling utilisation, the constraint named on the board and in the panel, the policy-constraint case | **built**, `m1/moving-constraint` |
-| 2 | **Area-collision legibility** — see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4. The overlap term is 46% of drift at default WIP and has no representation on screen | next |
-| 3 | **Hire, and the attention pool** — human vs. agent workers, attention as the scarcity that bounds hiring, context decay | planned |
+| 2 | **Area-collision legibility** — see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4. `overlap` cached on the item, area chips, the contention strip, hover-to-see-who-you-are-fighting, and the cause beside the fact in the stale list | **built**, `m1/collision-legibility` |
+| 3 | **Hire, and the attention pool** — human vs. agent workers, attention as the scarcity that bounds hiring, context decay | next |
 | 4 | **Save / load** from the command log — already a complete save file by construction; nothing but plumbing and a file picker | planned |
 | 5 | **Board building and placement** — the last of M1's original scope, and the only part that changes the shape of the pipeline rather than what runs through it | planned |
 

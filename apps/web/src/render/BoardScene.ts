@@ -1,7 +1,7 @@
 import { Application, Container, Graphics, Text } from 'pixi.js'
 import { DEFAULT_TUNING, STATION_LABELS, STATION_IDS, type StationId } from '@flow/content'
 import type { Snapshot, SnapshotItem } from '@flow/sim'
-import { COLORS, driftColor, waitScore } from './theme.js'
+import { COLORS, areaColor, driftColor, waitScore } from './theme.js'
 
 /**
  * M0's renderer: rectangles that redden. Deliberately crude — the gate this
@@ -21,6 +21,32 @@ const MIN_ROWS_DRAWN = 7
 const MAX_ROWS_DRAWN = 20
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 
+/** Area chips on an item: one small square per area it touches. */
+const CHIP = 7
+const CHIP_GAP = 2
+
+/** The contention strip below the columns. */
+const STRIP_H = 22
+const STRIP_LABEL_H = 14
+const STRIP_MAX_CELL = 64
+/** Vertical room the columns give up so the strip and the overflow line fit under them. */
+const STRIP_RESERVE = STRIP_LABEL_H + STRIP_H + STRIP_LABEL_H + 26
+
+/**
+ * The concurrency a strip cell has to reach before it is drawn full height.
+ *
+ * Without a floor the strip normalises to whatever the busiest area happens to
+ * be, so on day one a single item alone on area 3 draws a full, saturated bar —
+ * the picture of maximum contention, for a count of one. The early game is
+ * where the player forms their read of this thing, so a lone item has to look
+ * like a lone item. Four is roughly the concurrency an area actually carries at
+ * the WIP limits the game starts you on.
+ */
+const STRIP_FLOOR = 4
+
+/** How far an item that shares nothing with the hovered one recedes. */
+const DIMMED = 0.24
+
 type ItemView = {
   container: Container
   body: Graphics
@@ -39,6 +65,15 @@ export class BoardScene {
   private headers = new Map<ColumnId, { title: Text; detail: Text; status: Text; mark: Text }>()
   private views = new Map<string, ItemView>()
   private overflow!: Text
+  private stripTitle!: Text
+  private stripCells = new Map<number, { count: Text; name: Text }>()
+  /**
+   * The item under the pointer, if any. Hovering asks the board one question —
+   * *who am I fighting?* — and it is answered by dimming everyone who is not,
+   * rather than outlining everyone who is: on a full column the outlines all
+   * run together and the negative space is the only thing that reads.
+   */
+  private hovered: string | null = null
   private getSnapshot: () => Snapshot = () => {
     throw new Error('BoardScene not mounted')
   }
@@ -72,7 +107,8 @@ export class BoardScene {
       this.headers.set(id, { title, detail, status, mark })
     }
     this.overflow = text('', 11, COLORS.muted)
-    this.stage.addChild(this.overflow)
+    this.stripTitle = text('', 10, COLORS.muted)
+    this.stage.addChild(this.overflow, this.stripTitle)
     this.app.stage.addChild(this.stage)
 
     this.app.ticker.add((ticker) => this.draw(this.getSnapshot(), ticker.deltaTime))
@@ -101,7 +137,10 @@ export class BoardScene {
     const tallest = Math.max(...snap.stations.map((s) => Math.max(s.wipLimit, s.occupancy)))
     const rowsShown = Math.min(MAX_ROWS_DRAWN, Math.max(MIN_ROWS_DRAWN, tallest))
     const panelHeight = Math.min(
-      this.app.screen.height - TOP_PAD * 2,
+      // The strip lives below the columns, so the columns are not allowed to
+      // grow into it — a readout that falls off the bottom of a short board is
+      // the same as not having built it.
+      this.app.screen.height - TOP_PAD * 2 - STRIP_RESERVE,
       HEADER_H + rowsShown * ROW_H + 16,
     )
 
@@ -200,15 +239,34 @@ export class BoardScene {
       drawn.add(item.id)
     }
 
+    const stripY = TOP_PAD + panelHeight + 10
+    this.drawContentionStrip(snap, stripY, width)
+
     const hidden = snap.items.length - drawn.size
     this.overflow.text = hidden > 0 ? `+${hidden} more not drawn` : ''
     this.overflow.x = 12
-    this.overflow.y = TOP_PAD + panelHeight + 8
+    this.overflow.y = stripY + STRIP_LABEL_H + STRIP_H + STRIP_LABEL_H + 6
 
     for (const [id, view] of this.views) {
       if (!drawn.has(id)) {
         view.container.destroy({ children: true })
+        // A hover that survives the item shipping leaves the whole board dimmed
+        // against a ghost.
+        if (this.hovered === id) this.hovered = null
         this.views.delete(id)
+      }
+    }
+
+    // Who is the hovered item fighting? Its own areas against everything that
+    // has actually branched — backlog work has no branch and cannot contend, so
+    // hovering a backlog item shows what it *would* collide with if admitted.
+    const focus = this.hovered === null ? undefined : snap.items.find((it) => it.id === this.hovered)
+    const contending = new Set<string>()
+    if (focus) {
+      contending.add(focus.id)
+      for (const other of snap.items) {
+        if (other.location.where === 'backlog') continue
+        if (other.areas.some((a) => focus.areas.includes(a))) contending.add(other.id)
       }
     }
 
@@ -217,6 +275,7 @@ export class BoardScene {
       const target = targets.get(item.id)
       if (!target) continue
       const view = this.views.get(item.id) ?? this.createView(item.id)
+      view.container.alpha = focus && !contending.has(item.id) ? DIMMED : 1
 
       if (!view.placed) {
         view.x = target.x
@@ -243,10 +302,75 @@ export class BoardScene {
     label.x = 8
     label.y = -6
     container.addChild(body, label)
+    container.eventMode = 'static'
+    container.cursor = 'pointer'
+    container.on('pointerover', () => {
+      this.hovered = id
+    })
+    container.on('pointerout', () => {
+      if (this.hovered === id) this.hovered = null
+    })
     this.stage.addChild(container)
     const view: ItemView = { container, body, label, x: 0, y: 0, placed: false }
     this.views.set(id, view)
     return view
+  }
+
+  /**
+   * The codebase, one cell per area, weighted by how much in-flight work is
+   * standing on it.
+   *
+   * This is the readout the item chips are pointing at: a chip says *which*
+   * ground an item is on, and the strip says how crowded that ground is. Cells
+   * hold their positions whatever the heat — a strip that reorders itself is a
+   * new picture every glance, and the whole value here is being glanceable.
+   */
+  private drawContentionStrip(snap: Snapshot, y: number, width: number): void {
+    const cells = snap.hotAreas
+    if (cells.length === 0) return
+
+    const left = 12
+    const span = Math.min(width - left * 2, cells.length * STRIP_MAX_CELL)
+    const cellW = span / cells.length
+    const barW = Math.max(6, cellW - 6)
+    const busiest = Math.max(STRIP_FLOOR, ...cells.map((c) => c.inFlight))
+
+    this.stripTitle.text = 'Codebase — work in flight per area. Two items on one colour are fighting.'
+    this.stripTitle.x = left
+    this.stripTitle.y = y
+
+    const top = y + STRIP_LABEL_H
+    for (const cell of cells) {
+      const x = left + cell.area * cellW
+      const heat = cell.inFlight / busiest
+      const color = areaColor(cell.area)
+      const fillH = cell.inFlight === 0 ? 0 : Math.max(3, STRIP_H * heat)
+
+      this.panels.roundRect(x, top, barW, STRIP_H, 3).fill({ color: COLORS.slot })
+      if (fillH > 0) {
+        this.panels
+          .roundRect(x, top + STRIP_H - fillH, barW, fillH, 3)
+          .fill({ color, alpha: 0.35 + 0.65 * heat })
+      }
+
+      let labels = this.stripCells.get(cell.area)
+      if (!labels) {
+        labels = { count: text('', 10, COLORS.text), name: text('', 9, COLORS.muted) }
+        this.stage.addChild(labels.count, labels.name)
+        this.stripCells.set(cell.area, labels)
+      }
+      // The count sits on the fill, so it needs the dark ink the pale palette
+      // was chosen for; an empty area has no fill to sit on.
+      labels.count.text = cell.inFlight === 0 ? '' : String(cell.inFlight)
+      labels.count.style.fill = heat > 0.5 ? COLORS.ground : COLORS.text
+      labels.count.x = x + barW / 2 - labels.count.width / 2
+      labels.count.y = top + STRIP_H - 13
+      // The panel names areas in words — "4 items touching area 7" — so the id
+      // has to be printed somewhere the player can match the colour to.
+      labels.name.text = String(cell.area)
+      labels.name.x = x + barW / 2 - labels.name.width / 2
+      labels.name.y = top + STRIP_H + 3
+    }
   }
 
   private paintItem(view: ItemView, item: SnapshotItem, width: number): void {
@@ -284,6 +408,19 @@ export class BoardScene {
       view.body
         .rect(-width / 2, ITEM_H / 2 - 3, width * item.progress, 3)
         .fill({ color: 0x0d1213, alpha: 0.55 })
+    }
+
+    // Which ground this work is standing on. Nearly half of all drift at the
+    // limits the game starts you on comes from two items sharing a square, and
+    // until now that was the one force on the board with nothing to look at.
+    // Right-aligned, because the label owns the left.
+    for (let i = 0; i < item.areas.length; i++) {
+      const area = item.areas[item.areas.length - 1 - i] as number
+      const cx = width / 2 - 5 - i * (CHIP + CHIP_GAP) - CHIP
+      view.body
+        .roundRect(cx, -CHIP / 2, CHIP, CHIP, 1.5)
+        .fill({ color: areaColor(area) })
+        .stroke({ color: 0x0d1213, width: 1, alpha: 0.7 })
     }
 
     view.label.x = -width / 2 + 8

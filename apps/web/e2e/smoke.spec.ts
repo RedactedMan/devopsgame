@@ -140,6 +140,12 @@ test('a stalled line says so instead of reporting a good lead time', async ({ pa
   await expect(alarm).toBeVisible({ timeout: 150_000 })
   await expect(alarm).toContainText(/Nothing shipped in/i)
 
+  // Contention is the larger half of drift and lives almost entirely on the
+  // canvas, which Playwright cannot see. The stale list is its one DOM surface,
+  // and this run — every limit at 20 — is the case where areas are guaranteed
+  // to be contended, so the panel has to be able to name the cause.
+  await expect(page.locator('.stale')).toContainText(/\d+ items are touching area \d+/i)
+
   // The honest metric must have kept climbing while the flattering one froze.
   const oldest = Number((await statValue(page, 'Oldest').innerText()).replace(/[^\d.]/g, ''))
   const lead = Number((await statValue(page, 'Lead time').innerText()).replace(/[^\d.]/g, ''))
