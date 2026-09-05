@@ -108,6 +108,17 @@ failed:
 | { kind: 'reassign'; workerId: WorkerId; to: StationId }
 ```
 
+> **Built:** `{ kind: 'assignWorker'; workerId: WorkerId; to: StationId }` —
+> renamed because `reassign` carrying its own `kind` field would collide with
+> the discriminant every other command uses. It is a *request*: a worker mid-item
+> finishes what they are holding first, and the move lands when they are free.
+> The delay is the cost, and it leaves the context-switching lesson for where
+> the design puts it. One deliberate consequence — a worker holding a STALE item
+> never becomes free, so the move waits on the player's stale decision. That is
+> "stale work holds its server" arriving somewhere new.
+>
+> **Not built:** `hire`. See §8 for the cost of deferring it, which is real.
+
 Reassignment matters more than hiring. Moving a worker is free capacity
 relocation and is the move a player should reach for *before* spending — which
 makes the constraint diagnosis the valuable skill rather than the budget.
@@ -129,12 +140,16 @@ The mechanic is real (§2) and the player cannot currently see any of it. The
 HUD reports `0/1 busy` — an instantaneous sample of a quantity that only means
 something averaged.
 
-- **Rolling utilisation per station**, windowed over ~1 sim-day, in the sim and
-  on the snapshot. Utilisation is the diagnosis; occupancy is not.
-- **The constraint named on the board.** The hottest station gets a persistent
+- ✅ **Rolling utilisation per station**, windowed over ~1 sim-day, in the sim and
+  on the snapshot. Utilisation is the diagnosis; occupancy is not. *Built as an
+  EMA over 80 ticks — one scalar per station, which rides through `cloneState`
+  for free. A station with no workers and a queue reads as fully utilised;
+  reporting 0% would point at the one station that cannot be the answer.*
+- ✅ **The constraint named on the board.** The hottest station gets a persistent
   marker. Not a tooltip — a permanent piece of the station's identity that
-  visibly moves to another column when it moves.
-- **A "the constraint moved" moment.** When the hottest station changes, say so.
+  visibly moves to another column when it moves. *Built: amber edge, the word
+  CONSTRAINT in the header, and a utilisation bar under every station.*
+- ✅ **A "the constraint moved" moment.** When the hottest station changes, say so.
   This is the single highest-value feedback event in M1: it is the instant the
   player learns that the answer they just found has expired.
 
@@ -164,9 +179,14 @@ something averaged.
   > here: the panel reads "Finding the constraint…" for the first twelve sim-days
   > or so, about forty seconds at 4×. That is dead air in the opening minute,
   > chosen over a marker that lies.
-- **Flag when the constraint is a policy, not a station** — every station below
+- ✅ **Flag when the constraint is a policy, not a station** — every station below
   some utilisation while throughput is flat is §3's plateau, and it should read
-  as "your WIP limits are the bottleneck now", not as a station's fault.
+  as "your WIP limits are the bottleneck now", not as a station's fault. *Built
+  as `Snapshot.constraintIsPolicy`: no station above 70% utilisation while the
+  backlog is non-empty. It replaces the station banner rather than sitting
+  beside it, because the two answers are mutually exclusive and showing both
+  would send the player to staff a station that is already idle a third of the
+  time.*
 
 The full diagnosis is the VSM overlay in M3. M1 needs enough for the player to
 find the constraint without it; if the VSM turns out to be *required* to play
@@ -174,18 +194,36 @@ M1, it has been scheduled too late.
 
 ## 7. Balance targets, as tests
 
-Assert shapes, not point values, per plan §5.
+Assert shapes, not point values, per plan §5. All four now exist in
+`packages/sim/test/staffing.test.ts`, written against the *reallocation* version
+of each move — see §8 for why that matters, and for the one that came out weaker
+than specified.
 
-1. **ToC holds.** One server at the constraint is worth at least 5× one server
-   anywhere else. Currently 14.6% vs 0.0–1.7%, so there is wide margin.
-2. **The greedy ladder plateaus.** Hiring at fixed WIP stops paying by the
-   second or third hire. This is the lesson, so it is a test, not a bug.
-3. **The optimum moves.** The argmax WIP multiplier at `+2 rev +2 impl` is
-   strictly greater than at baseline. If a single WIP setting is optimal at
-   every staffing level, the coupling has been tuned away and M1's core loop is
-   dead — this is the regression that would matter most.
-4. **Retuning beats the second hire** at `+1 review`. The relationship, not the
-   number.
+1. ✅ **ToC holds.** One server at the constraint is worth at least 5× one server
+   anywhere else. Specced against hiring at 14.6% vs 0.0–1.7%; asserted against
+   reallocation at **+11.7% vs −1.2–1.0%**, an 11:1 ratio.
+2. ✅ **The greedy ladder plateaus.** Staffing the constraint again at fixed WIP
+   stops paying. Asserted as "the second move gains less than half of what the
+   first did" — flat would be the lesson too; what must not happen is the second
+   move paying like the first.
+3. ⚠️ **The optimum moves.** Asserted, but **weakly**: after `ci → review` the
+   optimum shifts 0.4× → 0.5× and is worth +2.3%, against the baseline's +0.2%
+   for the same change. The strong version — the optimum walking to 0.75× — needs
+   `hire`, because a zero-sum move does not grow the capacity that lets the line
+   hold more work. The test says so in a comment. **Strengthening this assertion
+   is the acceptance criterion for the slice that adds hiring.**
+4. ✅ **Retuning beats the second hire** at `+1 review`. Holds strongly for
+   reallocation, and for a blunter reason than for hiring: the second move is
+   *negative*, so retuning does not have to be good to beat it.
+
+Two more tests exist that the spec did not ask for, both written after a defect:
+
+5. ✅ **Nobody is in two places.** Every service slot names a worker, that worker
+   is assigned to that station, and no worker holds two slots. Property, all
+   seeds.
+6. ✅ **A line nobody touched never reports a constraint move.** The regression
+   from §6 — the most important event in the milestone is not allowed to fire
+   when nothing happened.
 
 ## 8. Built: the zero-sum version *(M1)*
 

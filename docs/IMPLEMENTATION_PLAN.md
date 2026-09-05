@@ -55,6 +55,7 @@ flow-state/
 │  │  │   ├─ routing.ts        # pull, WIP limits, queue admission
 │  │  │   ├─ service.ts        # station work, service time distributions
 │  │  │   ├─ drift.ts          # ★ WIP decay, staleness, rebase/restart
+│  │  │   ├─ staffing.ts       # ★ the roster, utilisation, constraint detection
 │  │  │   ├─ context.ts        # ★ agent context fidelity decay
 │  │  │   ├─ quality.ts        # defect classes, injection, CI catch rates, escapes
 │  │  │   ├─ review.ts         # ★ review provenance, true vs. displayed quality
@@ -111,21 +112,43 @@ If that fails, the design is wrong and no amount of Pixi will save it. Fix the d
 
 ### M1 — Agency *(in progress)*
 
-Shipped: the roster (workers are first-class, and a station's capacity *is* the
-people standing at it), `assignWorker`, rolling per-station utilisation, and the
-constraint named on the board and in the panel — including the case where the
-constraint is a *policy* rather than a station. Measured first, per §6: the
-zero-sum version of the lesson holds at 11:1 (see
-[CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md) §8).
+**The moving constraint is the milestone's headline** — see
+[CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md). Staffing relocates
+the bottleneck, and capacity is coupled to WIP policy: one server at the
+constraint is worth +15% while one anywhere else is worth ~0%, hiring alone
+plateaus after a single hire, and a player who invests without re-tuning their
+WIP limits gives back 24% of the gain. Two levers, neither solvable alone, and
+the optimum moves because of what the player did rather than because of dice.
 
-Still to come: `hire` — the WIP optimum only moves *weakly* for a zero-sum
-reallocation, and the strong version of that coupling needs capacity to grow —
-plus area-collision legibility, the attention pool, context decay, save/load via
-the command log, and board building.
+M1 is being built in slices rather than as one drop, because the milestone is
+large enough that a single branch would be the thing this project keeps warning
+about. Each slice is playable on its own.
 
-Original scope: Board building and placement · worker assignment (human vs. agent) · the attention pool · context decay · save/load via command log · **area-collision legibility** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4 — the overlap term is 46% of drift at default WIP and has no representation on screen).
+| # | Slice | State |
+|---|---|---|
+| 1 | **The moving constraint** — the roster as first-class state, `assignWorker`, rolling utilisation, the constraint named on the board and in the panel, the policy-constraint case | **built**, `m1/moving-constraint` |
+| 2 | **Area-collision legibility** — see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4. The overlap term is 46% of drift at default WIP and has no representation on screen | next |
+| 3 | **Hire, and the attention pool** — human vs. agent workers, attention as the scarcity that bounds hiring, context decay | planned |
+| 4 | **Save / load** from the command log — already a complete save file by construction; nothing but plumbing and a file picker | planned |
+| 5 | **Board building and placement** — the last of M1's original scope, and the only part that changes the shape of the pipeline rather than what runs through it | planned |
 
-**The moving constraint is the milestone's headline** — see [CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md). Staffing relocates the bottleneck, and capacity is coupled to WIP policy: measured against the M0 sim, one server at the constraint is worth +15% while one anywhere else is worth ~0%, hiring alone plateaus after a single hire, and a player who invests without re-tuning their WIP limits gives back 24% of the gain. Two levers, neither solvable alone, and the optimum moves because of what the player did rather than because of dice.
+Slice 1 notes, for whoever picks this up:
+
+- A station no longer stores a `servers` count. Its capacity **is** the set of
+  workers standing at it, and a `ServiceSlot` records which one is working. Two
+  sources of truth for capacity would have diverged the first time a worker
+  moved, and the slot binding is the hook that context decay (slice 3) and agent
+  review (M5) both hang off.
+- **`hire` is deliberately not in slice 1.** A head-count currency invented
+  before the economy exists is one that gets deleted when money lands in M2, and
+  the spec's own argument is that reassignment is what makes diagnosis the
+  valuable skill. The cost of deferring it is real and recorded: the zero-sum
+  move reproduces three of the four balance targets with room to spare and the
+  fourth — *the WIP optimum moves* — only weakly, because total capacity did not
+  grow. That target is the reason slice 3 exists.
+- Measured before built, per §6, and the measurement changed the plan for the
+  third time on this project (see
+  [CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md) §8).
 
 ### M2 — Feedback
 CI station with coverage/speed dials · **defect classes** · defect injection and escapes · production incidents and preemption · **DORA dashboard** (reading displayed quality only) · the money/revenue loop · **dispatch as a player decision** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §5 — gated on item value and deadlines, which is why it is here and not in M1).
@@ -154,8 +177,8 @@ Fitting for the subject, the test strategy is the same lesson: **fast feedback b
 | **Unit** | Each system in isolation — drift math, attention accounting, defect probability |
 | **Invariant / property** | Work items conserved (nothing vanishes or duplicates) · queues never negative · attention never below zero · Little's Law holds within tolerance across random runs |
 | **Golden replay** | `{ seed, commandLog } → hash(final metrics)`. Catches unintended balance changes instantly. **The most valuable test type here** — it makes an entire simulation refactor safe |
-| **Sweeps** | 10k headless runs; assert the *shape* of results, not point values. Three lessons are asserted as tests: **lower WIP beats higher WIP** at fixed capacity; **a high agent-review share raises escaped defects while displayed quality stays flat**; and **money cannot substitute for attention** — a run with unlimited budget and fixed attention plateaus. If the sim stops teaching a lesson, the build fails |
-| **Smoke** | One Playwright run: load, play 60 seconds, no console errors |
+| **Sweeps** | Headless runs; assert the *shape* of results, not point values. Four lessons are asserted as tests: **lower WIP beats higher WIP** at fixed capacity *(built, `flow.test.ts`)*; **a worker at the constraint is worth many anywhere else, a second one is worth nothing, and retuning beats both** *(built, `staffing.test.ts`)*; **a high agent-review share raises escaped defects while displayed quality stays flat** *(M5)*; and **money cannot substitute for attention** — a run with unlimited budget and fixed attention plateaus *(M1 slice 3 / M2)*. If the sim stops teaching a lesson, the build fails |
+| **Smoke** | Playwright against a real browser: load, play, no console errors — plus one assertion per mechanic the unit suite structurally cannot see. Slower than everything else combined and worth it; it has caught three bugs that were green in every unit test |
 
 Keep the full suite under 60 seconds. If it gets slow, that's an Act II lesson arriving in real life.
 
@@ -166,6 +189,10 @@ Keep the full suite under 60 seconds. If it gets slow, that's an Act II lesson a
 - **Trunk-based.** Short-lived branches. You are about to learn viscerally why.
 - **Limit your own WIP.** One milestone at a time; one agent task in flight per area of the codebase. `packages/sim/systems/` is deliberately split so parallel agent work touches disjoint files — that is `touchedAreas` collision avoidance, applied to your own repo.
 - **Sim before renderer, always.** A mechanic that isn't in the sim with a test isn't real.
+- **Then look at it.** Three times now — twice in M0, once in M1 slice 1 — the
+  defect that mattered was the game *saying* something it did not know, with a
+  full green suite. Tests cannot see that. A screenshot can. Take one before
+  calling a slice done.
 - **Tuning lives in data, not code.** Every number in `content/tuning.ts`, so sweeps can vary it and you can rebalance without a rebuild.
 - **Dogfood the metrics.** Track your own lead time from idea to deployed build. Put it in the README. It is the most credible marketing this project could have.
 

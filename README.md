@@ -24,10 +24,17 @@ asserted in `packages/sim/test/flow.test.ts`; the human half was played on
 question M0 existed to answer.
 
 M1's headline is the moving constraint: capacity and WIP policy are coupled
-levers, and neither is solvable alone. Shipped so far — the roster,
-`assignWorker`, utilisation, and the constraint named on the board. Still to
-come in M1: area-collision legibility, the attention pool and context decay,
-save/load from the command log, and board building.
+levers, and neither is solvable alone. It is being built in slices, each
+playable on its own:
+
+1. **The moving constraint** — built. The roster, `assignWorker`, rolling
+   utilisation, and the bottleneck named on the board.
+2. **Area-collision legibility** — next. The overlap term is 46% of drift at
+   default WIP and has no representation on screen.
+3. **Hire and the attention pool** — human vs. agent workers, and the scarcity
+   that bounds hiring.
+4. **Save / load** from the command log.
+5. **Board building and placement.**
 
 - [Game Design Document](docs/GAME_DESIGN.md) — mechanics, campaign, pedagogy
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) — architecture, milestones, testing
@@ -108,6 +115,16 @@ destination pays 11.7% or 8.9% depending on who you take.
 What the table cannot show is the part that makes it a game rather than a lookup:
 a second move to Review gives most of the gain back, and after the first move the
 WIP sliders want retuning — which is worth more than moving anyone else at all.
+
+Finding the constraint is the skill, so the game does not hand it over cheaply
+and it does not lie about it. The panel says "Finding the constraint…" for the
+first ten sim-days and names nothing until one station has held the lead for two
+shifts. That is not caution for its own sake: built the obvious way, the board
+announces the bottleneck *moving* three times in the first minute — a line that
+is still filling has a bottleneck that walks downstream, and two saturated
+stations trade places on noise. Measured over 122 runs, the current rule reports
+the constraint correctly on every one and reports zero moves, which is the right
+answer for a line nobody touched.
 
 ## How it is built
 
