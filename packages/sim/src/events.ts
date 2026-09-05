@@ -1,5 +1,5 @@
 import type { StationId } from '@flow/content'
-import type { ItemId } from './state.js'
+import type { ItemId, WorkerId } from './state.js'
 import type { StaleChoice } from './commands.js'
 
 /** Emitted by `step`, consumed by the renderer for effects and by tests for assertions. */
@@ -13,3 +13,6 @@ export type SimEvent =
   | { kind: 'staleResolved'; itemId: ItemId; choice: StaleChoice }
   | { kind: 'shipped'; itemId: ItemId; trunkVersion: number; leadTimeTicks: number }
   | { kind: 'wipLimitChanged'; station: StationId; limit: number }
+  | { kind: 'workerMoved'; workerId: WorkerId; from: StationId; to: StationId }
+  /** The answer the player found has expired. The most important event in M1. */
+  | { kind: 'constraintMoved'; from: StationId | null; to: StationId }

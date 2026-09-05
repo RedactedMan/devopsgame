@@ -1,7 +1,17 @@
 import { STATION_IDS, type StationId } from '@flow/content'
-import type { AreaId, GameState, ItemId, ItemLocation, ItemType, MetricSample } from './state.js'
-import { inFlightItems, locateItem } from './state.js'
+import type {
+  AreaId,
+  GameState,
+  ItemId,
+  ItemLocation,
+  ItemType,
+  MetricSample,
+  WorkerId,
+  WorkerKind,
+} from './state.js'
+import { inFlightItems, locateItem, serversAt, workerIsBusy } from './state.js'
 import { recentLeadTime } from './systems/metrics.js'
+import { constraintIsPolicy } from './systems/staffing.js'
 
 /**
  * The view the renderer subscribes to.
@@ -48,6 +58,21 @@ export type SnapshotStation = {
    * one upstream.
    */
   blocked: boolean
+  /**
+   * Rolling share of servers busy, over roughly a sim-day. `occupancy` says
+   * what is here right now; this says how hard the station has been worked,
+   * and only the second one identifies a bottleneck.
+   */
+  utilisation: number
+}
+
+export type SnapshotWorker = {
+  id: WorkerId
+  kind: WorkerKind
+  station: StationId
+  busy: boolean
+  /** Where they are headed, if the player has asked them to move and they are mid-item. */
+  pendingStation: StationId | null
 }
 
 export type Snapshot = {
@@ -75,6 +100,14 @@ export type Snapshot = {
    * nothing the player can act on.
    */
   oldestInFlightTicks: number
+  workers: SnapshotWorker[]
+  /** The station the sim believes is the bottleneck. Null until the average warms up. */
+  constraint: StationId | null
+  constraintSinceTick: number
+  /** Times the constraint has changed hands. Zero means it has never moved. */
+  constraintMoves: number
+  /** Every station has slack and work is still piling up: the WIP limits are the bottleneck. */
+  constraintIsPolicy: boolean
 }
 
 export function snapshot(state: GameState): Snapshot {
@@ -121,15 +154,17 @@ export function snapshot(state: GameState): Snapshot {
     backlog: state.backlog.length,
     stations: STATION_IDS.map((id) => {
       const s = state.stations[id]
+      const servers = serversAt(state, id)
       return {
         id,
         wipLimit: s.wipLimit,
-        servers: s.servers,
+        servers,
         occupancy: s.queue.length + s.inService.length + s.outbound.length,
         queue: s.queue.length,
         inService: s.inService.length,
         outbound: s.outbound.length,
-        blocked: s.outbound.length > 0 && s.inService.length < s.servers,
+        blocked: s.outbound.length > 0 && s.inService.length < servers,
+        utilisation: s.utilisation,
       }
     }),
     items,
@@ -145,6 +180,17 @@ export function snapshot(state: GameState): Snapshot {
       (oldest, it) => Math.max(oldest, state.tick - it.createdTick),
       0,
     ),
+    workers: state.workers.map((w) => ({
+      id: w.id,
+      kind: w.kind,
+      station: w.station,
+      busy: workerIsBusy(state, w.id),
+      pendingStation: w.pendingStation,
+    })),
+    constraint: state.constraint,
+    constraintSinceTick: state.constraintSinceTick,
+    constraintMoves: state.constraintMoves,
+    constraintIsPolicy: constraintIsPolicy(state),
   }
 }
 

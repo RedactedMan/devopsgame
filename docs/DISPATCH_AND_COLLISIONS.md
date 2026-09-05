@@ -120,7 +120,13 @@ they exist, dispatch is an ordering problem with a known answer.
 
 ---
 
-## 4. Phase 1 — make collisions visible *(M1)*
+## 4. Phase 1 — make collisions visible *(M1, slice 2 — next)*
+
+Not started. The moving constraint went first as the milestone's headline; this
+is the slice after it. Nothing below has changed since it was written, and one
+line of it is now cheaper than it looks: `WorkItem` already carries cached
+`drift` and `driftScore` fields that `systems/drift.ts` writes every tick, so
+caching `overlap` beside them is the same pattern in the same loop.
 
 Pure legibility. No behaviour change, no tuning change, no balance change; the
 golden replay is unaffected because nothing in `fingerprint()` moves.

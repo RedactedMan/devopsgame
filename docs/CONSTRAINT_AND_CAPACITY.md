@@ -108,6 +108,17 @@ failed:
 | { kind: 'reassign'; workerId: WorkerId; to: StationId }
 ```
 
+> **Built:** `{ kind: 'assignWorker'; workerId: WorkerId; to: StationId }` —
+> renamed because `reassign` carrying its own `kind` field would collide with
+> the discriminant every other command uses. It is a *request*: a worker mid-item
+> finishes what they are holding first, and the move lands when they are free.
+> The delay is the cost, and it leaves the context-switching lesson for where
+> the design puts it. One deliberate consequence — a worker holding a STALE item
+> never becomes free, so the move waits on the player's stale decision. That is
+> "stale work holds its server" arriving somewhere new.
+>
+> **Not built:** `hire`. See §8 for the cost of deferring it, which is real.
+
 Reassignment matters more than hiring. Moving a worker is free capacity
 relocation and is the move a player should reach for *before* spending — which
 makes the constraint diagnosis the valuable skill rather than the budget.
@@ -129,17 +140,53 @@ The mechanic is real (§2) and the player cannot currently see any of it. The
 HUD reports `0/1 busy` — an instantaneous sample of a quantity that only means
 something averaged.
 
-- **Rolling utilisation per station**, windowed over ~1 sim-day, in the sim and
-  on the snapshot. Utilisation is the diagnosis; occupancy is not.
-- **The constraint named on the board.** The hottest station gets a persistent
+- ✅ **Rolling utilisation per station**, windowed over ~1 sim-day, in the sim and
+  on the snapshot. Utilisation is the diagnosis; occupancy is not. *Built as an
+  EMA over 80 ticks — one scalar per station, which rides through `cloneState`
+  for free. A station with no workers and a queue reads as fully utilised;
+  reporting 0% would point at the one station that cannot be the answer.*
+- ✅ **The constraint named on the board.** The hottest station gets a persistent
   marker. Not a tooltip — a permanent piece of the station's identity that
-  visibly moves to another column when it moves.
-- **A "the constraint moved" moment.** When the hottest station changes, say so.
+  visibly moves to another column when it moves. *Built: amber edge, the word
+  CONSTRAINT in the header, and a utilisation bar under every station.*
+- ✅ **A "the constraint moved" moment.** When the hottest station changes, say so.
   This is the single highest-value feedback event in M1: it is the instant the
   player learns that the answer they just found has expired.
-- **Flag when the constraint is a policy, not a station** — every station below
+
+  > **Which makes a false one the most expensive thing on the screen.** Built
+  > naively — name the argmax after the average converges, switch on a margin —
+  > it fires twice for reasons that are not the mechanic. A line that is still
+  > *filling* has a bottleneck that walks downstream as work reaches each
+  > station, so the first minute announces spec → implement → review as though
+  > something had happened. And two stations running neck and neck trade places
+  > on noise: one seed did it ten times in a run. A margin does not fix the
+  > second, because it asks for a bigger swing rather than a sustained one.
+  >
+  > What works: name nothing for ten sim-days, and require a station to hold the
+  > lead for two shifts — before the *first* naming as well as before any later
+  > change. The first naming needs it for a sharper reason than the others: on
+  > the seed the game boots with, Implement and Review are both pinned near 100%
+  > when the grace period ends and have not separated yet, so whichever is a
+  > point ahead gets named and then "moves" a few days later when they do.
+  >
+  > Measured over 61 seeds × two WIP settings: a 480- or 560-tick grace still
+  > misnames three of the 122 runs; 800 names the constraint correctly on every
+  > one and reports zero moves — which is right, because nobody did anything.
+  > Locked in as a test, with the boot seed named explicitly, because the
+  > failure mode is a game that cries wolf about its own headline.
+  >
+  > The cost is real and belongs in a playtest rather than in a decision made
+  > here: the panel reads "Finding the constraint…" for the first twelve sim-days
+  > or so, about forty seconds at 4×. That is dead air in the opening minute,
+  > chosen over a marker that lies.
+- ✅ **Flag when the constraint is a policy, not a station** — every station below
   some utilisation while throughput is flat is §3's plateau, and it should read
-  as "your WIP limits are the bottleneck now", not as a station's fault.
+  as "your WIP limits are the bottleneck now", not as a station's fault. *Built
+  as `Snapshot.constraintIsPolicy`: no station above 70% utilisation while the
+  backlog is non-empty. It replaces the station banner rather than sitting
+  beside it, because the two answers are mutually exclusive and showing both
+  would send the player to staff a station that is already idle a third of the
+  time.*
 
 The full diagnosis is the VSM overlay in M3. M1 needs enough for the player to
 find the constraint without it; if the VSM turns out to be *required* to play
@@ -147,20 +194,79 @@ M1, it has been scheduled too late.
 
 ## 7. Balance targets, as tests
 
-Assert shapes, not point values, per plan §5.
+Assert shapes, not point values, per plan §5. All four now exist in
+`packages/sim/test/staffing.test.ts`, written against the *reallocation* version
+of each move — see §8 for why that matters, and for the one that came out weaker
+than specified.
 
-1. **ToC holds.** One server at the constraint is worth at least 5× one server
-   anywhere else. Currently 14.6% vs 0.0–1.7%, so there is wide margin.
-2. **The greedy ladder plateaus.** Hiring at fixed WIP stops paying by the
-   second or third hire. This is the lesson, so it is a test, not a bug.
-3. **The optimum moves.** The argmax WIP multiplier at `+2 rev +2 impl` is
-   strictly greater than at baseline. If a single WIP setting is optimal at
-   every staffing level, the coupling has been tuned away and M1's core loop is
-   dead — this is the regression that would matter most.
-4. **Retuning beats the second hire** at `+1 review`. The relationship, not the
-   number.
+1. ✅ **ToC holds.** One server at the constraint is worth at least 5× one server
+   anywhere else. Specced against hiring at 14.6% vs 0.0–1.7%; asserted against
+   reallocation at **+11.7% vs −1.2–1.0%**, an 11:1 ratio.
+2. ✅ **The greedy ladder plateaus.** Staffing the constraint again at fixed WIP
+   stops paying. Asserted as "the second move gains less than half of what the
+   first did" — flat would be the lesson too; what must not happen is the second
+   move paying like the first.
+3. ⚠️ **The optimum moves.** Asserted, but **weakly**: after `ci → review` the
+   optimum shifts 0.4× → 0.5× and is worth +2.3%, against the baseline's +0.2%
+   for the same change. The strong version — the optimum walking to 0.75× — needs
+   `hire`, because a zero-sum move does not grow the capacity that lets the line
+   hold more work. The test says so in a comment. **Strengthening this assertion
+   is the acceptance criterion for the slice that adds hiring.**
+4. ✅ **Retuning beats the second hire** at `+1 review`. Holds strongly for
+   reallocation, and for a blunter reason than for hiring: the second move is
+   *negative*, so retuning does not have to be good to beat it.
 
-## 8. Why this and not dispatch
+Two more tests exist that the spec did not ask for, both written after a defect:
+
+5. ✅ **Nobody is in two places.** Every service slot names a worker, that worker
+   is assigned to that station, and no worker holds two slots. Property, all
+   seeds.
+6. ✅ **A line nobody touched never reports a constraint move.** The regression
+   from §6 — the most important event in the milestone is not allowed to fire
+   when nothing happened.
+
+## 8. Built: the zero-sum version *(M1)*
+
+Everything in §2–§4 measures a **hire** — capacity added from outside. What
+shipped first is **reallocation**, which is zero-sum: a worker moved to Review
+leaves a hole where they were standing. That is a weaker move by construction,
+so it was measured before being built rather than assumed to inherit the numbers
+above. Same method, 12 seeds × 4000 ticks, wip 0.4×:
+
+| move | shipped | Δ | lead |
+|---|---|---|---|
+| baseline | 165 | — | 707t |
+| implement → spec | 163 | −1.2% | 704t |
+| implement → ci | 163 | −1.1% | 771t |
+| implement → deploy | 163 | −1.1% | 771t |
+| ci → spec | 166 | +1.0% | 666t |
+| ci → implement | 166 | +0.5% | 705t |
+| ci → deploy | 165 | +0.4% | 707t |
+| implement → review | 179 | +8.9% | 585t |
+| **ci → review** | **184** | **+11.7%** | **508t** |
+
+The lesson survives the weaker move, at an 11:1 ratio against §7's 5:1 target.
+It also gains an axis the hiring version does not have: **where the worker comes
+from matters as much as where they go.** CI has slack to donate and Implement
+does not, so the same destination pays 11.7% or 8.9% depending on the donor.
+That is Theory of Constraints and its converse in one decision, and it is free.
+
+Of §7's four targets, reallocation delivers 1, 2 and 4 with room to spare. It
+delivers **3 only weakly**: after `ci → review` the WIP optimum shifts from
+0.4× to 0.5× (+2.3%, against the baseline's +0.2% for the same change), where the
+`+1 review` hire shifts it by +11.6% and two hires walk it to 0.75×. The reason
+is mechanical — total capacity did not grow, so the line cannot absorb much more
+work in flight.
+
+**So target 3 is the argument for `hire`,** and it is the reason the milestone is
+not finished without one. It is deliberately not in the first slice: a head-count
+currency invented before the economy exists is one that gets deleted when money
+arrives in M2, and §5's own point is that reassignment is the move that makes
+diagnosis the valuable skill. The assertion in `staffing.test.ts` is written at
+the strength reallocation actually supports, with a comment saying why, so that
+strengthening it is a deliberate act rather than an accident.
+
+## 9. Why this and not dispatch
 
 Both were measured against the same sim with the same method. Dispatch produced
 +11% and was dominated by a heuristic that ignores the mechanic entirely

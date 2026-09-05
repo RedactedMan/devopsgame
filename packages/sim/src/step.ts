@@ -7,6 +7,12 @@ import { resolveStale, updateDrift } from './systems/drift.js'
 import { sampleMetrics } from './systems/metrics.js'
 import { arrivals, pull } from './systems/routing.js'
 import { advanceService, startService } from './systems/service.js'
+import {
+  applyPendingMoves,
+  requestMove,
+  updateConstraint,
+  updateUtilisation,
+} from './systems/staffing.js'
 
 export type StepResult = { state: GameState; events: SimEvent[] }
 
@@ -27,8 +33,13 @@ export function step(state: GameState, commands: readonly Command[] = []): StepR
   arrivals(s, events)
   updateDrift(s, events)
   advanceService(s, events)
+  // Between finishing and starting: a worker who just came free can move before
+  // the station hands them the next thing.
+  applyPendingMoves(s, events)
   pull(s, events)
   startService(s, events)
+  updateUtilisation(s)
+  updateConstraint(s, events)
 
   if (s.tick % s.tuning.sampleEveryTicks === 0) s.metrics.samples.push(sampleMetrics(s))
 
@@ -50,6 +61,11 @@ function applyCommands(state: GameState, commands: readonly Command[], events: S
       }
       case 'resolveStale':
         resolveStale(state, command.itemId, command.choice, events)
+        break
+      case 'assignWorker':
+        // Only ever a request. `applyPendingMoves` decides when it lands, so
+        // there is one code path whether the worker is idle or mid-item.
+        requestMove(state, command.workerId, command.to)
         break
     }
   }
