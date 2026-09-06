@@ -236,9 +236,16 @@ crawls instead of stopping. A player cannot tell a mechanic they triggered from
 an application that has hung, and there was no way back from it — rebasing costs
 attention too.
 
-**Step 4 — the screen.** *(next)* An attention meter that reads as a budget rather than a
-score, the roster showing kind, and the refusal to staff Review with an agent
-explained where the player tries it rather than in a codex.
+**Step 4 — the screen.** *(built)* An attention meter that reads as a budget
+rather than a score, the roster showing kind, and the refusal to staff Review
+with an agent explained where the player tries it rather than in a codex.
+
+The one thing the build added to this: **empty and underwater are different
+panels.** A pool at zero because the shift has been spent is fixed by tomorrow;
+a pool floored because the roster produces more than it can read is only fixed
+by changing who is on the line. Printing the remainder alone cannot tell them
+apart, and a player who read the second as the first would wait for a morning
+that never comes.
 
 ## 6. Deferred, deliberately
 

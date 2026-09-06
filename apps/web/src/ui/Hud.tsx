@@ -65,6 +65,14 @@ export function Hud({ sim }: { sim: SimHandle }) {
         />
         <Stat label="WIP" value={snap.items.filter((i) => i.location.where !== 'backlog').length} />
         <Stat label="Backlog" value={snap.backlog} />
+        <Stat
+          label="Attention"
+          // The only scarcity in M1. Money buys capacity, attention buys
+          // judgment, and there is no money — so this is the meter that says
+          // what the roster can actually think about today.
+          value={`${snap.attention.remaining.toFixed(0)}/${snap.attention.perShift.toFixed(0)}`}
+          alarm={snap.attention.remaining < 1}
+        />
 
         <div className="controls">
           <button
@@ -121,6 +129,7 @@ export function Hud({ sim }: { sim: SimHandle }) {
 
         <section>
           <h2>Staffing</h2>
+          <Attention snap={snap} />
           <p className="hint">
             {held === null
               ? 'Click someone to pick them up, then click a station to move them there. Moving is free; knowing where to move them is not.'
@@ -139,6 +148,9 @@ export function Hud({ sim }: { sim: SimHandle }) {
                 dispatch({ kind: 'assignWorker', workerId: held, to: station.id })
                 setHeld(null)
               }}
+              onHire={(workerKind) =>
+                dispatch({ kind: 'hire', station: station.id, workerKind })
+              }
             />
           ))}
         </section>
@@ -362,12 +374,63 @@ function Constraint({ snap }: { snap: Snapshot }) {
 }
 
 /**
- * One station's roster, and the utilisation that says whether it needs one.
+ * The judgment budget, and what the roster is doing to it.
  *
- * Pick a worker up, put them down somewhere else. There is no cost and no
- * limit, on purpose: this milestone is about the diagnosis, not the budget. If
- * moving people were rationed, a player who guessed wrong would learn that
- * guessing is expensive rather than that they guessed wrong.
+ * Two states that look identical if you only print the remainder, and are not
+ * the same problem at all: a pool that is *empty* is a team that has spent its
+ * day, and a pool that is *underwater* is a roster producing more work than it
+ * could ever read. The first is fixed by tomorrow. The second is only fixed by
+ * changing who is on the line, and the panel has to say which one the player is
+ * looking at or the fix they reach for will be the wrong one.
+ */
+function Attention({ snap }: { snap: Snapshot }) {
+  const { remaining, perShift, supply } = snap.attention
+  const share = perShift > 0 ? Math.min(1, remaining / perShift) : 0
+  const underwater = supply < perShift
+
+  const humans = snap.workers.filter((w) => w.kind === 'human').length
+  const agents = snap.workers.length - humans
+
+  return (
+    <div className={underwater ? 'attention attention--underwater' : 'attention'}>
+      <div className="attention__head">
+        <span>Attention</span>
+        <span className="attention__num">
+          {remaining.toFixed(0)} / {perShift.toFixed(0)} this shift
+        </span>
+      </div>
+      <div className="attention__bar">
+        <span style={{ width: `${share * 100}%` }} />
+      </div>
+      <p className="attention__body">
+        {underwater ? (
+          <>
+            {agents} agents against {humans} people. This roster produces more than it can read —
+            Review is running on a floor, not a budget. Hiring more of them makes it worse.
+          </>
+        ) : (
+          <>
+            Reviewing and rebasing are paid for out of this. {humans} people supply it, {agents}{' '}
+            {agents === 1 ? 'agent draws' : 'agents draw'} on it, and it does not carry over.
+          </>
+        )}
+      </p>
+    </div>
+  )
+}
+
+/**
+ * One station's roster, the utilisation that says whether it needs one, and the
+ * two ways to add to it.
+ *
+ * Moving is free and unlimited, on purpose — a player who guesses wrong should
+ * learn that they guessed wrong, not that guessing is expensive. Hiring is not
+ * rationed either, and does not need to be: agents cost attention to supervise
+ * and humans cost coordination, so the roster prices itself.
+ *
+ * Review's missing agent button is the single most important thing in this
+ * panel. It is the one station a machine cannot stand at, it is the constraint,
+ * and those two facts being the same fact is the whole game.
  */
 function StaffRow({
   station,
@@ -376,6 +439,7 @@ function StaffRow({
   held,
   onHold,
   onDrop,
+  onHire,
 }: {
   station: Snapshot['stations'][number]
   workers: Snapshot['workers']
@@ -383,6 +447,7 @@ function StaffRow({
   held: string | null
   onHold: (id: string) => void
   onDrop: () => void
+  onHire: (workerKind: 'human' | 'agent') => void
 }) {
   const heldHere = workers.find((w) => w.id === held)
   const droppable = held !== null && heldHere === undefined
@@ -407,6 +472,7 @@ function StaffRow({
             className={[
               'chip',
               worker.busy ? 'chip--busy' : '',
+              worker.kind === 'agent' ? 'chip--agent' : '',
               held === worker.id ? 'chip--held' : '',
               worker.pendingStation ? 'chip--moving' : '',
             ]
@@ -416,11 +482,12 @@ function StaffRow({
               worker.pendingStation
                 ? `Finishing up, then moving to ${STATION_LABELS[worker.pendingStation]}`
                 : worker.busy
-                  ? 'Working. A move lands when they finish.'
-                  : 'Idle.'
+                  ? `${worker.kind === 'agent' ? 'Agent' : 'Person'}, working. A move lands when they finish.`
+                  : `${worker.kind === 'agent' ? 'Agent' : 'Person'}, idle.`
             }
             onClick={() => onHold(worker.id)}
           >
+            {worker.kind === 'agent' ? '⌁' : ''}
             {worker.id}
             {worker.pendingStation ? ' →' : ''}
           </button>
@@ -430,6 +497,32 @@ function StaffRow({
           <button type="button" className="chip chip--drop" onClick={onDrop}>
             {cancellable ? 'keep' : 'move'} {held} here
           </button>
+        )}
+      </div>
+      <div className="staff__hire">
+        <button
+          type="button"
+          className="hire"
+          title="Supplies attention. Costs coordination, and the tenth costs more than the second."
+          onClick={() => onHire('human')}
+        >
+          + person
+        </button>
+        {station.agentsAllowed ? (
+          <button
+            type="button"
+            className="hire"
+            title="Free capacity. Draws on the attention budget, because someone has to read what it wrote."
+            onClick={() => onHire('agent')}
+          >
+            + agent
+          </button>
+        ) : (
+          // Said here rather than in a codex, because here is where the player
+          // goes looking for it.
+          <span className="staff__barred" title="Agents can produce the work. They cannot be the judgment about it.">
+            no agents here
+          </span>
         )}
       </div>
     </div>

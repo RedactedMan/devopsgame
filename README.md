@@ -36,11 +36,14 @@ playable on its own:
    chip per area it touches, the board has a contention strip, hovering an item
    dims everything it is *not* fighting, and the stale list names the cause
    beside the fact.
-3. **Hire and the attention pool** — specced, in progress. Human vs. agent
-   workers, and the scarcity that bounds them. Measured before building, and
-   the measurement moved the plan for the fourth time on this project: the sim
-   already bounds hiring on its own, so the pool is there to price the *human*
-   hire, which is the only one that can touch the constraint.
+3. **Hire and the attention pool** — built. Human vs. agent workers, and the
+   scarcity that bounds them. Measured before building, and the measurement
+   moved the plan for the fourth time on this project: the sim already bounds
+   hiring on its own, so the pool is there to price the *human* hire, which is
+   the only one that can touch the constraint. Eight agents nobody can review
+   are worth **−12%**; the same eight after one human hire are worth **+25%**;
+   the best board position is two humans and four agents. A ratio, not a
+   maximum of either.
 4. **Save / load** from the command log.
 5. **Board building and placement.**
 
