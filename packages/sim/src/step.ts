@@ -9,6 +9,7 @@ import { arrivals, pull } from './systems/routing.js'
 import { advanceService, startService } from './systems/service.js'
 import {
   applyPendingMoves,
+  hire,
   requestMove,
   updateConstraint,
   updateUtilisation,
@@ -65,7 +66,10 @@ function applyCommands(state: GameState, commands: readonly Command[], events: S
       case 'assignWorker':
         // Only ever a request. `applyPendingMoves` decides when it lands, so
         // there is one code path whether the worker is idle or mid-item.
-        requestMove(state, command.workerId, command.to)
+        requestMove(state, command.workerId, command.to, events)
+        break
+      case 'hire':
+        hire(state, command.station, command.workerKind, events)
         break
     }
   }

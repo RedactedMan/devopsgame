@@ -38,6 +38,13 @@ const limitsAt = (m: number) =>
     ]),
   ) as Record<StationId, number>
 
+/** Capacity added from outside, rather than moved. Head count grows. */
+const hired = (adds: Partial<Record<StationId, number>>): Record<StationId, number> => {
+  const staffing = { ...BASELINE }
+  for (const [id, n] of Object.entries(adds)) staffing[id as StationId] += n as number
+  return staffing
+}
+
 /** One worker leaves `from` and arrives at `to`. Head count does not change. */
 const move = (...moves: Array<[StationId, StationId]>): Record<StationId, number> => {
   const staffing = { ...BASELINE }
@@ -228,14 +235,139 @@ describe('the lessons', () => {
   it('§3 — the WIP optimum moves once the constraint has been relieved', () => {
     // Weakly, for a zero-sum move: total capacity did not grow, so the line
     // cannot absorb much more work in flight. Measured at 0.4 vs 0.5, the
-    // baseline is flat and the relieved line prefers the looser setting. The
-    // strong version of this — the optimum walking to 0.75 — needs `hire`, and
-    // arrives with the economy in M2.
+    // baseline is flat and the relieved line prefers the looser setting.
+    // The strong version is the test below, and it needed `hire`.
     const relievedTight = shipped(move(['ci', 'review']), 0.4)
     const relievedLoose = shipped(move(['ci', 'review']), 0.5)
     const baseLoose = shipped(BASELINE, 0.5)
 
     expect(relievedLoose).toBeGreaterThan(relievedTight)
     expect(relievedLoose - relievedTight).toBeGreaterThan(baseLoose - base)
+  })
+
+  it('§3, strong — the setting that was best becomes the worst on the board', () => {
+    // This assertion is the acceptance criterion for `hire`
+    // (docs/CONSTRAINT_AND_CAPACITY.md §8), and it is the reason the command
+    // exists. A reallocation cannot do it: the line can only absorb more work
+    // in flight if there is more capacity to work it.
+    //
+    // The player's own success invalidates their own settings, which is the
+    // whole two-lever interaction. Nothing here is random — the optimum moved
+    // because of what the player did.
+    const tightAtBaseline = shipped(BASELINE, 0.4)
+    const looseAtBaseline = shipped(BASELINE, 0.75)
+    expect(tightAtBaseline).toBeGreaterThan(looseAtBaseline)
+
+    const staffed = hired({ review: 2, implement: 2 })
+    const tightAfter = shipped(staffed, 0.4)
+    const looseAfter = shipped(staffed, 0.75)
+    expect(looseAfter).toBeGreaterThan(tightAfter)
+
+    // And the reversal is worth caring about, not a rounding error: the
+    // slider the player worked out in slice 1 now costs them a fifth of the
+    // line. Measured at 183 against 237.
+    expect((looseAfter - tightAfter) / tightAfter).toBeGreaterThan(0.15)
+  })
+
+  it('§3, strong — hiring where agents may stand cannot substitute for hiring where they may not', () => {
+    // The design's two currencies, as one number. Agents are cheap, parallel,
+    // and barred from Review; humans are none of those and Review is the
+    // constraint. Measured at 14:1 — docs/HIRING_AND_ATTENTION.md §3.
+    //
+    // Deliberately eight against one. If the ratio held only at equal head
+    // count it would be a statement about the constraint; holding at eight to
+    // one is a statement about what money can and cannot buy.
+    const eightWhereAgentsMayGo = shipped(hired({ implement: 8 }), 0.4)
+    const oneWhereTheyMayNot = shipped(hired({ review: 1 }), 0.5)
+
+    expect(oneWhereTheyMayNot - base).toBeGreaterThan(5 * (eightWhereAgentsMayGo - base))
+  })
+
+  it('§3, strong — and the same agents are worth far more once a human has unblocked them', () => {
+    // The converse, without which the above is just "agents are useless". They
+    // are not weak, they are blocked: the same eight are worth ~2% before the
+    // human hire and ~14% after it. Ordering is the decision.
+    const agentsAlone = shipped(hired({ implement: 8 }), 0.4) - base
+
+    const humanOnly = shipped(hired({ review: 1 }), 0.5)
+    const humanThenAgents = shipped(hired({ review: 1, implement: 8 }), 1)
+    const agentsAfter = humanThenAgents - humanOnly
+
+    expect(agentsAfter).toBeGreaterThan(3 * agentsAlone)
+  })
+})
+
+describe('hiring', () => {
+  const hireCmd = (station: StationId, workerKind: 'human' | 'agent'): Command => ({
+    kind: 'hire',
+    station,
+    workerKind,
+  })
+
+  it('adds capacity, and the new worker is capacity immediately', () => {
+    const before = initState({ seed: 1 })
+    const after = step(before, [hireCmd('review', 'human')]).state
+    expect(serversAt(after, 'review')).toBe(serversAt(before, 'review') + 1)
+    expect(after.workers.at(-1)?.kind).toBe('human')
+    expect(after.workers.at(-1)?.station).toBe('review')
+  })
+
+  it('gives the hire an id no one already on the roster is using', () => {
+    // `nextWorkerSerial` exists for this. A replay that hires and then moves
+    // "W10" has to mean the same person on the way through, or the second
+    // command addresses a stranger.
+    let state = initState({ seed: 1 })
+    const startingIds = new Set(state.workers.map((w) => w.id))
+    for (let i = 0; i < 5; i++) state = step(state, [hireCmd('ci', 'agent')]).state
+
+    const ids = state.workers.map((w) => w.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids.filter((id) => !startingIds.has(id))).toHaveLength(5)
+  })
+
+  it('refuses to put an agent at Review, and says so', () => {
+    // The one rule that separates the game's two currencies. Refusing in
+    // silence would read as a broken button.
+    const before = initState({ seed: 1 })
+    const { state, events } = step(before, [hireCmd('review', 'agent')])
+
+    expect(state.workers).toHaveLength(before.workers.length)
+    expect(events).toContainEqual({
+      kind: 'staffingRefused',
+      station: 'review',
+      workerKind: 'agent',
+      why: 'agentsNotAllowed',
+    })
+  })
+
+  it('lets an agent stand anywhere else', () => {
+    for (const id of STATION_IDS.filter((s) => s !== 'review')) {
+      const after = step(initState({ seed: 1 }), [hireCmd(id, 'agent')]).state
+      expect(serversAt(after, id), id).toBe(DEFAULT_TUNING.stations[id].servers + 1)
+    }
+  })
+
+  it('will not let an agent be moved to Review either', () => {
+    // The gap the enforcement would have had if `hire` were the only place it
+    // was checked: hire the agent at CI, then walk it over.
+    let state = initState({ seed: 1 })
+    state = step(state, [hireCmd('ci', 'agent')]).state
+    const agent = state.workers.at(-1) as { id: string }
+
+    const { state: after, events } = step(state, [
+      { kind: 'assignWorker', workerId: agent.id, to: 'review' },
+    ])
+    const moved = after.workers.find((w) => w.id === agent.id)
+    expect(moved?.station).toBe('ci')
+    expect(moved?.pendingStation).toBeNull()
+    expect(events.some((e) => e.kind === 'staffingRefused')).toBe(true)
+  })
+
+  it('still lets a human be moved to Review', () => {
+    const state = initState({ seed: 1 })
+    const human = state.workers.find((w) => w.station === 'ci') as { id: string }
+    const after = step(state, [{ kind: 'assignWorker', workerId: human.id, to: 'review' }]).state
+    const moved = after.workers.find((w) => w.id === human.id)
+    expect(moved?.station === 'review' || moved?.pendingStation === 'review').toBe(true)
   })
 })
