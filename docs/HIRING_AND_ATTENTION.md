@@ -131,9 +131,8 @@ agents anywhere else, push the sliders to 1.5×, and the line is at 242 out of a
 word: *a static optimum is interesting exactly once*. Slice 3 without a cost
 would hand the player a four-rung ladder to the top of the game.
 
-So attention exists to make the *human* hire expensive, because the human hire
-is the one that matters. Design §3.4 is already explicit about what attention is
-for, and it is not headcount:
+So attention exists to make hiring cost something. Design §3.4 is already
+explicit about what attention is for, and it is not headcount:
 
 > Money buys capacity. Attention buys judgment. Money cannot buy attention.
 
@@ -152,6 +151,28 @@ of the design doc do not currently agree and one of them has to give:
 That last line is what makes the trap close. A player who hires agents to get
 past a review bottleneck spends the budget that the review bottleneck runs on,
 and the meter says so while they do it.
+
+### Corrected after the first playtest
+
+This section originally claimed the pool was there "to price the *human* hire,
+which is the only one that can reach the constraint." **That was false as
+built**, and a playtester found it by asking the obvious question: *what stops
+me just hiring more people?*
+
+Nothing did. Humans *supply* attention, so the budget rose as the roster grew,
+and `coordination` was set at 0.02 — inert until a team of roughly two hundred.
+Measured: 13 people ship 242 and 109 people ship 242, with the attention supply
+climbing from 13.7 to 60.2 along the way. Over-hiring was pointless and never
+costly.
+
+Worse than untidy, that was a hole in the milestone. **`+5 everywhere` reached
+the same 242 ceiling as the careful 13-person roster without ever finding the
+constraint.** Slices 1 through 3 exist to make *where* you add capacity the
+skill; if capacity can be added everywhere, the question stops being asked. The
+sweeps missed it because they only ever varied agents.
+
+The fix was already in the model and mis-tuned, plus one modelling error
+underneath it — see the retune in §5.
 
 **CONSTRAINT_AND_CAPACITY §5 is superseded on one point.** It says "humans
 consume attention, agents consume money." Measured against the design's own
@@ -194,6 +215,9 @@ assert, per plan §5:
 
 ### Swept, and it does better than plateau
 
+*(First tuning. Superseded by the retune below, which does not change the shape
+of this table — the agent numbers survive it deliberately.)*
+
 `perHuman 1.6 · perAgent 0.85 · coordination 0.02 · reviewCost 1 · rebaseCost 2`,
 8 seeds × 4000 ticks, each row at its own best WIP setting:
 
@@ -235,6 +259,51 @@ where the player can see it, and floor the pool at one review so a drowned line
 crawls instead of stopping. A player cannot tell a mechanic they triggered from
 an application that has hung, and there was no way back from it — rebasing costs
 attention too.
+
+### Retuned for a team that can fit round a table
+
+Prompted by the playtest question in §4. Two changes.
+
+**A modelling error first.** Coordination counted communication channels
+between *everybody*, agents included. Brooks's argument is about human
+communication — an agent does not attend the standup or need keeping in the
+loop on what four other agents are doing. What it costs is one person's
+attention to read its output, which `perAgent` already charges linearly.
+Counting agents in the quadratic charged them twice, and it only became visible
+when the two terms were tuned together: every coordination value large enough to
+punish a sprawling org also made four agents unaffordable. Channels are now
+counted between people.
+
+**Then the coefficient**, from 0.02 to 0.22, with `perHuman` raised to 2.4 to
+keep the starting roster clear of the wall and `perAgent` to 1.2 to keep the
+agent trap exactly where it was. 6 seeds × 4000 ticks, evenly grown rosters:
+
+```
+        9p    10p+1rev   13p+2r2i        14p        19p        24p    10p+4ag
+       163         191        242        224        226         35        238
+```
+
+The peak is **thirteen people** — a two-pizza team, and it lands there because
+of where they stand rather than how many there are. Nineteen ships *less* than
+thirteen, so sprawl now costs rather than merely wasting; twenty-four cannot
+review its own output and tips over. The agent numbers are unmoved: four agents
+after a human hire still pay, eight still do not.
+
+Both golden replay hashes survived the retune, which is the check that it
+changed what happens when you sprawl and not the base game.
+
+Two tests added for the lesson, because the milestone did not have one: a small
+team in the right places beats a big one everywhere, and a big enough team
+cannot review its own output at all.
+
+**On the name.** "Two-pizza team" is Amazon's, and it is a management heuristic
+rather than a research finding — nothing establishes six-to-ten as an optimum.
+What is evidenced is the shape, not the number: per-person output falling as
+groups grow is one of the oldest results in social psychology, and software
+project data has repeatedly found small teams delivering comparable scope for
+less total effort. The quadratic term here is Brooks's, which was itself an
+argument from experience. So the sim is tuned to a defensible *curve* with a
+memorable *label*, and the label is doing rhetorical work the evidence does not.
 
 **Step 4 — the screen.** *(built)* An attention meter that reads as a budget
 rather than a score, the roster showing kind, and the refusal to staff Review

@@ -325,10 +325,38 @@ describe('attention — the wall money cannot buy past', () => {
     expect(four).toBeGreaterThan(eight)
   })
 
-  it('hiring humans never starves the line, however many', () => {
-    // Humans supply attention; agents draw it. If hiring a human could starve
-    // Review, the pool would be punishing the one move the milestone spent two
-    // slices teaching the player to make.
+  it('a small team in the right places beats a big one everywhere', () => {
+    // The lesson this pool was retuned to teach, and the question a playtester
+    // asked that the first tuning had no answer to: what stops me just hiring
+    // more people? Nothing did. Coordination was set so low that blanket
+    // hiring reached the same ceiling as a carefully placed roster, so the
+    // whole find-the-constraint skill could be skipped by paying for it.
+    //
+    // Now the marginal person eventually goes negative: thirteen people put
+    // where the constraint is beat nineteen spread evenly over every station,
+    // and the nineteen are the more expensive team.
+    const placed = shipped(hired({ review: 2, implement: 2 }), 0.75)
+    const sprawling = shipped(
+      { spec: 3, implement: 6, review: 3, ci: 4, deploy: 3 },
+      0.75,
+    )
+    expect(placed).toBeGreaterThan(sprawling)
+  })
+
+  it('and a big enough team cannot review its own output at all', () => {
+    // Brooks, at the far end. Communication channels grow quadratically, so
+    // past a point every additional person costs the team more attention than
+    // they bring — and the line tips over rather than plateauing.
+    const sprawling = shipped({ spec: 4, implement: 7, review: 4, ci: 5, deploy: 4 }, 0.75)
+    expect(sprawling).toBeLessThan(base)
+  })
+
+  it('hiring humans at the constraint never starves the line', () => {
+    // Humans supply attention and agents draw it, so staffing *the constraint*
+    // must always pay — the pool must never punish the one move the milestone
+    // spent two slices teaching the player to make. Sprawl is punished; a
+    // correct hire is not, and the two tests above and below this one are the
+    // pair that pins the difference.
     const staffed = hired({ review: 2, implement: 2 })
     expect(shipped(staffed, 0.75)).toBeGreaterThan(shipped(hired({ review: 1 }), 0.5))
   })

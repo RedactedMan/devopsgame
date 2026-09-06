@@ -56,8 +56,17 @@ export function attentionSupply(state: GameState): number {
     else agents++
   }
 
-  const heads = humans + agents
-  const channels = (heads * (heads - 1)) / 2
+  // Channels are counted between *people*, not between everybody. Brooks's
+  // argument is about human communication — an agent does not attend the
+  // standup or need to be kept in the loop on what four other agents are
+  // doing. What it costs is one person's attention to read its output, and
+  // that is `perAgent`, charged linearly above.
+  //
+  // Counting agents as channels was the first version and it was wrong in a
+  // way that only showed up when the two terms were tuned together: raising
+  // coordination enough to punish a sprawling org also made four agents
+  // unaffordable, because the quadratic was counting them twice.
+  const channels = (humans * (humans - 1)) / 2
   return perHuman * humans - perAgent * agents - coordination * channels
 }
 

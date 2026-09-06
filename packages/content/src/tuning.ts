@@ -191,9 +191,16 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
   // and a meter that was already tight on turn one teaches the opposite.
   // Swept to these values; see docs/HIRING_AND_ATTENTION.md §5 step 3.
   attention: {
-    perHuman: 1.6,
-    perAgent: 0.85,
-    coordination: 0.02,
+    perHuman: 2.4,
+    perAgent: 1.2,
+    // Retuned after a playtest asked the obvious question the first tuning had
+    // no answer to: what stops me hiring more people? Nothing did. At 0.02 this
+    // term was inert below a roster of about two hundred, so blanket hiring
+    // reached the same ceiling as a carefully placed thirteen and the whole
+    // find-the-constraint skill could be skipped. At 0.22 the peak sits at
+    // thirteen people, nineteen ships less than thirteen, and twenty-four tips
+    // the line over. See docs/HIRING_AND_ATTENTION.md §5.
+    coordination: 0.22,
     reviewCost: 1,
     rebaseCost: 2,
   },
