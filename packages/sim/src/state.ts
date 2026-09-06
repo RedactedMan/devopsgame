@@ -177,6 +177,11 @@ export type GameState = {
   /** The station currently making a sustained case for the title, and since when. */
   constraintChallenger: StationId | null
   constraintChallengeSince: number
+  /**
+   * The judgment budget for the current shift. Restored on the shift boundary
+   * and never banked — see `systems/attention.ts`.
+   */
+  attention: { remaining: number; perShift: number }
   /** Every live item: in the backlog or somewhere in a station. */
   items: WorkItem[]
   metrics: Metrics

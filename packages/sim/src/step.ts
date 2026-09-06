@@ -3,6 +3,7 @@ import type { Command } from './commands.js'
 import type { SimEvent } from './events.js'
 import { cloneState } from './init.js'
 import type { GameState } from './state.js'
+import { replenishAttention } from './systems/attention.js'
 import { resolveStale, updateDrift } from './systems/drift.js'
 import { sampleMetrics } from './systems/metrics.js'
 import { arrivals, pull } from './systems/routing.js'
@@ -31,6 +32,9 @@ export function step(state: GameState, commands: readonly Command[] = []): StepR
   applyCommands(s, commands, events)
 
   s.tick += 1
+  // Before anything can spend it. The budget does not accumulate, so whatever
+  // last shift did not use is gone at this line.
+  replenishAttention(s, events)
   arrivals(s, events)
   updateDrift(s, events)
   advanceService(s, events)

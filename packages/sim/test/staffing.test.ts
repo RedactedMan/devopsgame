@@ -64,14 +64,18 @@ const rebaseEverything = (state: GameState): Command[] =>
 /** Several of the targets below share configurations; each one is only run once. */
 const cache = new Map<string, number>()
 
-function shipped(staffing: Record<StationId, number>, wipMultiplier = 0.4): number {
-  const key = JSON.stringify([staffing, wipMultiplier])
+function shipped(
+  staffing: Record<StationId, number>,
+  wipMultiplier = 0.4,
+  agents: Partial<Record<StationId, number>> = {},
+): number {
+  const key = JSON.stringify([staffing, wipMultiplier, agents])
   const hit = cache.get(key)
   if (hit !== undefined) return hit
 
   let total = 0
   for (let seed = 1; seed <= SEEDS; seed++) {
-    const state = initState({ seed, staffing, wipLimits: limitsAt(wipMultiplier) })
+    const state = initState({ seed, staffing, agents, wipLimits: limitsAt(wipMultiplier) })
     total += summarize(run(state, TICKS, rebaseEverything)).shipped
   }
   const mean = total / SEEDS
@@ -269,31 +273,64 @@ describe('the lessons', () => {
     expect((looseAfter - tightAfter) / tightAfter).toBeGreaterThan(0.15)
   })
 
-  it('§3, strong — hiring where agents may stand cannot substitute for hiring where they may not', () => {
+  it('§3, strong — a fleet of agents cannot substitute for one human at the constraint', () => {
     // The design's two currencies, as one number. Agents are cheap, parallel,
     // and barred from Review; humans are none of those and Review is the
-    // constraint. Measured at 14:1 — docs/HIRING_AND_ATTENTION.md §3.
+    // constraint. Measured at ~17:1 — docs/HIRING_AND_ATTENTION.md §3.
     //
-    // Deliberately eight against one. If the ratio held only at equal head
-    // count it would be a statement about the constraint; holding at eight to
-    // one is a statement about what money can and cannot buy.
-    const eightWhereAgentsMayGo = shipped(hired({ implement: 8 }), 0.4)
-    const oneWhereTheyMayNot = shipped(hired({ review: 1 }), 0.5)
+    // Deliberately four against one. At equal head count this would be a
+    // statement about the constraint; at four to one it is a statement about
+    // what money can and cannot buy.
+    const fourAgents = shipped(BASELINE, 0.4, { implement: 4 })
+    const oneHuman = shipped(hired({ review: 1 }), 0.5)
 
-    expect(oneWhereTheyMayNot - base).toBeGreaterThan(5 * (eightWhereAgentsMayGo - base))
+    expect(oneHuman - base).toBeGreaterThan(5 * (fourAgents - base))
   })
 
   it('§3, strong — and the same agents are worth far more once a human has unblocked them', () => {
-    // The converse, without which the above is just "agents are useless". They
-    // are not weak, they are blocked: the same eight are worth ~2% before the
-    // human hire and ~14% after it. Ordering is the decision.
-    const agentsAlone = shipped(hired({ implement: 8 }), 0.4) - base
+    // The converse, without which the above is only a claim that agents are
+    // useless. They are not weak, they are blocked, and ordering is the whole
+    // decision: the same four are worth ~3 items before the human hire and
+    // ~22 after it.
+    const agentsAlone = shipped(BASELINE, 0.4, { implement: 4 }) - base
 
     const humanOnly = shipped(hired({ review: 1 }), 0.5)
-    const humanThenAgents = shipped(hired({ review: 1, implement: 8 }), 1)
-    const agentsAfter = humanThenAgents - humanOnly
+    const humanThenAgents = shipped(hired({ review: 1 }), 1, { implement: 4 })
 
-    expect(agentsAfter).toBeGreaterThan(3 * agentsAlone)
+    expect(humanThenAgents - humanOnly).toBeGreaterThan(3 * agentsAlone)
+  })
+})
+
+describe('attention — the wall money cannot buy past', () => {
+  const base = shipped(BASELINE)
+
+  it('a fleet nobody can review is worse than not hiring it', () => {
+    // Plan §5 lists this as a lesson test with nowhere to live: a run with an
+    // unlimited budget and a fixed attention supply plateaus. It does better
+    // than plateau — eight agents with no reviewer to read them cost 12% of
+    // the line, because agents draw the budget that Review runs on.
+    //
+    // This is the whole reason the pool exists. Without it, free capacity is
+    // free, and the correct play is to take all of it.
+    const eightAgents = shipped(BASELINE, 0.4, { implement: 8 })
+    expect(eightAgents).toBeLessThan(base)
+  })
+
+  it('the fleet has a right size, and it is not the largest one', () => {
+    // A hump rather than a plateau. Doubling a fleet that was paying costs
+    // throughput, so "buy more doing" is punished rather than merely wasted —
+    // and the player has to find a ratio instead of a maximum.
+    const four = shipped(hired({ review: 1 }), 1, { implement: 4 })
+    const eight = shipped(hired({ review: 1 }), 0.5, { implement: 8 })
+    expect(four).toBeGreaterThan(eight)
+  })
+
+  it('hiring humans never starves the line, however many', () => {
+    // Humans supply attention; agents draw it. If hiring a human could starve
+    // Review, the pool would be punishing the one move the milestone spent two
+    // slices teaching the player to make.
+    const staffed = hired({ review: 2, implement: 2 })
+    expect(shipped(staffed, 0.75)).toBeGreaterThan(shipped(hired({ review: 1 }), 0.5))
   })
 })
 

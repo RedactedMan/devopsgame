@@ -4,6 +4,7 @@ import { detachItem, inFlightItems, locateItem } from '../state.js'
 import { createItem } from '../items.js'
 import type { StaleChoice } from '../commands.js'
 import type { SimEvent } from '../events.js'
+import { spendAttention } from './attention.js'
 
 /**
  * Drift — the mechanic the whole game exists to make visible.
@@ -96,6 +97,22 @@ export function resolveStale(
   if (!item || !item.stale) return
 
   if (choice === 'rebase') {
+    // Rebasing is a judgment call and is charged for as one. When the budget
+    // will not cover it the rebase is refused — and abandon and ship-anyway are
+    // not, so the line can never deadlock on an empty pool. Running out of
+    // attention costs you the good option and leaves you the two bad ones,
+    // which is the lesson rather than a wall.
+    const cost = state.tuning.attention.rebaseCost
+    if (!spendAttention(state, cost)) {
+      events.push({
+        kind: 'attentionExhausted',
+        wanted: 'rebase',
+        cost,
+        remaining: state.attention.remaining,
+      })
+      return
+    }
+
     // Catch the branch up to trunk. Cheaper than starting over, but the
     // re-spend is real and it lands on top of whatever is left.
     const respend = state.tuning.drift.rebaseWorkFraction * item.originalSize

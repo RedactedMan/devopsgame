@@ -192,7 +192,51 @@ assert, per plan §5:
    materially more after the constraint is unblocked than before it. If the
    pool flattens §3's 2.2% → 14.5%, the pool is wrong, not the finding.
 
-**Step 4 — the screen.** An attention meter that reads as a budget rather than a
+### Swept, and it does better than plateau
+
+`perHuman 1.6 · perAgent 0.85 · coordination 0.02 · reviewCost 1 · rebaseCost 2`,
+8 seeds × 4000 ticks, each row at its own best WIP setting:
+
+```
+                    config   best    at  vs base
+           starting roster    165  0.4x     0.0%
+  +2 agents, no human hire    168  0.4x     1.7%
+  +4 agents, no human hire    168  0.4x     1.7%
+  +8 agents, no human hire    145  0.4x   -12.4%
+           +1 human review    212  0.5x    28.3%
+       +1 human, +2 agents    231 0.75x    39.5%
+       +1 human, +4 agents    234    1x    41.4%
+       +1 human, +6 agents    230 0.75x    39.2%
+       +1 human, +8 agents    206  0.5x    24.6%
+       +2 human, +4 agents    247    1x    49.4%
+       +2 human, +8 agents    219  0.5x    32.4%
+```
+
+Both targets hold, and the first one holds harder than it was asked to.
+**Eight agents with nobody to review them are worth −12.4%** — not a plateau, a
+loss. Free capacity that draws on the budget Review runs on is worse than no
+capacity at all, which is the sharpest form the design's currency rule could
+take.
+
+And it is a **hump rather than a ceiling**. The same fleet is worth +41.4% after
+one human hire and +24.6% at twice the size, so the sixth agent pays and the
+eighth costs. The best position on the board is `+2 human, +4 agents` at +49.4%
+— **a ratio, not a maximum of either**, which is the decision the slice exists
+to create. Nobody can read it off a single axis.
+
+The first tuning attempt is worth recording because it failed in a way that
+would have been expensive to find later. At `perHuman 4 · perAgent 3 ·
+coordination 0.2` the pool did **nothing at all** across every realistic roster
+— supply 8 to 52 against a demand of about 5 — and then fell off a cliff to
+shipping *zero* on a large fleet, because the quadratic coordination term drove
+supply negative. A mechanic that is invisible until it is fatal is not a
+mechanic. Two fixes: put supply and demand on the same order so the meter moves
+where the player can see it, and floor the pool at one review so a drowned line
+crawls instead of stopping. A player cannot tell a mechanic they triggered from
+an application that has hung, and there was no way back from it — rebasing costs
+attention too.
+
+**Step 4 — the screen.** *(next)* An attention meter that reads as a budget rather than a
 score, the roster showing kind, and the refusal to staff Review with an agent
 explained where the player tries it rather than in a codex.
 

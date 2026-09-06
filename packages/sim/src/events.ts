@@ -23,5 +23,11 @@ export type SimEvent =
    * two currencies reads as a broken button.
    */
   | { kind: 'staffingRefused'; station: StationId; workerKind: WorkerKind; why: 'agentsNotAllowed' }
+  | { kind: 'attentionReplenished'; to: number }
+  /**
+   * Judgment the player could not pay for. The most important thing the pool
+   * can say, because an empty budget looks exactly like an idle station.
+   */
+  | { kind: 'attentionExhausted'; wanted: 'review' | 'rebase'; cost: number; remaining: number }
   /** The answer the player found has expired. The most important event in M1. */
   | { kind: 'constraintMoved'; from: StationId | null; to: StationId }
