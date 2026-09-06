@@ -159,9 +159,11 @@ golden replay is unaffected because nothing in `fingerprint()` moves.
   in-flight item.
 
 **Acceptance**: a playtester who has never been told about areas can say why one
-item is drifting faster than another sitting beside it. **Not yet played.** The
-build is up and looked at, and the mechanical half is under test, but the
-sentence above is a claim about a person and only a person can settle it.
+item is drifting faster than another sitting beside it. **Played on 2026-09-05:
+passed.** Unlike M0's gate and slice 1's, this one cost nothing — no defect came
+back with it. Worth noting because the three before it all did, and the reason
+is probably that this slice only ever *said* things the sim already knew, rather
+than teaching it anything new to say.
 
 ### As built
 
