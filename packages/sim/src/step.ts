@@ -3,12 +3,14 @@ import type { Command } from './commands.js'
 import type { SimEvent } from './events.js'
 import { cloneState } from './init.js'
 import type { GameState } from './state.js'
+import { replenishAttention } from './systems/attention.js'
 import { resolveStale, updateDrift } from './systems/drift.js'
 import { sampleMetrics } from './systems/metrics.js'
 import { arrivals, pull } from './systems/routing.js'
 import { advanceService, startService } from './systems/service.js'
 import {
   applyPendingMoves,
+  hire,
   requestMove,
   updateConstraint,
   updateUtilisation,
@@ -30,6 +32,9 @@ export function step(state: GameState, commands: readonly Command[] = []): StepR
   applyCommands(s, commands, events)
 
   s.tick += 1
+  // Before anything can spend it. The budget does not accumulate, so whatever
+  // last shift did not use is gone at this line.
+  replenishAttention(s, events)
   arrivals(s, events)
   updateDrift(s, events)
   advanceService(s, events)
@@ -65,7 +70,10 @@ function applyCommands(state: GameState, commands: readonly Command[], events: S
       case 'assignWorker':
         // Only ever a request. `applyPendingMoves` decides when it lands, so
         // there is one code path whether the worker is idle or mid-item.
-        requestMove(state, command.workerId, command.to)
+        requestMove(state, command.workerId, command.to, events)
+        break
+      case 'hire':
+        hire(state, command.station, command.workerKind, events)
         break
     }
   }

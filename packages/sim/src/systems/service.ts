@@ -2,6 +2,7 @@ import { REWORK_STATION, STATION_IDS, type StationId, type Tuning } from '@flow/
 import type { GameState, WorkItem } from '../state.js'
 import type { SimEvent } from '../events.js'
 import { reworkProbability, serviceMultiplier } from './drift.js'
+import { costsAttention, reviewCostOf, spendAttention } from './attention.js'
 import { nextFloat } from '../rng.js'
 
 /**
@@ -92,12 +93,29 @@ export function startService(state: GameState, events: SimEvent[]): void {
         !station.inService.some((slot) => slot.workerId === w.id),
     )
 
+    // Judgment is paid for out of the shift's budget, and Review is where
+    // judgment happens. A station that cannot afford to start is not idle for
+    // want of people — it is idle for want of attention, and the two look
+    // identical on a board that only counts heads.
+    const charged = costsAttention(state, stationId)
+    const cost = charged ? reviewCostOf(state) : 0
+
     while (free.length > 0) {
       const at = station.queue.findIndex((id) => {
         const item = state.items.find((it) => it.id === id)
         return item !== undefined && !item.stale
       })
       if (at < 0) break
+
+      if (charged && !spendAttention(state, cost)) {
+        events.push({
+          kind: 'attentionExhausted',
+          wanted: 'review',
+          cost,
+          remaining: state.attention.remaining,
+        })
+        break
+      }
 
       const itemId = station.queue[at] as string
       station.queue.splice(at, 1)

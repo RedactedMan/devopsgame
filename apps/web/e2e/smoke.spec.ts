@@ -122,6 +122,53 @@ test('names the constraint and lets a worker be moved to it', async ({ page }) =
   expect(problems, problems.join('\n')).toEqual([])
 })
 
+test('will not staff Review with an agent, and says so where you try it', async ({ page }) => {
+  // The one rule that separates the game's two currencies, and the unit suite
+  // cannot see whether the panel actually offers it. Review is the constraint
+  // and the one station a machine may not stand at; if the button is there, or
+  // the refusal is silent, the whole lesson is unreachable.
+  const problems = watchForErrors(page)
+  await page.goto('/')
+  await expect(page.locator('.board canvas')).toBeVisible()
+
+  const row = (name: string) => page.locator('.staff').filter({ hasText: name })
+
+  await expect(row('Review').getByRole('button', { name: '+ person' })).toBeVisible()
+  await expect(row('Review').getByRole('button', { name: '+ agent' })).toHaveCount(0)
+  await expect(row('Review')).toContainText(/no agents here/i)
+
+  // Everywhere else takes one, and it lands as capacity.
+  await expect(row('Implement').getByRole('button', { name: '+ agent' })).toBeVisible()
+  const before = await row('Implement').locator('.chip--agent').count()
+  await row('Implement').getByRole('button', { name: '+ agent' }).click()
+  await expect(row('Implement').locator('.chip--agent')).toHaveCount(before + 1)
+
+  expect(problems, problems.join('\n')).toEqual([])
+})
+
+test('a fleet nobody can review says the roster is the problem', async ({ page }) => {
+  // Attention is the only scarcity in M1 and it lives entirely in the DOM.
+  // Empty and underwater are different problems with different fixes, so the
+  // panel has to distinguish them — this drives the second one.
+  const problems = watchForErrors(page)
+  await page.goto('/')
+  await expect(page.locator('.board canvas')).toBeVisible()
+
+  const attention = page.locator('.attention')
+  await expect(attention).not.toHaveClass(/attention--underwater/)
+  await expect(attention).toContainText(/does not carry over/i)
+
+  const implement = page.locator('.staff').filter({ hasText: 'Implement' })
+  for (let i = 0; i < 20; i++) {
+    await implement.getByRole('button', { name: '+ agent' }).click()
+  }
+
+  await expect(attention).toHaveClass(/attention--underwater/)
+  await expect(attention).toContainText(/produces more than it can read/i)
+
+  expect(problems, problems.join('\n')).toEqual([])
+})
+
 test('a stalled line says so instead of reporting a good lead time', async ({ page }) => {
   // The alarm is the answer to a real playtest failure: the dashboard reported
   // 39.2h lead time while nothing had shipped for nine days. Drive the line

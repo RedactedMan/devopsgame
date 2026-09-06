@@ -18,6 +18,21 @@ const StationTuning = z.object({
   ticksPerUnit: z.number().nonnegative(),
   /** Baseline chance a completed item is sent back for rework, before drift. */
   reworkBase: z.number().min(0).max(1),
+  /**
+   * Whether an agent may stand here.
+   *
+   * Review is false, and the design doc (§3.3) does *not* say agents cannot
+   * review — it says they can, and that the signal they produce is unreliable.
+   * That is M5's mechanic. Until it exists, an agent reviewer would be a
+   * strictly better human: same output, no attention cost. Every lesson in the
+   * game inverts. So M1 bars them outright and M5 lets them in along with the
+   * reason they should not be trusted.
+   *
+   * This one flag is what separates the design's two currencies. Measured:
+   * sixty-four workers everywhere agents may stand are worth +1.9%, and one
+   * human at Review is worth +26.6% — see docs/HIRING_AND_ATTENTION.md §3.
+   */
+  agentsAllowed: z.boolean(),
 })
 
 export const TuningSchema = z.object({
@@ -90,6 +105,31 @@ export const TuningSchema = z.object({
     policySlackBelow: z.number().min(0).max(1),
   }),
 
+  /**
+   * The judgment budget. See `systems/attention.ts` and
+   * docs/HIRING_AND_ATTENTION.md §4.
+   */
+  attention: z.object({
+    /** Supplied per shift by each human on the roster. */
+    perHuman: z.number().nonnegative(),
+    /** Drawn per shift by each agent, because someone has to read its output. */
+    perAgent: z.number().nonnegative(),
+    /**
+     * Drawn per communication channel per shift — `n(n-1)/2` of them on a team
+     * of n. Brooks's Law as a term rather than as a flavour text.
+     */
+    coordination: z.number().nonnegative(),
+    /** Charged when Review picks up an item. Unaffordable means Review stalls. */
+    reviewCost: z.number().nonnegative(),
+    /**
+     * Charged for a rebase. When it cannot be paid the rebase is refused and
+     * abandon and ship-anyway are not — running out of judgment costs you the
+     * good option and leaves you the bad ones, which is the lesson rather than
+     * a deadlock.
+     */
+    rebaseCost: z.number().nonnegative(),
+  }),
+
   /** How often the metrics sampler appends a point to the chart series. */
   sampleEveryTicks: z.number().int().positive(),
 })
@@ -115,11 +155,11 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
   stations: {
     // Review is the bottleneck by construction: one server, and only humans
     // can staff it. That is the constraint the whole campaign is built around.
-    spec: { servers: 1, defaultWipLimit: 4, baseTicks: 4, ticksPerUnit: 1, reworkBase: 0 },
-    implement: { servers: 4, defaultWipLimit: 8, baseTicks: 8, ticksPerUnit: 6, reworkBase: 0 },
-    review: { servers: 1, defaultWipLimit: 4, baseTicks: 4, ticksPerUnit: 1.5, reworkBase: 0.05 },
-    ci: { servers: 2, defaultWipLimit: 6, baseTicks: 12, ticksPerUnit: 0, reworkBase: 0.08 },
-    deploy: { servers: 1, defaultWipLimit: 4, baseTicks: 5, ticksPerUnit: 0, reworkBase: 0 },
+    spec: { servers: 1, defaultWipLimit: 4, baseTicks: 4, ticksPerUnit: 1, reworkBase: 0, agentsAllowed: true },
+    implement: { servers: 4, defaultWipLimit: 8, baseTicks: 8, ticksPerUnit: 6, reworkBase: 0, agentsAllowed: true },
+    review: { servers: 1, defaultWipLimit: 4, baseTicks: 4, ticksPerUnit: 1.5, reworkBase: 0.05, agentsAllowed: false },
+    ci: { servers: 2, defaultWipLimit: 6, baseTicks: 12, ticksPerUnit: 0, reworkBase: 0.08, agentsAllowed: true },
+    deploy: { servers: 1, defaultWipLimit: 4, baseTicks: 5, ticksPerUnit: 0, reworkBase: 0, agentsAllowed: true },
   },
 
   constraint: {
@@ -143,6 +183,19 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
     qualityPenaltyAtFullDrift: 0.35,
     rebaseWorkFraction: 0.3,
     reworkSizeFraction: 0.35,
+  },
+
+  // Shipped deliberately slack: at the starting roster this budget cannot be
+  // exhausted, so the golden replay does not move and the pool binds only after
+  // the player has hired. The feedback has to be causal — *your hire did this* —
+  // and a meter that was already tight on turn one teaches the opposite.
+  // Swept to these values; see docs/HIRING_AND_ATTENTION.md §5 step 3.
+  attention: {
+    perHuman: 1.6,
+    perAgent: 0.85,
+    coordination: 0.02,
+    reviewCost: 1,
+    rebaseCost: 2,
   },
 
   sampleEveryTicks: 10,

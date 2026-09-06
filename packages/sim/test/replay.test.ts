@@ -20,6 +20,36 @@ const REPLAY: Replay = {
 const GOLDEN = 'bbf2d633'
 const TICKS = 1500
 
+/**
+ * A second script, for the half of the game the first one cannot see.
+ *
+ * `REPLAY` above predates `hire` and never leaves the starting roster, which is
+ * exactly why it proved the attention pool was a no-op — and exactly why it
+ * pins nothing about what happens after the player spends. Every balance
+ * number in docs/HIRING_AND_ATTENTION.md lives past the point this run stops
+ * looking, and the tests that assert them are sweeps over a dozen seeds: they
+ * catch a lesson being lost and would not notice a 25% number becoming a 20%
+ * one.
+ *
+ * So: hire the human at the constraint, hire agents where agents may stand,
+ * and retune afterwards, which is the whole of the slice in five commands.
+ */
+const STAFFED: Replay = {
+  seed: 20260830,
+  commands: [
+    { tick: 30, command: { kind: 'setWipLimit', station: 'implement', limit: 3 } },
+    { tick: 30, command: { kind: 'setWipLimit', station: 'review', limit: 2 } },
+    { tick: 300, command: { kind: 'hire', station: 'review', workerKind: 'human' } },
+    { tick: 320, command: { kind: 'hire', station: 'implement', workerKind: 'agent' } },
+    { tick: 340, command: { kind: 'hire', station: 'implement', workerKind: 'agent' } },
+    // The retune, which is worth more than a second hire would be.
+    { tick: 700, command: { kind: 'setWipLimit', station: 'implement', limit: 6 } },
+    { tick: 700, command: { kind: 'setWipLimit', station: 'review', limit: 4 } },
+  ],
+}
+
+const GOLDEN_STAFFED = '3a359b81'
+
 describe('replay', () => {
   it('reproduces a run exactly from seed and command log', () => {
     expect(fingerprint(runReplay(REPLAY, TICKS))).toBe(fingerprint(runReplay(REPLAY, TICKS)))
@@ -27,6 +57,16 @@ describe('replay', () => {
 
   it('matches the golden fingerprint', () => {
     expect(fingerprint(runReplay(REPLAY, TICKS))).toBe(GOLDEN)
+  })
+
+  it('matches the golden fingerprint for a run that hires', () => {
+    expect(fingerprint(runReplay(STAFFED, TICKS))).toBe(GOLDEN_STAFFED)
+  })
+
+  it('is actually a different run to the one that never staffs up', () => {
+    // Guard against the second golden quietly becoming a copy of the first if
+    // someone edits the command log down to nothing.
+    expect(fingerprint(runReplay(STAFFED, TICKS))).not.toBe(GOLDEN)
   })
 
   it('notices when the command log changes', () => {

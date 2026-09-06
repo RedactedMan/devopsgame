@@ -36,8 +36,16 @@ playable on its own:
    chip per area it touches, the board has a contention strip, hovering an item
    dims everything it is *not* fighting, and the stale list names the cause
    beside the fact.
-3. **Hire and the attention pool** — next. Human vs. agent workers, and the
-   scarcity that bounds hiring.
+3. **Hire and the attention pool** — built. Human vs. agent workers, and the
+   scarcity that bounds them. Measured before building, and the measurement
+   moved the plan for the fourth time on this project: the sim already bounds
+   hiring on its own, so the pool is there to price the *human* hire, which is
+   the only one that can touch the constraint. Eight agents nobody can review
+   are worth **−12%**; the same eight after one human hire are worth **+25%**;
+   the best board position is two humans and four agents. A ratio, not a
+   maximum of either. Its playtest gate — *can someone told nothing about
+   worker kinds work out why their agents are doing nothing?* — has not been
+   run yet.
 4. **Save / load** from the command log.
 5. **Board building and placement.**
 
@@ -45,6 +53,7 @@ playable on its own:
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) — architecture, milestones, testing
 - [The Moving Constraint](docs/CONSTRAINT_AND_CAPACITY.md) — M1's headline mechanic, measured
 - [Dispatch and Area Collisions](docs/DISPATCH_AND_COLLISIONS.md) — what M1 gets, and what waits for M2
+- [Hiring and the Attention Pool](docs/HIRING_AND_ATTENTION.md) — why 64 extra workers are worth 2% and one is worth 27%
 
 ## Running it
 

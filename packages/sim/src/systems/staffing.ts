@@ -1,5 +1,5 @@
 import { STATION_IDS, type StationId } from '@flow/content'
-import type { GameState, WorkerId } from '../state.js'
+import type { GameState, WorkerId, WorkerKind } from '../state.js'
 import { serversAt, stationOccupancy, workerIsBusy } from '../state.js'
 import type { SimEvent } from '../events.js'
 
@@ -43,11 +43,65 @@ export function applyPendingMoves(state: GameState, events: SimEvent[]): void {
   }
 }
 
+/**
+ * Whether this kind of worker may stand at this station.
+ *
+ * One flag, read from tuning, and it is the whole of the design's currency
+ * split in M1: agents are cheap, parallel, and barred from the one station that
+ * is the constraint. Measured at 14:1 — docs/HIRING_AND_ATTENTION.md §3.
+ */
+export function mayStaff(state: GameState, workerKind: WorkerKind, station: StationId): boolean {
+  return workerKind === 'human' || state.tuning.stations[station].agentsAllowed
+}
+
 /** Queue a move. It lands this tick if the worker is idle, and when they finish if not. */
-export function requestMove(state: GameState, workerId: WorkerId, to: StationId): void {
+export function requestMove(
+  state: GameState,
+  workerId: WorkerId,
+  to: StationId,
+  events: SimEvent[],
+): void {
   const worker = state.workers.find((w) => w.id === workerId)
   if (!worker) return
+  if (!mayStaff(state, worker.kind, to)) {
+    events.push({ kind: 'staffingRefused', station: to, workerKind: worker.kind, why: 'agentsNotAllowed' })
+    return
+  }
   worker.pendingStation = worker.station === to ? null : to
+}
+
+/**
+ * Add a worker to the roster.
+ *
+ * `nextWorkerSerial` has been on `GameState` since slice 1 for exactly this: a
+ * replay that hires must produce the same worker ids on the way through, or a
+ * later `assignWorker` in the same log addresses somebody else.
+ *
+ * There is no cost here yet. That is deliberate and temporary — free hiring
+ * solves this game in about four moves (docs/HIRING_AND_ATTENTION.md §4), which
+ * is what the attention pool is for. This step is the mechanic; the price is
+ * the next one.
+ */
+export function hire(
+  state: GameState,
+  station: StationId,
+  workerKind: WorkerKind,
+  events: SimEvent[],
+): void {
+  if (!mayStaff(state, workerKind, station)) {
+    events.push({ kind: 'staffingRefused', station, workerKind, why: 'agentsNotAllowed' })
+    return
+  }
+
+  const worker = {
+    id: `W${state.nextWorkerSerial}`,
+    kind: workerKind,
+    station,
+    pendingStation: null,
+  }
+  state.workers.push(worker)
+  state.nextWorkerSerial++
+  events.push({ kind: 'workerHired', workerId: worker.id, at: station, workerKind })
 }
 
 /**

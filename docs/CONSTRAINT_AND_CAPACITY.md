@@ -117,7 +117,9 @@ failed:
 > never becomes free, so the move waits on the player's stale decision. That is
 > "stale work holds its server" arriving somewhere new.
 >
-> **Not built:** `hire`. See §8 for the cost of deferring it, which is real.
+> **Built in slice 3:** `{ kind: 'hire'; station: StationId; workerKind: WorkerKind }`
+> — `workerKind` rather than `kind`, for the same discriminant collision that
+> renamed `reassign`. See [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md).
 
 Reassignment matters more than hiring. Moving a worker is free capacity
 relocation and is the move a player should reach for *before* spending — which
@@ -206,12 +208,15 @@ than specified.
    stops paying. Asserted as "the second move gains less than half of what the
    first did" — flat would be the lesson too; what must not happen is the second
    move paying like the first.
-3. ⚠️ **The optimum moves.** Asserted, but **weakly**: after `ci → review` the
-   optimum shifts 0.4× → 0.5× and is worth +2.3%, against the baseline's +0.2%
-   for the same change. The strong version — the optimum walking to 0.75× — needs
-   `hire`, because a zero-sum move does not grow the capacity that lets the line
-   hold more work. The test says so in a comment. **Strengthening this assertion
-   is the acceptance criterion for the slice that adds hiring.**
+3. ✅ **The optimum moves.** Was asserted weakly and now is not. The zero-sum
+   version still only shifts 0.4× → 0.5× for +2.3%; with `hire` the same axis
+   walks 0.5× → 0.75× → 1.5×, and **0.4× — the best setting in the game at the
+   starting roster — becomes the worst on the board once staffed up**, 183
+   against 239. Asserted at a 15% floor on the reversal in `staffing.test.ts`,
+   alongside two more the measurement turned up: eight workers where agents may
+   stand cannot substitute for one where they may not, and the same eight are
+   worth 3× more once a human has unblocked them. See
+   [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §2–§3.
 4. ✅ **Retuning beats the second hire** at `+1 review`. Holds strongly for
    reallocation, and for a blunter reason than for hiring: the second move is
    *negative*, so retuning does not have to be good to beat it.
@@ -258,13 +263,20 @@ delivers **3 only weakly**: after `ci → review` the WIP optimum shifts from
 is mechanical — total capacity did not grow, so the line cannot absorb much more
 work in flight.
 
-**So target 3 is the argument for `hire`,** and it is the reason the milestone is
-not finished without one. It is deliberately not in the first slice: a head-count
-currency invented before the economy exists is one that gets deleted when money
-arrives in M2, and §5's own point is that reassignment is the move that makes
-diagnosis the valuable skill. The assertion in `staffing.test.ts` is written at
-the strength reallocation actually supports, with a comment saying why, so that
-strengthening it is a deliberate act rather than an accident.
+**So target 3 was the argument for `hire`,** and it is the reason the milestone
+was not finished without one. It was deliberately not in the first slice: §5's
+own point is that reassignment is the move that makes diagnosis the valuable
+skill, and the assertion in `staffing.test.ts` was written at the strength
+reallocation actually supports, with a comment saying why, so that strengthening
+it would be a deliberate act rather than an accident.
+
+**Settled in slice 3.** `hire` landed and target 3 is asserted in its strong
+form. The worry that a head-count currency invented before the economy would be
+deleted when money arrives turned out to be the wrong worry: what bounds hiring
+in M1 is not a currency at all but *where a worker may stand*, which is a rule
+about kinds rather than about price, and M2's economy re-prices it without
+replacing it. See [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §3, and
+§4 for the one point of §5 above that it supersedes.
 
 ## 9. Why this and not dispatch
 

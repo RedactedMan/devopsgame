@@ -149,6 +149,79 @@ body {
   font-size: 11px;
 }
 
+/* The half of the diagnosis the player cannot reach on their own: a fleet that
+   looks useless is usually a fleet that is blocked. */
+.constraint__aside {
+  margin: 6px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--edge);
+  font-size: 10px;
+  line-height: 1.4;
+  color: #93b6d6;
+}
+
+/* Attention ----------------------------------------------------------------- */
+
+/* The only scarcity in M1, so it sits above the roster rather than beside it:
+   every staffing decision below is spending or supplying this. */
+.attention {
+  border: 1px solid var(--edge);
+  border-left: 3px solid var(--flow);
+  border-radius: 4px;
+  padding: 8px 9px;
+  margin-bottom: 10px;
+}
+
+/* Empty and underwater are different problems with different fixes, so they
+   are different colours. */
+.attention--underwater {
+  border-left-color: var(--stale);
+  background: color-mix(in srgb, var(--stale) 12%, transparent);
+}
+
+.attention__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--flow);
+}
+
+.attention--underwater .attention__head {
+  color: #ffb59b;
+}
+
+.attention__num {
+  font-weight: 500;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.attention__bar {
+  height: 4px;
+  border-radius: 2px;
+  background: #232c2e;
+  margin: 6px 0;
+  overflow: hidden;
+}
+
+.attention__bar span {
+  display: block;
+  height: 100%;
+  background: var(--flow);
+}
+
+.attention--underwater .attention__bar span {
+  background: var(--stale);
+}
+
+.attention__body {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
 /* Staffing ------------------------------------------------------------------ */
 
 .staff {
@@ -249,6 +322,57 @@ body {
   border-style: dashed;
   border-color: var(--flow);
   color: var(--flow);
+}
+
+/* An agent reads as a different kind of thing to a person, because the whole
+   staffing decision is which of the two you are adding. */
+.chip--agent {
+  border-color: #4a6b8a;
+  color: #93b6d6;
+}
+
+.chip--agent.chip--busy {
+  background: #1e2a35;
+  color: #cfe2f2;
+}
+
+.staff__hire {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+/* Deliberately not a `.chip`. A chip is a person or an agent standing at a
+   station; these are controls. Sharing the class made "how many workers are at
+   Review" unanswerable from the DOM, which broke a test that was right. */
+.hire {
+  background: transparent;
+  color: var(--muted);
+  border: 1px dashed var(--edge);
+  border-radius: 3px;
+  padding: 2px 5px;
+  font: 500 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+  opacity: 0.75;
+}
+
+.hire:hover {
+  border-color: var(--flow);
+  opacity: 1;
+}
+
+.hire:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 1px;
+}
+
+/* Review's missing agent button, said where the player looks for it. */
+.staff__barred {
+  color: var(--muted);
+  font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-style: italic;
+  opacity: 0.7;
 }
 
 .controls {

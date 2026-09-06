@@ -1,5 +1,6 @@
 import { STATION_IDS, DEFAULT_TUNING, type StationId, type Tuning } from '@flow/content'
 import { makeRng, nextExponential } from './rng.js'
+import { attentionFloor, attentionSupply } from './systems/attention.js'
 import type { GameState, Station, Worker } from './state.js'
 
 export type InitOptions = {
@@ -12,6 +13,16 @@ export type InitOptions = {
    * The sweeps use it to measure a staffing decision without needing a player.
    */
   staffing?: Partial<Record<StationId, number>>
+  /**
+   * Agents on the roster at t=0, on top of `staffing`, which is humans.
+   *
+   * Same purpose: a sweep needs to measure a fleet without playing one into
+   * existence. Agents requested at a station that will not take them are
+   * dropped rather than silently converted to humans — a sweep that quietly
+   * measured something other than what it asked for would be worse than one
+   * that measures nothing.
+   */
+  agents?: Partial<Record<StationId, number>>
 }
 
 export function initState(options: InitOptions): GameState {
@@ -47,8 +58,15 @@ export function initState(options: InitOptions): GameState {
       })
     }
   }
+  for (const id of STATION_IDS) {
+    if (!tuning.stations[id].agentsAllowed) continue
+    const count = options.agents?.[id] ?? 0
+    for (let i = 0; i < count; i++) {
+      workers.push({ id: `W${workers.length + 1}`, kind: 'agent', station: id, pendingStation: null })
+    }
+  }
 
-  return {
+  const state: GameState = {
     tick: 0,
     rng,
     tuning,
@@ -66,6 +84,11 @@ export function initState(options: InitOptions): GameState {
     constraintMoves: 0,
     constraintChallenger: null,
     constraintChallengeSince: 0,
+    // Set just below, once the roster exists to be counted. `step` increments
+    // the tick before checking the shift boundary, so tick zero never triggers
+    // a replenish and the opening shift has to be filled here or Review starts
+    // the game unable to afford anything.
+    attention: { remaining: 0, perShift: 0 },
     items: [],
     metrics: {
       created: 0,
@@ -76,6 +99,10 @@ export function initState(options: InitOptions): GameState {
       samples: [],
     },
   }
+
+  const supply = Math.max(attentionFloor(state), attentionSupply(state))
+  state.attention = { remaining: supply, perShift: supply }
+  return state
 }
 
 /**
@@ -98,6 +125,7 @@ export function cloneState(state: GameState): GameState {
     constraintMoves: state.constraintMoves,
     constraintChallenger: state.constraintChallenger,
     constraintChallengeSince: state.constraintChallengeSince,
+    attention: { ...state.attention },
     stations: Object.fromEntries(
       STATION_IDS.map((id): [StationId, Station] => {
         const s = state.stations[id]

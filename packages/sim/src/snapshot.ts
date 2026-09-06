@@ -12,6 +12,7 @@ import type {
 import { inFlightItems, locateItem, serversAt, workerIsBusy } from './state.js'
 import { recentLeadTime } from './systems/metrics.js'
 import { constraintIsPolicy } from './systems/staffing.js'
+import { attentionSupply } from './systems/attention.js'
 
 /**
  * The view the renderer subscribes to.
@@ -77,6 +78,13 @@ export type SnapshotStation = {
    * and only the second one identifies a bottleneck.
    */
   utilisation: number
+  /**
+   * Whether an agent may stand here. False for exactly one station, and that
+   * station is the constraint — see docs/HIRING_AND_ATTENTION.md §3. The HUD
+   * needs it to explain the refusal where the player attempts it, rather than
+   * in a codex they will not read.
+   */
+  agentsAllowed: boolean
 }
 
 export type SnapshotWorker = {
@@ -121,6 +129,16 @@ export type Snapshot = {
   constraintMoves: number
   /** Every station has slack and work is still piling up: the WIP limits are the bottleneck. */
   constraintIsPolicy: boolean
+  /**
+   * The judgment budget for this shift.
+   *
+   * `supply` is the raw figure and may be **negative**, which is a different
+   * state from empty and has to read differently: an empty pool is a team that
+   * has spent its day, a negative one is a roster producing more than it can
+   * ever read. `perShift` is what the pool was actually filled to, floored at
+   * one review so a drowned line crawls rather than stopping.
+   */
+  attention: { remaining: number; perShift: number; supply: number }
   /**
    * Concurrent in-flight work per area of the codebase, every area in id order
    * including the cold ones.
@@ -200,6 +218,7 @@ export function snapshot(state: GameState): Snapshot {
         outbound: s.outbound.length,
         blocked: s.outbound.length > 0 && s.inService.length < servers,
         utilisation: s.utilisation,
+        agentsAllowed: state.tuning.stations[id].agentsAllowed,
       }
     }),
     items,
@@ -226,6 +245,7 @@ export function snapshot(state: GameState): Snapshot {
     constraintSinceTick: state.constraintSinceTick,
     constraintMoves: state.constraintMoves,
     constraintIsPolicy: constraintIsPolicy(state),
+    attention: { ...state.attention, supply: attentionSupply(state) },
     hotAreas: inFlightPerArea.map((inFlight, area) => ({ area, inFlight })),
   }
 }
