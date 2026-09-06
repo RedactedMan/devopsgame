@@ -128,8 +128,8 @@ about. Each slice is playable on its own.
 |---|---|---|
 | 1 | **The moving constraint** — the roster as first-class state, `assignWorker`, rolling utilisation, the constraint named on the board and in the panel, the policy-constraint case | **built**, merged to `main` |
 | 2 | **Area-collision legibility** — see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §4. `overlap` cached on the item, area chips, the contention strip, hover-to-see-who-you-are-fighting, and the cause beside the fact in the stale list | **built and played**, 2026-09-05 |
-| 3 | **Hire, and the attention pool** — see [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md). `hire`, agents barred from Review, and attention as a per-shift judgment budget. Measured first, and the measurement moved the plan again (§3) | **built**, `m1/hire-and-attention` |
-| 3b | **Context decay** — split out of slice 3, which already had three mechanics and this one had no measurement behind it. See [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §6 | planned |
+| 3 | **Hire, and the attention pool** — see [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md). `hire`, agents barred from Review, and attention as a per-shift judgment budget. Measured first, and the measurement moved the plan again (§3) | **built**, `m1/hire-and-attention` — acceptance §6, not yet played |
+| 3b | **Context decay** — split out of slice 3, which already had three mechanics and this one had no measurement behind it. See [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §7 | planned |
 | 4 | **Save / load** from the command log — already a complete save file by construction; nothing but plumbing and a file picker | planned |
 | 5 | **Board building and placement** — the last of M1's original scope, and the only part that changes the shape of the pipeline rather than what runs through it | planned |
 

@@ -149,6 +149,17 @@ body {
   font-size: 11px;
 }
 
+/* The half of the diagnosis the player cannot reach on their own: a fleet that
+   looks useless is usually a fleet that is blocked. */
+.constraint__aside {
+  margin: 6px 0 0;
+  padding-top: 6px;
+  border-top: 1px solid var(--edge);
+  font-size: 10px;
+  line-height: 1.4;
+  color: #93b6d6;
+}
+
 /* Attention ----------------------------------------------------------------- */
 
 /* The only scarcity in M1, so it sits above the roster rather than beside it:

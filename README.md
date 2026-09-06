@@ -43,7 +43,9 @@ playable on its own:
    the only one that can touch the constraint. Eight agents nobody can review
    are worth **−12%**; the same eight after one human hire are worth **+25%**;
    the best board position is two humans and four agents. A ratio, not a
-   maximum of either.
+   maximum of either. Its playtest gate — *can someone told nothing about
+   worker kinds work out why their agents are doing nothing?* — has not been
+   run yet.
 4. **Save / load** from the command log.
 5. **Board building and placement.**
 

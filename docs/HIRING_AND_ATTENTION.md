@@ -247,7 +247,32 @@ by changing who is on the line. Printing the remainder alone cannot tell them
 apart, and a player who read the second as the first would wait for a morning
 that never comes.
 
-## 6. Deferred, deliberately
+## 6. Acceptance
+
+Two halves, as with the slices before it.
+
+**Mechanical, and settled.** [CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md)
+§7 target 3 — *the WIP optimum moves* — asserted in its strong form rather than
+the weak one reallocation could support. Plus the two the measurement turned up:
+a fleet nobody can review is worth less than no fleet at all, and the same fleet
+is worth three times more once a human has unblocked it. All in
+`staffing.test.ts`; the mechanism underneath them is in `attention.test.ts`.
+
+**Played, and not yet run.** *A playtester who is told nothing about worker
+kinds hires agents first, watches them do nothing, and can say why.*
+
+That is deliberately the hardest of the three gates so far, because it is the
+one this slice is most likely to fail. The failure mode is legible in the
+numbers: two agents with no human hire are worth +1.7%, which is inside seed
+noise, so a player who tries the cheap move first sees nothing happen and has
+every reason to conclude that agents are useless. They are not — they are
+queued behind a station they cannot staff, and are worth +41% the moment that
+station is relieved.
+
+The constraint panel says so when both conditions are true, which is the
+mitigation as built. Whether that is enough is exactly what the play is for.
+
+## 7. Deferred, deliberately
 
 **Context decay** (design §4.2) is specced as part of this slice in the
 implementation plan and is not in the build above. It is a fourth mechanic in a

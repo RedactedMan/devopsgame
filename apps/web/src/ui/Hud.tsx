@@ -358,6 +358,15 @@ function Constraint({ snap }: { snap: Snapshot }) {
   const moved = snap.constraintMoves > 0
   const fresh = moved && snap.tick - snap.constraintSinceTick < CONSTRAINT_NEWS_TICKS
 
+  // The constraint is a station agents may not stand at, and the player has
+  // agents. Without this line the game is very hard to read correctly: a
+  // player who hires two agents sees a gain inside the noise, concludes that
+  // agents do nothing, and never finds out they were merely queued behind a
+  // station they cannot help. The panel knows both halves; it should say so.
+  const here = snap.stations.find((st) => st.id === snap.constraint)
+  const agents = snap.workers.filter((w) => w.kind === 'agent').length
+  const agentsCannotHelp = here !== undefined && !here.agentsAllowed && agents > 0
+
   return (
     <div className={fresh ? 'constraint constraint--news' : 'constraint'} role="status">
       <div className="constraint__head">
@@ -369,6 +378,13 @@ function Constraint({ snap }: { snap: Snapshot }) {
           ? 'The bottleneck is not where it was. Whatever was holding the line back before is not what is holding it back now.'
           : 'Capacity added anywhere else buys you almost nothing. This is the station the whole line runs at.'}
       </p>
+      {agentsCannotHelp && (
+        <p className="constraint__aside">
+          None of your {agents} {agents === 1 ? 'agent' : 'agents'} can stand here. They are not
+          slow — they are queued behind a station they cannot staff, and they are drawing on the
+          attention it runs on the whole time they wait.
+        </p>
+      )}
     </div>
   )
 }
