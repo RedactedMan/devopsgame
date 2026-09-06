@@ -160,10 +160,9 @@ golden replay is unaffected because nothing in `fingerprint()` moves.
 
 **Acceptance**: a playtester who has never been told about areas can say why one
 item is drifting faster than another sitting beside it. **Played on 2026-09-05:
-passed.** Unlike M0's gate and slice 1's, this one cost nothing — no defect came
-back with it. Worth noting because the three before it all did, and the reason
-is probably that this slice only ever *said* things the sim already knew, rather
-than teaching it anything new to say.
+passed.** No findings were recorded against it; the three gates before this one
+each returned a defect, so if anything did come up in the play it is worth
+adding here rather than leaving this line to imply otherwise.
 
 ### As built
 
