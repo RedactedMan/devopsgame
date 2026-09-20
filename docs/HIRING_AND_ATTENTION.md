@@ -376,7 +376,7 @@ agent rows from the first tuning's, which the retune preserved.
     +2 everywhere (sprawl)     19   23.09    240  0.75x     0.079         226
              +3 everywhere     24   27.20    243     1x     0.099          35
              +5 everywhere     34   34.70    242     1x     0.141           –
-   +8 agents, nobody to review 17    4.09    145   0.4x         –         145
+       +8 agents, no reviewer     17    4.09    145   0.4x         –         145
        +1 human, +4 agents     14    9.93    232  0.75x         –         234
        +1 human, +8 agents     18    5.13    183   0.5x         –         206
        +2 human, +4 agents     15   10.95    245     1x         –         247

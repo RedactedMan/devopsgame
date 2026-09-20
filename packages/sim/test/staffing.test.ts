@@ -291,7 +291,8 @@ describe('the lessons', () => {
     // The converse, without which the above is only a claim that agents are
     // useless. They are not weak, they are blocked, and ordering is the whole
     // decision: the same four are worth ~3 items before the human hire and
-    // ~22 after it.
+    // ~16 after it. (~22 under the quadratic supply curve; the power law
+    // narrowed it, and the 3× margin below still clears by a factor of two.)
     const agentsAlone = shipped(BASELINE, 0.4, { implement: 4 }) - base
 
     const humanOnly = shipped(hired({ review: 1 }), 0.5)
