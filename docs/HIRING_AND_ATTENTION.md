@@ -305,6 +305,80 @@ less total effort. The quadratic term here is Brooks's, which was itself an
 argument from experience. So the sim is tuned to a defensible *curve* with a
 memorable *label*, and the label is doing rhetorical work the evidence does not.
 
+### Checked against the literature, and the shape does not survive
+
+The paragraph above was written before the six claims behind the formula had
+been checked. They were checked on 2026-09-20 — the full appraisal, claim by
+claim with verdicts and sources, is at
+<https://claude.ai/code/artifact/ce0492b6-ca71-4e42-add4-0f9553e2f959> — and
+the hedge turned out to be aimed at the wrong thing. The label is fine. It is
+the **shape** that is not supported.
+
+**What holds.** That per-person output falls as a team grows is one of the
+better-replicated results there is: Scholtes et al. 2016 and Gote et al. 2022
+on GitHub, Putnam's QSM database, a randomised Lego experiment (Staats, Milkman
+& Fox 2012: four people needed 54% more person-minutes than two for the same
+build). Concavity is safe.
+
+**What does not.** No observational dataset shows *total* output falling with
+headcount. The repository studies find output ∝ H^0.66–0.80 — sublinear, and
+still rising. QSM's 1,060-project comparison finds large teams *faster*, at
+three to four times the cost and two to three times the defect density.
+Gote et al. fitted the quadratic explicitly to test for an optimum: the H²
+term is significant on its own, and **loses significance in seven of eight
+productivity measures** once you control for the coordination structure it was
+standing in for. What survives is a constant elasticity — doubling the team
+costs each member 22–30% — and the measured coordination degree *saturates*
+above about fifty developers rather than growing like n−1 per person. Brooks's
+channel count is a model from experience; nobody has measured it and the one
+group that looked found it does not hold. The peak-then-collapse in the table
+above is Brooks's *transient* claim — adding people to a late project — written
+in as a steady state, and the transient itself has never been measured either.
+
+**The decision: adopt the power law.** The supply term becomes
+
+```
+supply_per_shift = perHuman · H^α − perAgent · A        α ≈ 0.7
+```
+
+with `perHuman` retuned to 2.33 so that a thirteen-person roster supplies what
+it does today (14.03 against 14.04) and the two forms part company only past
+sixteen, where the evidence stops. Per-person supply then falls as
+`2.33 · H^−0.3` — 1.68 at three, 1.08 at thirteen, 0.90 at twenty-four — and
+never crosses zero. The band for α across the studies is 0.6–0.8; 0.7 is a
+reasonable bet, not a settled value, and one credible group finds the exponent
+above one, so it is tunable and recorded as contested.
+
+**What this changes in the lesson.** Nineteen now ships *more* than thirteen,
+and pays for it: attention per shipped item rises monotonically, which is what
+QSM actually measured. The "too big" lesson moves from *supply goes negative*
+to *cost per unit climbs*, and the team-cost mechanic from `be23cc4` is what
+carries it. The assertion that *a big enough team cannot review its own output
+at all* is dropped — it was the quadratic's artefact. The agent findings are
+untouched: `perAgent` stays a linear drain (DORA 2025 supports the direction,
+review being the bottleneck AI exposes, and gives no magnitude), so *a fleet
+nobody can review is worth less than no fleet* and *four agents pay, eight do
+not* still hold and stay asserted.
+
+**What has to move.** `coordination` leaves `tuning.attention` and `alpha`
+arrives; `attentionSupply` in `systems/attention.ts` and its header comment;
+the "Brooks, as a term" case in `attention.test.ts`, which currently permits a
+negative raw supply; the "marginal person goes negative" and "cannot review its
+own output" cases in `staffing.test.ts`, which assert the dropped lesson; and
+both golden replay hashes, which will change because the curve has. The floor
+of one review stays — it is now a guard against a *large enough fleet* rather
+than a large enough roster, and the underwater panel still needs it.
+
+**What the evidence supports instead, deferred.** Two penalties are better
+grounded than any headcount term and are recorded in §7 rather than built
+here: a cost on *ownership overlap* — humans per station, work crossing an
+ownership boundary — which is the largest coefficient in Gote et al. and the
+strongest of Nagappan's Windows Vista predictors; and a *transient* onboarding
+cost on a newly added person, which is the part of Brooks that is actually his
+claim. If a channel term is ever wanted again it should saturate,
+`k(1 − e^(−H/H₀))`, which is linear in H and is what the network data look
+like.
+
 **Step 4 — the screen.** *(built)* An attention meter that reads as a budget
 rather than a score, the roster showing kind, and the refusal to staff Review
 with an agent explained where the player tries it rather than in a codex.
@@ -354,3 +428,20 @@ parked on work is free to leave and come back, so the design's sharpest
 anti-pattern — *start five agents on five things and come back later* — is not
 yet punished. Slice 3 makes agents reachable; it does not yet make them
 mismanageable.
+
+**Two coordination penalties the evidence does support** (§5, *Checked against
+the literature*) are deferred with the shape change rather than bundled into
+it, because each is a mechanic with its own measurement to do:
+
+- **Ownership overlap.** Attention spent when work crosses an ownership
+  boundary — a second human on one station's WIP, an agent's output reviewed by
+  someone who did not spec it. For a five-station line this makes the cost a
+  function of humans *per station*, not roster size. Best-evidenced of
+  anything in this document; belongs with board building (slice 5), which is
+  where stations get shape.
+- **Onboarding transient.** A newly hired person draws on a veteran's
+  attention for a few shifts and supplies less meanwhile. This is Brooks's
+  actual claim — adding people to a late project makes it later — as a shock
+  rather than a steady state, and the only place a rising marginal cost
+  belongs. Cheap to build; needs the money loop (M2) before hiring timing is a
+  real decision.
