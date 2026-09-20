@@ -37,23 +37,33 @@ describe('the attention supply', () => {
     expect(attentionSupply(withAgents)).toBeLessThan(attentionSupply(bare))
   })
 
-  it('loses more to coordination on a big team than on a small one — Brooks, as a term', () => {
-    // The cost is per communication channel, and a team of n has n(n-1)/2 of
-    // them. So the second hire is nearly free and the twentieth is not: what
-    // must hold is that the *marginal* human supplies less as the team grows.
+  it('grows sublinearly in people — each hire supplies less than the last, and never nothing', () => {
+    // A power law, `perHuman · H^α` with α below one. The first half of this
+    // is the well-replicated finding: doubling a team costs each member a
+    // quarter or so of their output. The second half is what the quadratic
+    // this replaced got wrong — it wrote Brooks's channel count in as a
+    // steady state, so past thirteen people the marginal hire went *negative*
+    // and a big enough roster could not review its own output. No dataset
+    // shows total output falling with head count. The twentieth person is
+    // worth less than the fourth; they are still worth something.
     const supplyAt = (n: number) =>
       attentionSupply(initState({ seed: 1, staffing: { spec: n, implement: 0, review: 0, ci: 0, deploy: 0 } }))
 
     const earlyGain = supplyAt(4) - supplyAt(3)
     const lateGain = supplyAt(20) - supplyAt(19)
     expect(lateGain).toBeLessThan(earlyGain)
+    expect(lateGain).toBeGreaterThan(0)
   })
 
-  it('goes underwater on a fleet with nobody to supervise it', () => {
+  it('goes underwater on a fleet with nobody to supervise it, and only on one', () => {
     // The raw number is allowed to be negative — that is the difference
     // between a small budget and a roster that produces more than it can read,
-    // and the HUD needs to be able to say which.
+    // and the HUD needs to be able to say which. Agents are the only thing
+    // that can take it there: the human term never falls, so a roster of
+    // people alone is never underwater however large it gets.
     expect(attentionSupply(drowned())).toBeLessThan(0)
+    const crowd = initState({ seed: 1, staffing: { spec: 20, implement: 20, review: 20, ci: 20, deploy: 20 } })
+    expect(attentionSupply(crowd)).toBeGreaterThan(0)
   })
 })
 

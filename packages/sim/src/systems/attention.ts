@@ -16,10 +16,12 @@ import type { SimEvent } from '../events.js'
  *  1. **Humans supply it.** They are the ones with judgment to spend.
  *  2. **Agents consume it.** Someone has to read what they produced. An agent
  *     is throughput you have to supervise, not throughput you get for nothing.
- *  3. **Coordination eats it, quadratically.** Not a fudge factor: the term is
- *     the number of communication channels on a team of n, which is Brooks's
- *     Law written down. Doubling the team roughly quadruples what coordination
- *     costs, so the tenth hire supplies far less than the second did.
+ *  3. **Each person supplies less than the last.** The human term is a power
+ *     law, `perHuman · H^α` with α below one, which is the shape the repository
+ *     and project studies actually find: doubling a team costs each member
+ *     something like a quarter of their output, and the total keeps rising.
+ *     Not Brooks's channel count — that was the first two tunings, and it
+ *     wrote a peak-then-collapse into the steady state that no dataset shows.
  *
  * It does not accumulate. The budget is restored every shift and whatever was
  * not spent is gone, because a fixed rate that cannot be banked is what makes
@@ -28,8 +30,9 @@ import type { SimEvent } from '../events.js'
  *
  * See docs/HIRING_AND_ATTENTION.md §4 for why this exists at all: the sim
  * already plateaus hiring on its own, so the pool is not here to cap head
- * count. It is here to price the *human* hire, which is the only one that can
- * reach the constraint.
+ * count. It is here to make hiring cost something — to close the trap where a
+ * player buys agents to get past a review bottleneck and spends the budget
+ * that bottleneck runs on.
  */
 
 /** Ticks in a shift. The budget resets on this boundary and does not carry over. */
@@ -40,14 +43,15 @@ export function shiftTicks(state: GameState): number {
 /**
  * What the roster is worth per shift.
  *
- * Can go negative — a line of agents with nobody to supervise them is not a
- * line with a small budget, it is a line that has more output than it can
- * possibly read. Floored on the way into the pool rather than here, so the raw
- * number stays readable and the HUD can say *how far* underwater the roster is
- * rather than just "empty".
+ * Can go negative, and only agents can take it there — the human term never
+ * falls. A line of agents with nobody to supervise them is not a line with a
+ * small budget, it is a line that has more output than it can possibly read.
+ * Floored on the way into the pool rather than here, so the raw number stays
+ * readable and the HUD can say *how far* underwater the roster is rather than
+ * just "empty".
  */
 export function attentionSupply(state: GameState): number {
-  const { perHuman, perAgent, coordination } = state.tuning.attention
+  const { perHuman, alpha, perAgent } = state.tuning.attention
 
   let humans = 0
   let agents = 0
@@ -56,18 +60,13 @@ export function attentionSupply(state: GameState): number {
     else agents++
   }
 
-  // Channels are counted between *people*, not between everybody. Brooks's
-  // argument is about human communication — an agent does not attend the
-  // standup or need to be kept in the loop on what four other agents are
-  // doing. What it costs is one person's attention to read its output, and
-  // that is `perAgent`, charged linearly above.
-  //
-  // Counting agents as channels was the first version and it was wrong in a
-  // way that only showed up when the two terms were tuned together: raising
-  // coordination enough to punish a sprawling org also made four agents
-  // unaffordable, because the quadratic was counting them twice.
-  const channels = (humans * (humans - 1)) / 2
-  return perHuman * humans - perAgent * agents - coordination * channels
+  // The exponent is on *people*, not on everybody. The sublinear finding is
+  // about humans coordinating with humans — an agent does not attend the
+  // standup or need keeping in the loop on what four other agents are doing.
+  // What it costs is one person's attention to read its output, and that is
+  // `perAgent`, charged linearly. Counting agents into the concave term was
+  // the first version's mistake, and it charged them twice.
+  return perHuman * Math.pow(humans, alpha) - perAgent * agents
 }
 
 /**

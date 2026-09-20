@@ -325,30 +325,39 @@ describe('attention — the wall money cannot buy past', () => {
     expect(four).toBeGreaterThan(eight)
   })
 
-  it('a small team in the right places beats a big one everywhere', () => {
-    // The lesson this pool was retuned to teach, and the question a playtester
-    // asked that the first tuning had no answer to: what stops me just hiring
-    // more people? Nothing did. Coordination was set so low that blanket
-    // hiring reached the same ceiling as a carefully placed roster, so the
-    // whole find-the-constraint skill could be skipped by paying for it.
+  it('a big team everywhere buys nothing a small team in the right places did not', () => {
+    // The question a playtester asked: what stops me just hiring more people?
+    // The first answer was a quadratic coordination term that made the
+    // marginal person go negative past thirteen, so that nineteen shipped
+    // less than thirteen and twenty-four tipped the line over. Checked against
+    // the literature, that shape is not there — per-person output falls as
+    // teams grow, total output does not — and it was replaced with a power
+    // law (docs/HIRING_AND_ATTENTION.md §5). What the evidence supports is
+    // this pair: sprawl reaches the same ceiling, and pays more for it.
     //
-    // Now the marginal person eventually goes negative: thirteen people put
-    // where the constraint is beat nineteen spread evenly over every station,
-    // and the nineteen are the more expensive team.
+    // Measured: 13 placed → 242, 19 everywhere → 240, 24 everywhere → 243.
+    // Flat, within noise. So "no better" rather than "worse", with the noise
+    // allowed for, and the cost carried by people per shipped item.
     const placed = shipped(hired({ review: 2, implement: 2 }), 0.75)
-    const sprawling = shipped(
-      { spec: 3, implement: 6, review: 3, ci: 4, deploy: 3 },
-      0.75,
-    )
-    expect(placed).toBeGreaterThan(sprawling)
+    const nineteen = shipped({ spec: 3, implement: 6, review: 3, ci: 4, deploy: 3 }, 0.75)
+    const twentyFour = shipped({ spec: 4, implement: 7, review: 4, ci: 5, deploy: 4 }, 0.75)
+    expect(nineteen).toBeLessThan(placed * 1.05)
+    expect(twentyFour).toBeLessThan(placed * 1.05)
+
+    // And the bill climbs the whole way: each person on the sprawling roster
+    // ships less than each person on the placed one, monotonically.
+    expect(nineteen / 19).toBeLessThan(placed / 13)
+    expect(twentyFour / 24).toBeLessThan(nineteen / 19)
   })
 
-  it('and a big enough team cannot review its own output at all', () => {
-    // Brooks, at the far end. Communication channels grow quadratically, so
-    // past a point every additional person costs the team more attention than
-    // they bring — and the line tips over rather than plateauing.
-    const sprawling = shipped({ spec: 4, implement: 7, review: 4, ci: 5, deploy: 4 }, 0.75)
-    expect(sprawling).toBeLessThan(base)
+  it('and a big team is more expensive, not slower — the total never falls', () => {
+    // The dropped lesson, inverted and pinned. The quadratic asserted here
+    // that twenty-four people ship *less than the starting nine*. No
+    // observational dataset shows that; the large teams in the project data
+    // are faster at three to four times the cost. If this ever goes red, a
+    // headcount penalty has crept back in that the evidence does not support.
+    const twentyFour = shipped({ spec: 4, implement: 7, review: 4, ci: 5, deploy: 4 }, 0.75)
+    expect(twentyFour).toBeGreaterThan(base)
   })
 
   it('hiring humans at the constraint never starves the line', () => {
