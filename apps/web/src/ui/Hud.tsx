@@ -441,8 +441,10 @@ function Attention({ snap }: { snap: Snapshot }) {
  *
  * Moving is free and unlimited, on purpose — a player who guesses wrong should
  * learn that they guessed wrong, not that guessing is expensive. Hiring is not
- * rationed either, and does not need to be: agents cost attention to supervise
- * and humans cost coordination, so the roster prices itself.
+ * rationed either. Agents price themselves — they cost attention to supervise.
+ * A person does not, yet: each one supplies less attention than the last but
+ * never costs any, so until money lands in M2 the human hire is free. Recorded
+ * as open in docs/HIRING_AND_ATTENTION.md §5 rather than papered over here.
  *
  * Review's missing agent button is the single most important thing in this
  * panel. It is the one station a machine cannot stand at, it is the constraint,
@@ -519,7 +521,7 @@ function StaffRow({
         <button
           type="button"
           className="hire"
-          title="Supplies attention. Costs coordination, and the tenth costs more than the second."
+          title="Supplies attention. The tenth person brings less of it than the second did."
           onClick={() => onHire('human')}
         >
           + person

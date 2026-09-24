@@ -145,8 +145,9 @@ of the design doc do not currently agree and one of them has to give:
 - **Attention is a per-shift budget that does not accumulate**, spent on
   judgment: reviewing, rebasing, and supervising agents.
 - **Humans supply attention. Agents consume it.** Hiring a human raises the
-  budget sub-linearly — Brooks's Law as a mechanic, per §3.4. Hiring an agent
-  lowers what is left, because someone has to read what it produced.
+  budget sub-linearly — a power law, per §5, after a Brooks's-Law quadratic
+  was tried and did not survive the literature. Hiring an agent lowers what is
+  left, because someone has to read what it produced.
 
 That last line is what makes the trap close. A player who hires agents to get
 past a review bottleneck spends the budget that the review bottleneck runs on,
@@ -341,33 +342,88 @@ in as a steady state, and the transient itself has never been measured either.
 supply_per_shift = perHuman · H^α − perAgent · A        α ≈ 0.7
 ```
 
-with `perHuman` retuned to 2.33 so that a thirteen-person roster supplies what
-it does today (14.03 against 14.04) and the two forms part company only past
-sixteen, where the evidence stops. Per-person supply then falls as
-`2.33 · H^−0.3` — 1.68 at three, 1.08 at thirteen, 0.90 at twenty-four — and
-never crosses zero. The band for α across the studies is 0.6–0.8; 0.7 is a
-reasonable bet, not a settled value, and one credible group finds the exponent
-above one, so it is tunable and recorded as contested.
+with `perHuman` retuned so that the roster the lessons are measured on
+supplies what it does today. Per-person supply then falls as `perHuman ·
+H^−0.3` and never crosses zero. The band for α across the studies is 0.6–0.8;
+0.7 is a reasonable bet, not a settled value, and one credible group finds the
+exponent above one, so it is tunable and recorded as contested.
 
-**What this changes in the lesson.** Nineteen now ships *more* than thirteen,
-and pays for it: attention per shipped item rises monotonically, which is what
-QSM actually measured. The "too big" lesson moves from *supply goes negative*
-to *cost per unit climbs*, and the team-cost mechanic from `be23cc4` is what
-carries it. The assertion that *a big enough team cannot review its own output
-at all* is dropped — it was the quadratic's artefact. The agent findings are
-untouched: `perAgent` stays a linear drain (DORA 2025 supports the direction,
-review being the bottleneck AI exposes, and gives no magnitude), so *a fleet
-nobody can review is worth less than no fleet* and *four agents pay, eight do
-not* still hold and stay asserted.
+*Where to anchor it was got wrong the first time, and the sweep caught it.*
+The decision as written anchored at thirteen people — `perHuman 2.33`, so
+that 13 supplied 14.03 against the quadratic's 14.04 — on the reasoning that
+the curves should agree up to where the evidence stops. But the agent lessons
+are not measured at thirteen. They are measured at nine and ten, and there
+the anchor at thirteen took a fifth of the budget away: the starting roster
+fell from 13.68 to 10.85 against a measured peak demand of 10 per shift, and
+`+1 human, +4 agents` went from +41% to **−3%**, shipping less than the human
+alone. "The agent findings are untouched" was an assumption, and it was false.
+Anchoring at nine instead — `perHuman 2.94`, 13.69 against 13.68 — reproduces
+the agent table to within seed noise and leaves the starting roster's margin
+exactly where it was. The cost is that thirteen people now supply 17.7 rather
+than 14.0, which nothing measured depends on: a thirteen-person roster's
+demand is about ten.
 
-**What has to move.** `coordination` leaves `tuning.attention` and `alpha`
-arrives; `attentionSupply` in `systems/attention.ts` and its header comment;
-the "Brooks, as a term" case in `attention.test.ts`, which currently permits a
-negative raw supply; the "marginal person goes negative" and "cannot review its
-own output" cases in `staffing.test.ts`, which assert the dropped lesson; and
-both golden replay hashes, which will change because the curve has. The floor
-of one review stays — it is now a guard against a *large enough fleet* rather
-than a large enough roster, and the underwater panel still needs it.
+**Measured, built.** `perHuman 2.94 · α 0.7 · perAgent 1.2`, 8 seeds × 4000
+ticks, each row at its own best WIP setting. The quadratic's numbers are
+alongside for the rows it had — the human rows from the retune table, the
+agent rows from the first tuning's, which the retune preserved.
+
+```
+                    config  heads  supply   best     at  ppl/ship   quadratic
+           starting roster      9   13.69    165   0.4x     0.054         163
+           +1 human review     10   14.73    212   0.5x     0.047         191
+   +2 rev +2 impl (placed)     13   17.71    242  0.75x     0.054         242
+    +2 everywhere (sprawl)     19   23.09    240  0.75x     0.079         226
+             +3 everywhere     24   27.20    243     1x     0.099          35
+             +5 everywhere     34   34.70    242     1x     0.141           –
+       +8 agents, no reviewer     17    4.09    145   0.4x         –         145
+       +1 human, +4 agents     14    9.93    232  0.75x         –         234
+       +1 human, +8 agents     18    5.13    183   0.5x         –         206
+       +2 human, +4 agents     15   10.95    245     1x         –         247
+       +2 human, +8 agents     19    6.15    206   0.5x         –         219
+```
+
+Read the human rows downward: 242, 240, 243, 242. **Sprawl is flat, not
+fatal.** Thirteen placed and thirty-four everywhere reach the same ceiling, and
+the bill for it is in the `ppl/ship` column, which climbs monotonically the
+whole way — 0.054 → 0.079 → 0.099 → 0.141 — which is what QSM actually
+measured: the big team is not slower, it is three times as expensive. The
+"too big" lesson moves from *supply goes negative* to *cost per unit climbs*.
+The assertion that *a big enough team cannot review its own output at all* is
+dropped and replaced by its inverse — twenty-four ships more than the starting
+nine — so that a headcount cliff cannot creep back in unnoticed.
+
+The agent rows are the first table's numbers to within noise. `perAgent` stays
+a linear drain (DORA 2025 supports the direction, review being the bottleneck
+AI exposes, and gives no magnitude), so *a fleet nobody can review is worth
+less than no fleet* (145 against 165) and *four agents pay, eight do not* (232
+against 183) both hold and stay asserted.
+
+**What moved.** `coordination` left `tuning.attention` and `alpha` arrived;
+`attentionSupply` and the header comment in `systems/attention.ts`; the
+"Brooks, as a term" case in `attention.test.ts` now also asserts the marginal
+person never goes negative, and the underwater case asserts only agents can
+take the raw supply below zero; the two sprawl cases in `staffing.test.ts` are
+rewritten as above. **Neither golden replay hash moved** — the decision
+predicted they would, but `fingerprint` does not hash the pool, so a hash only
+moves if the pool *binds*, and at `perHuman 2.94` neither script's does (the
+staffed run has 2.3 to spare at its tightest shift end). At the abandoned
+`2.33` anchor the staffed run would have bound once and the hash would have
+moved, so the prediction was a symptom of the wrong anchor rather than a fact
+about the curve. The floor of one review stays — it is now a guard against a
+*large enough fleet* rather than a large enough roster, and the underwater
+panel still needs it.
+
+**What this reopens, on purpose.** §4's playtest question — *what stops me
+just hiring more people?* — has its old answer back: in M1, nothing. A person
+supplies less attention than the last and never costs any, so hiring humans
+everywhere reaches the ceiling without the player ever finding the constraint,
+which is the hole `be23cc4` closed with the quadratic. It is reopened
+knowingly: closing it with a curve the evidence contradicts was teaching a
+false lesson to protect a true one. The true one — the big team pays three
+times as much per item — is in the sim's numbers and not yet on its screen,
+because there is nothing to pay *with*. It waits for money in M2, and the
+onboarding transient in §7, which is the part of Brooks that is actually his.
 
 **What the evidence supports instead, deferred.** Two penalties are better
 grounded than any headcount term and are recorded in §7 rather than built

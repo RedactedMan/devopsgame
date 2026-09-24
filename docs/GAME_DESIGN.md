@@ -113,7 +113,7 @@ Both are real resources, and the design lives or dies on keeping them genuinely 
 |---|---|---|
 | Buys | Headcount, agent seats, CI machines, telemetry, tooling, test infrastructure | Review, briefing agents, re-briefing stale agents, incident triage, rebase decisions, postmortems |
 | Replenished by | Shipping value — delivered features generate revenue, which becomes next quarter's budget | Per shift, at a fixed rate. It does not accumulate |
-| Scales with spending? | Linearly. More money, more machines | **Sub-linearly.** Hiring adds attention, but with ramp time and communication overhead — Brooks's Law as a mechanic |
+| Scales with spending? | Linearly. More money, more machines | **Sub-linearly.** Hiring adds attention, but each person adds less than the last — a power law, `H^0.7`, which is the shape the team-size data support; a Brooks's-Law channel count was tried and did not survive the literature (see [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §5). Ramp time for a new hire — Brooks's actual claim — is deferred until money makes hiring timing a decision |
 | Runs out as | A slow squeeze across a level | A hard wall within a single shift |
 
 This structure produces the tension the game is about. Money is abundant in the AI era — agent seats are cheap, and the player can always buy more *doing*. Attention is fixed. A player flush with cash and out of attention has exactly the problem the game exists to teach, and they can *see* both meters at once.

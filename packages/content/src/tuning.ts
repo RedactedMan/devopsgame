@@ -115,10 +115,13 @@ export const TuningSchema = z.object({
     /** Drawn per shift by each agent, because someone has to read its output. */
     perAgent: z.number().nonnegative(),
     /**
-     * Drawn per communication channel per shift — `n(n-1)/2` of them on a team
-     * of n. Brooks's Law as a term rather than as a flavour text.
+     * Exponent on the human head count: supply is `perHuman · H^alpha`. Below
+     * one, each person added supplies less than the last — the well-replicated
+     * finding — but the total never falls. Not capped at one, because the sign
+     * of the exponent is contested in the literature and a sweep should be
+     * able to try the other side. See docs/HIRING_AND_ATTENTION.md §5.
      */
-    coordination: z.number().nonnegative(),
+    alpha: z.number().positive(),
     /** Charged when Review picks up an item. Unaffordable means Review stalls. */
     reviewCost: z.number().nonnegative(),
     /**
@@ -191,16 +194,24 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
   // and a meter that was already tight on turn one teaches the opposite.
   // Swept to these values; see docs/HIRING_AND_ATTENTION.md §5 step 3.
   attention: {
-    perHuman: 2.4,
+    // A power law, not a quadratic. The first two tunings used Brooks's
+    // channel count, `coordination · H(H−1)/2`, and it put a peak at thirteen
+    // people with a cliff past it. Checked against the literature, the cliff
+    // is not there: per-person output falls as a team grows, total output
+    // does not, and the one study that fitted the quadratic explicitly found
+    // it standing in for coordination structure rather than head count.
+    //
+    // perHuman is anchored so that the starting roster of nine supplies what
+    // it did under the quadratic (13.69 against 13.68). The decision first
+    // anchored at thirteen, and that cost a fifth of the budget at ten, which
+    // is where every agent lesson lives: four agents after a human hire went
+    // from paying 41% to costing 3%. Anchored at nine, the agent table
+    // reproduces to within seed noise. Alpha is a reasonable bet inside a
+    // 0.6–0.8 band, not a settled value. See docs/HIRING_AND_ATTENTION.md §5,
+    // "Checked against the literature".
+    perHuman: 2.94,
+    alpha: 0.7,
     perAgent: 1.2,
-    // Retuned after a playtest asked the obvious question the first tuning had
-    // no answer to: what stops me hiring more people? Nothing did. At 0.02 this
-    // term was inert below a roster of about two hundred, so blanket hiring
-    // reached the same ceiling as a carefully placed thirteen and the whole
-    // find-the-constraint skill could be skipped. At 0.22 the peak sits at
-    // thirteen people, nineteen ships less than thirteen, and twenty-four tips
-    // the line over. See docs/HIRING_AND_ATTENTION.md §5.
-    coordination: 0.22,
     reviewCost: 1,
     rebaseCost: 2,
   },
