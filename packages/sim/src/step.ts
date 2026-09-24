@@ -73,7 +73,7 @@ function applyCommands(state: GameState, commands: readonly Command[], events: S
         requestMove(state, command.workerId, command.to, events)
         break
       case 'hire':
-        hire(state, command.station, command.workerKind, events)
+        hire(state, command.station, events)
         break
     }
   }

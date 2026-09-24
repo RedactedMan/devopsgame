@@ -1,5 +1,5 @@
 import type { StationId } from '@flow/content'
-import type { ItemId, WorkerId, WorkerKind } from './state.js'
+import type { ItemId, WorkerId } from './state.js'
 
 /**
  * The player's entire action vocabulary for M0.
@@ -14,20 +14,19 @@ export type Command =
   | { kind: 'setWipLimit'; station: StationId; limit: number }
   | { kind: 'resolveStale'; itemId: ItemId; choice: StaleChoice }
   /**
-   * Move a worker to another station. Free, unlimited, and reversible — the
-   * scarce thing is knowing where to put them, not the ability to do it.
+   * Move a worker to another station. Unlimited and reversible, but not free
+   * for a person: they onboard at the new station, slower for a while and
+   * drawing on the attention budget. A player can guess, but every guess
+   * costs something.
    */
   | { kind: 'assignWorker'; workerId: WorkerId; to: StationId }
   /**
-   * Add capacity from outside. Unlike a move, this is not zero-sum, and that
-   * difference is the entire reason it exists: a reallocation cannot grow the
-   * capacity that lets the line hold more work in flight, so it can only move
-   * the WIP optimum weakly (docs/CONSTRAINT_AND_CAPACITY.md §8). Hiring moves
-   * it from 0.5× to 2×.
-   *
-   * `workerKind` rather than `kind`, which is already the command discriminant.
+   * Add an agent. The human team is fixed, so this is the only way capacity
+   * grows, and it is what lets the WIP optimum move strongly
+   * (docs/CONSTRAINT_AND_CAPACITY.md §8). A move alone is zero-sum. Moving
+   * a person to the constraint and backfilling with agents is not.
    */
-  | { kind: 'hire'; station: StationId; workerKind: WorkerKind }
+  | { kind: 'hire'; station: StationId }
 
 /** A save file, and a bug report, are this. */
 export type LoggedCommand = { tick: number; command: Command }

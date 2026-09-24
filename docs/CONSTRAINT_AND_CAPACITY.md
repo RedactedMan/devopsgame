@@ -278,6 +278,11 @@ about kinds rather than about price, and M2's economy re-prices it without
 replacing it. See [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §3, and
 §4 for the one point of §5 above that it supersedes.
 
+**Changed 2026-09-23.** People are no longer hired. The capacity target 3 needs
+now comes from agents backfilling a person moved to the constraint, and the
+strong form still holds (183 → 230 at 0.4× vs 0.75×). See
+[HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §8.
+
 ## 9. Why this and not dispatch
 
 Both were measured against the same sim with the same method. Dispatch produced

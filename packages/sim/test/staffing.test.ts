@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_TUNING, STATION_IDS, type StationId } from '@flow/content'
 import {
   initState,
+  isOnboarding,
   run,
+  serviceTicksFor,
   serversAt,
   snapshot,
   step,
@@ -37,13 +39,6 @@ const limitsAt = (m: number) =>
       Math.max(1, Math.round(DEFAULT_TUNING.stations[id].defaultWipLimit * m)),
     ]),
   ) as Record<StationId, number>
-
-/** Capacity added from outside, rather than moved. Head count grows. */
-const hired = (adds: Partial<Record<StationId, number>>): Record<StationId, number> => {
-  const staffing = { ...BASELINE }
-  for (const [id, n] of Object.entries(adds)) staffing[id as StationId] += n as number
-  return staffing
-}
 
 /** One worker leaves `from` and arrives at `to`. Head count does not change. */
 const move = (...moves: Array<[StationId, StationId]>): Record<StationId, number> => {
@@ -250,10 +245,11 @@ describe('the lessons', () => {
   })
 
   it('§3, strong — the setting that was best becomes the worst on the board', () => {
-    // This assertion is the acceptance criterion for `hire`
-    // (docs/CONSTRAINT_AND_CAPACITY.md §8), and it is the reason the command
-    // exists. A reallocation cannot do it: the line can only absorb more work
-    // in flight if there is more capacity to work it.
+    // The acceptance criterion for adding capacity
+    // (docs/CONSTRAINT_AND_CAPACITY.md §8). A move alone cannot do it: the
+    // line can only hold more work in flight if there is more capacity to work
+    // it. With the team fixed, that capacity is agents, backfilling the
+    // people moved to the constraint (docs/HIRING_AND_ATTENTION.md §8).
     //
     // The player's own success invalidates their own settings, which is the
     // whole two-lever interaction. Nothing here is random — the optimum moved
@@ -262,43 +258,42 @@ describe('the lessons', () => {
     const looseAtBaseline = shipped(BASELINE, 0.75)
     expect(tightAtBaseline).toBeGreaterThan(looseAtBaseline)
 
-    const staffed = hired({ review: 2, implement: 2 })
-    const tightAfter = shipped(staffed, 0.4)
-    const looseAfter = shipped(staffed, 0.75)
+    const staffed = move(['implement', 'review'], ['implement', 'review'])
+    const tightAfter = shipped(staffed, 0.4, { implement: 4 })
+    const looseAfter = shipped(staffed, 0.75, { implement: 4 })
     expect(looseAfter).toBeGreaterThan(tightAfter)
 
     // And the reversal is worth caring about, not a rounding error: the
     // slider the player worked out in slice 1 now costs them a fifth of the
-    // line. Measured at 183 against 237.
+    // line. Measured at 183 against 230.
     expect((looseAfter - tightAfter) / tightAfter).toBeGreaterThan(0.15)
   })
 
   it('§3, strong — a fleet of agents cannot substitute for one human at the constraint', () => {
     // The design's two currencies, as one number. Agents are cheap, parallel,
     // and barred from Review; humans are none of those and Review is the
-    // constraint. Measured at ~17:1 — docs/HIRING_AND_ATTENTION.md §3.
+    // constraint. Measured at ~11:1 — docs/HIRING_AND_ATTENTION.md §8.
     //
-    // Deliberately four against one. At equal head count this would be a
-    // statement about the constraint; at four to one it is a statement about
-    // what money can and cannot buy.
+    // Four agents against one person moved to Review with one agent to fill
+    // the gap they left. That second configuration has exactly the capacity
+    // the old human hire had, and ships exactly what it did.
     const fourAgents = shipped(BASELINE, 0.4, { implement: 4 })
-    const oneHuman = shipped(hired({ review: 1 }), 0.5)
+    const oneHuman = shipped(move(['implement', 'review']), 0.5, { implement: 1 })
 
     expect(oneHuman - base).toBeGreaterThan(5 * (fourAgents - base))
   })
 
-  it('§3, strong — and the same agents are worth far more once a human has unblocked them', () => {
+  it('§3, strong — and the same agents are worth far more once a person has unblocked them', () => {
     // The converse, without which the above is only a claim that agents are
     // useless. They are not weak, they are blocked, and ordering is the whole
-    // decision: the same four are worth ~3 items before the human hire and
-    // ~16 after it. (~22 under the quadratic supply curve; the power law
-    // narrowed it, and the 3× margin below still clears by a factor of two.)
+    // decision: the same four are worth ~4 items before a person is moved to
+    // Review and ~44 after it.
     const agentsAlone = shipped(BASELINE, 0.4, { implement: 4 }) - base
 
-    const humanOnly = shipped(hired({ review: 1 }), 0.5)
-    const humanThenAgents = shipped(hired({ review: 1 }), 1, { implement: 4 })
+    const movedOnly = shipped(move(['implement', 'review']), 0.4)
+    const movedThenAgents = shipped(move(['implement', 'review']), 0.75, { implement: 4 })
 
-    expect(humanThenAgents - humanOnly).toBeGreaterThan(3 * agentsAlone)
+    expect(movedThenAgents - movedOnly).toBeGreaterThan(3 * agentsAlone)
   })
 })
 
@@ -321,70 +316,145 @@ describe('attention — the wall money cannot buy past', () => {
     // A hump rather than a plateau. Doubling a fleet that was paying costs
     // throughput, so "buy more doing" is punished rather than merely wasted —
     // and the player has to find a ratio instead of a maximum.
-    const four = shipped(hired({ review: 1 }), 1, { implement: 4 })
-    const eight = shipped(hired({ review: 1 }), 0.5, { implement: 8 })
+    const four = shipped(move(['implement', 'review']), 0.75, { implement: 4 })
+    const eight = shipped(move(['implement', 'review']), 0.4, { implement: 8 })
     expect(four).toBeGreaterThan(eight)
   })
+})
 
-  it('a big team everywhere buys nothing a small team in the right places did not', () => {
-    // The question a playtester asked: what stops me just hiring more people?
-    // The first answer was a quadratic coordination term that made the
-    // marginal person go negative past thirteen, so that nineteen shipped
-    // less than thirteen and twenty-four tipped the line over. Checked against
-    // the literature, that shape is not there — per-person output falls as
-    // teams grow, total output does not — and it was replaced with a power
-    // law (docs/HIRING_AND_ATTENTION.md §5). What the evidence supports is
-    // this pair: sprawl reaches the same ceiling, and pays more for it.
-    //
-    // Measured: 13 placed → 242, 19 everywhere → 240, 24 everywhere → 243.
-    // Flat, within noise. So "no better" rather than "worse", with the noise
-    // allowed for, and the cost carried by people per shipped item.
-    const placed = shipped(hired({ review: 2, implement: 2 }), 0.75)
-    const nineteen = shipped({ spec: 3, implement: 6, review: 3, ci: 4, deploy: 3 }, 0.75)
-    const twentyFour = shipped({ spec: 4, implement: 7, review: 4, ci: 5, deploy: 4 }, 0.75)
-    expect(nineteen).toBeLessThan(placed * 1.05)
-    expect(twentyFour).toBeLessThan(placed * 1.05)
+/**
+ * The team is fixed (docs/HIRING_AND_ATTENTION.md §8), so capacity at the
+ * constraint has to come from somewhere, and where it comes from is a decision
+ * the old human hire never asked for.
+ */
+describe('a fixed team', () => {
+  const base = shipped(BASELINE)
 
-    // And the bill climbs the whole way: each person on the sprawling roster
-    // ships less than each person on the placed one, monotonically.
-    expect(nineteen / 19).toBeLessThan(placed / 13)
-    expect(twentyFour / 24).toBeLessThan(nineteen / 19)
+  it('can over-correct: moving too many to the constraint just moves it', () => {
+    // Two implementers to Review with nobody to fill the gap. Implement
+    // becomes the constraint and the line ships less than it did untouched.
+    // There is no hire to bail the player out, so they have to find the ratio.
+    // Measured at 121 against 165.
+    expect(shipped(move(['implement', 'review'], ['implement', 'review']))).toBeLessThan(base)
   })
 
-  it('and a big team is more expensive, not slower — the total never falls', () => {
-    // The dropped lesson, inverted and pinned. The quadratic asserted here
-    // that twenty-four people ship *less than the starting nine*. No
-    // observational dataset shows that; the large teams in the project data
-    // are faster at three to four times the cost. If this ever goes red, a
-    // headcount penalty has crept back in that the evidence does not support.
-    const twentyFour = shipped({ spec: 4, implement: 7, review: 4, ci: 5, deploy: 4 }, 0.75)
-    expect(twentyFour).toBeGreaterThan(base)
+  it('pays more when the person comes from a station with slack', () => {
+    // CI has two people and room to spare; Implement is nearly as busy as
+    // Review. Measured: +13.8% from CI against +8.6% from Implement.
+    expect(shipped(move(['ci', 'review']))).toBeGreaterThan(shipped(move(['implement', 'review'])))
   })
 
-  it('hiring humans at the constraint never starves the line', () => {
-    // Humans supply attention and agents draw it, so staffing *the constraint*
-    // must always pay — the pool must never punish the one move the milestone
-    // spent two slices teaching the player to make. Sprawl is punished; a
-    // correct hire is not, and the two tests above and below this one are the
-    // pair that pins the difference.
-    const staffed = hired({ review: 2, implement: 2 })
-    expect(shipped(staffed, 0.75)).toBeGreaterThan(shipped(hired({ review: 1 }), 0.5))
+  it('moving a person to the constraint and backfilling with agents beats either alone', () => {
+    const movedOnly = shipped(move(['implement', 'review']), 0.4)
+    const agentsOnly = shipped(BASELINE, 0.4, { implement: 2 })
+    const both = shipped(move(['implement', 'review']), 0.75, { implement: 2 })
+    expect(both).toBeGreaterThan(movedOnly)
+    expect(both).toBeGreaterThan(agentsOnly)
+  })
+})
+
+/**
+ * A person moved to a new station is slower for a while and draws on the
+ * attention budget (docs/HIRING_AND_ATTENTION.md §8). With the team fixed, it
+ * is the only thing a move costs.
+ */
+describe('onboarding', () => {
+  const { onboarding } = DEFAULT_TUNING
+
+  it('nobody on the starting roster is learning anything', () => {
+    const state = initState({ seed: 1 })
+    expect(state.workers.every((w) => !isOnboarding(state, w))).toBe(true)
+  })
+
+  it('starts when a person lands, and ends after the tuned time', () => {
+    let state = initState({ seed: 1 })
+    const person = state.workers.find((w) => w.station === 'deploy')!
+    state = step(state, [{ kind: 'assignWorker', workerId: person.id, to: 'review' }]).state
+    const moved = () => state.workers.find((w) => w.id === person.id)!
+
+    expect(moved().station).toBe('review')
+    expect(isOnboarding(state, moved())).toBe(true)
+    state = run(state, onboarding.ticks)
+    expect(isOnboarding(state, moved())).toBe(false)
+  })
+
+  it('restarts on every move, including a move straight back', () => {
+    // So chasing the constraint back and forth pays the cost every time.
+    let state = initState({ seed: 1 })
+    const person = state.workers.find((w) => w.station === 'deploy')!
+    const until = () => state.workers.find((w) => w.id === person.id)!.onboardingUntil
+
+    state = step(state, [{ kind: 'assignWorker', workerId: person.id, to: 'review' }]).state
+    const first = until()
+    state = step(state, [{ kind: 'assignWorker', workerId: person.id, to: 'deploy' }]).state
+
+    expect(state.workers.find((w) => w.id === person.id)!.station).toBe('deploy')
+    expect(until()).toBeGreaterThan(first)
+  })
+
+  it('does not apply to agents', () => {
+    let state = step(initState({ seed: 1 }), [{ kind: 'hire', station: 'ci' }]).state
+    const agent = state.workers.at(-1)!
+    state = step(state, [{ kind: 'assignWorker', workerId: agent.id, to: 'deploy' }]).state
+    expect(isOnboarding(state, state.workers.find((w) => w.id === agent.id)!)).toBe(false)
+  })
+
+  it('makes the work a learner picks up take longer', () => {
+    let state = initState({ seed: 2 })
+    const person = state.workers.find((w) => w.station === 'deploy')!
+    state = step(state, [{ kind: 'assignWorker', workerId: person.id, to: 'spec' }]).state
+
+    // Spec now has a veteran and a learner. Compare what each is given for
+    // the first items they start.
+    const ratios: number[] = []
+    for (let i = 0; i < onboarding.ticks && ratios.length === 0; i++) {
+      state = step(state).state
+      for (const slot of state.stations.spec.inService) {
+        // Just started: nothing has advanced it yet.
+        if (slot.workerId !== person.id || slot.remainingTicks !== slot.totalTicks) continue
+        const item = state.items.find((it) => it.id === slot.itemId)!
+        ratios.push(slot.totalTicks / serviceTicksFor(item, 'spec', state.tuning))
+      }
+    }
+    expect(ratios.length).toBeGreaterThan(0)
+    expect(ratios[0]).toBeGreaterThanOrEqual(onboarding.serviceMult)
+  })
+
+  it('a good move made mid-game still pays after the learning cost', () => {
+    // The cost must never be big enough to stop the lesson. Measured, moving
+    // a CI person to Review at t=1200: 187 with no onboarding, 180 with it,
+    // 165 staying put.
+    const at = 1200
+    const play = (moveIt: boolean) => {
+      let total = 0
+      for (let seed = 1; seed <= SEEDS; seed++) {
+        let state = initState({ seed, wipLimits: limitsAt(0.5) })
+        for (let t = 0; t < TICKS; t++) {
+          const commands = rebaseEverything(state)
+          if (moveIt && state.tick === at) {
+            const person = state.workers.find((w) => w.station === 'ci')!
+            commands.push({ kind: 'assignWorker', workerId: person.id, to: 'review' })
+          }
+          state = step(state, commands).state
+        }
+        total += state.metrics.shipped.length
+      }
+      return total / SEEDS
+    }
+    expect(play(true)).toBeGreaterThan(play(false) * 1.05)
   })
 })
 
 describe('hiring', () => {
-  const hireCmd = (station: StationId, workerKind: 'human' | 'agent'): Command => ({
-    kind: 'hire',
-    station,
-    workerKind,
-  })
+  const hireCmd = (station: StationId): Command => ({ kind: 'hire', station })
 
-  it('adds capacity, and the new worker is capacity immediately', () => {
+  it('adds an agent, and the agent is capacity immediately', () => {
+    // Only agents. The people are fixed; there is no command that adds one.
     const before = initState({ seed: 1 })
-    const after = step(before, [hireCmd('review', 'human')]).state
-    expect(serversAt(after, 'review')).toBe(serversAt(before, 'review') + 1)
-    expect(after.workers.at(-1)?.kind).toBe('human')
-    expect(after.workers.at(-1)?.station).toBe('review')
+    const after = step(before, [hireCmd('implement')]).state
+    expect(serversAt(after, 'implement')).toBe(serversAt(before, 'implement') + 1)
+    expect(after.workers.at(-1)?.kind).toBe('agent')
+    expect(after.workers.filter((w) => w.kind === 'human')).toHaveLength(9)
   })
 
   it('gives the hire an id no one already on the roster is using', () => {
@@ -393,7 +463,7 @@ describe('hiring', () => {
     // command addresses a stranger.
     let state = initState({ seed: 1 })
     const startingIds = new Set(state.workers.map((w) => w.id))
-    for (let i = 0; i < 5; i++) state = step(state, [hireCmd('ci', 'agent')]).state
+    for (let i = 0; i < 5; i++) state = step(state, [hireCmd('ci')]).state
 
     const ids = state.workers.map((w) => w.id)
     expect(new Set(ids).size).toBe(ids.length)
@@ -404,7 +474,7 @@ describe('hiring', () => {
     // The one rule that separates the game's two currencies. Refusing in
     // silence would read as a broken button.
     const before = initState({ seed: 1 })
-    const { state, events } = step(before, [hireCmd('review', 'agent')])
+    const { state, events } = step(before, [hireCmd('review')])
 
     expect(state.workers).toHaveLength(before.workers.length)
     expect(events).toContainEqual({
@@ -417,7 +487,7 @@ describe('hiring', () => {
 
   it('lets an agent stand anywhere else', () => {
     for (const id of STATION_IDS.filter((s) => s !== 'review')) {
-      const after = step(initState({ seed: 1 }), [hireCmd(id, 'agent')]).state
+      const after = step(initState({ seed: 1 }), [hireCmd(id)]).state
       expect(serversAt(after, id), id).toBe(DEFAULT_TUNING.stations[id].servers + 1)
     }
   })
@@ -426,7 +496,7 @@ describe('hiring', () => {
     // The gap the enforcement would have had if `hire` were the only place it
     // was checked: hire the agent at CI, then walk it over.
     let state = initState({ seed: 1 })
-    state = step(state, [hireCmd('ci', 'agent')]).state
+    state = step(state, [hireCmd('ci')]).state
     const agent = state.workers.at(-1) as { id: string }
 
     const { state: after, events } = step(state, [

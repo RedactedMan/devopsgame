@@ -133,7 +133,8 @@ test('will not staff Review with an agent, and says so where you try it', async 
 
   const row = (name: string) => page.locator('.staff').filter({ hasText: name })
 
-  await expect(row('Review').getByRole('button', { name: '+ person' })).toBeVisible()
+  // The team is fixed: nowhere offers a person (docs/HIRING_AND_ATTENTION.md §8).
+  await expect(page.getByRole('button', { name: '+ person' })).toHaveCount(0)
   await expect(row('Review').getByRole('button', { name: '+ agent' })).toHaveCount(0)
   await expect(row('Review')).toContainText(/no agents here/i)
 

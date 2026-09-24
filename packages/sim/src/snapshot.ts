@@ -12,7 +12,7 @@ import type {
 import { inFlightItems, locateItem, serversAt, workerIsBusy } from './state.js'
 import { recentLeadTime } from './systems/metrics.js'
 import { constraintIsPolicy } from './systems/staffing.js'
-import { attentionSupply } from './systems/attention.js'
+import { attentionFloor, attentionSupply } from './systems/attention.js'
 
 /**
  * The view the renderer subscribes to.
@@ -94,6 +94,8 @@ export type SnapshotWorker = {
   busy: boolean
   /** Where they are headed, if the player has asked them to move and they are mid-item. */
   pendingStation: StationId | null
+  /** Ticks left learning the station they were moved to. Zero once settled. */
+  onboardingTicks: number
 }
 
 export type Snapshot = {
@@ -137,8 +139,12 @@ export type Snapshot = {
    * has spent its day, a negative one is a roster producing more than it can
    * ever read. `perShift` is what the pool was actually filled to, floored at
    * one review so a drowned line crawls rather than stopping.
+   *
+   * `floor` is that one review. Underwater means `supply` is below it, not
+   * below `perShift`: supply moves mid-shift whenever someone is moved or an
+   * agent is added, and a budget that has only shrunk is not underwater.
    */
-  attention: { remaining: number; perShift: number; supply: number }
+  attention: { remaining: number; perShift: number; supply: number; floor: number }
   /**
    * Concurrent in-flight work per area of the codebase, every area in id order
    * including the cold ones.
@@ -240,12 +246,13 @@ export function snapshot(state: GameState): Snapshot {
       station: w.station,
       busy: workerIsBusy(state, w.id),
       pendingStation: w.pendingStation,
+      onboardingTicks: Math.max(0, w.onboardingUntil - state.tick),
     })),
     constraint: state.constraint,
     constraintSinceTick: state.constraintSinceTick,
     constraintMoves: state.constraintMoves,
     constraintIsPolicy: constraintIsPolicy(state),
-    attention: { ...state.attention, supply: attentionSupply(state) },
+    attention: { ...state.attention, supply: attentionSupply(state), floor: attentionFloor(state) },
     hotAreas: inFlightPerArea.map((inFlight, area) => ({ area, inFlight })),
   }
 }

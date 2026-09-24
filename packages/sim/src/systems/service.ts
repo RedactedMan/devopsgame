@@ -1,5 +1,5 @@
 import { REWORK_STATION, STATION_IDS, type StationId, type Tuning } from '@flow/content'
-import type { GameState, WorkItem } from '../state.js'
+import { isOnboarding, type GameState, type WorkItem } from '../state.js'
 import type { SimEvent } from '../events.js'
 import { reworkProbability, serviceMultiplier } from './drift.js'
 import { costsAttention, reviewCostOf, spendAttention } from './attention.js'
@@ -123,7 +123,11 @@ export function startService(state: GameState, events: SimEvent[]): void {
       if (!item) continue
 
       const worker = free.shift() as (typeof free)[number]
-      const ticks = serviceTicksFor(item, stationId, state.tuning)
+      // Set once, when the item is picked up. Someone who starts an item while
+      // learning finishes it at the learner's pace, even if they finish
+      // learning partway through. Simpler, and it rounds toward the cost.
+      const learning = isOnboarding(state, worker) ? state.tuning.onboarding.serviceMult : 1
+      const ticks = Math.ceil(serviceTicksFor(item, stationId, state.tuning) * learning)
       station.inService.push({ itemId, workerId: worker.id, remainingTicks: ticks, totalTicks: ticks })
 
       const visit = [...item.history].reverse().find((v) => v.station === stationId && v.exitedTick === null)

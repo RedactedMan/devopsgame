@@ -8,6 +8,7 @@ import { cssAreaColor, cssDriftColor } from '../render/theme.js'
 
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 const TICKS_PER_DAY = TICKS_PER_HOUR * 8
+const LEARNING_SPEED = Math.round(100 / DEFAULT_TUNING.onboarding.serviceMult)
 
 /**
  * How long a line may go without shipping before the HUD says so.
@@ -132,7 +133,7 @@ export function Hud({ sim }: { sim: SimHandle }) {
           <Attention snap={snap} />
           <p className="hint">
             {held === null
-              ? 'Click someone to pick them up, then click a station to move them there. Moving is free; knowing where to move them is not.'
+              ? 'Click someone to pick them up, then click a station to move them there. Nobody new is coming — the team is who you have. A person who moves is slower for a while, learning the new station.'
               : `Where should ${held} go? Click a station, or click ${held} again to put them down.`}
           </p>
           {snap.stations.map((station) => (
@@ -148,9 +149,7 @@ export function Hud({ sim }: { sim: SimHandle }) {
                 dispatch({ kind: 'assignWorker', workerId: held, to: station.id })
                 setHeld(null)
               }}
-              onHire={(workerKind) =>
-                dispatch({ kind: 'hire', station: station.id, workerKind })
-              }
+              onHire={() => dispatch({ kind: 'hire', station: station.id })}
             />
           ))}
         </section>
@@ -400,12 +399,13 @@ function Constraint({ snap }: { snap: Snapshot }) {
  * looking at or the fix they reach for will be the wrong one.
  */
 function Attention({ snap }: { snap: Snapshot }) {
-  const { remaining, perShift, supply } = snap.attention
+  const { remaining, perShift, supply, floor } = snap.attention
   const share = perShift > 0 ? Math.min(1, remaining / perShift) : 0
-  const underwater = supply < perShift
+  const underwater = supply < floor
 
   const humans = snap.workers.filter((w) => w.kind === 'human').length
   const agents = snap.workers.length - humans
+  const learning = snap.workers.filter((w) => w.onboardingTicks > 0).length
 
   return (
     <div className={underwater ? 'attention attention--underwater' : 'attention'}>
@@ -428,6 +428,13 @@ function Attention({ snap }: { snap: Snapshot }) {
           <>
             Reviewing and rebasing are paid for out of this. {humans} people supply it, {agents}{' '}
             {agents === 1 ? 'agent draws' : 'agents draw'} on it, and it does not carry over.
+            {learning > 0 && (
+              <>
+                {' '}
+                {learning === 1 ? 'One person is' : `${learning} people are`} still learning a new
+                station, and someone is answering their questions.
+              </>
+            )}
           </>
         )}
       </p>
@@ -437,14 +444,14 @@ function Attention({ snap }: { snap: Snapshot }) {
 
 /**
  * One station's roster, the utilisation that says whether it needs one, and the
- * two ways to add to it.
+ * one way to add to it.
  *
- * Moving is free and unlimited, on purpose — a player who guesses wrong should
- * learn that they guessed wrong, not that guessing is expensive. Hiring is not
- * rationed either. Agents price themselves — they cost attention to supervise.
- * A person does not, yet: each one supplies less attention than the last but
- * never costs any, so until money lands in M2 the human hire is free. Recorded
- * as open in docs/HIRING_AND_ATTENTION.md §5 rather than papered over here.
+ * The people are fixed (docs/HIRING_AND_ATTENTION.md §8). Moving one is
+ * unlimited but not free: they spend a couple of shifts learning the new
+ * station, slower and drawing on attention, and the chip says so while they
+ * do. A guess costs a little, not a lot, and chasing the constraint back and
+ * forth costs a lot. Agents are the only addition, and they price themselves
+ * in attention.
  *
  * Review's missing agent button is the single most important thing in this
  * panel. It is the one station a machine cannot stand at, it is the constraint,
@@ -465,7 +472,7 @@ function StaffRow({
   held: string | null
   onHold: (id: string) => void
   onDrop: () => void
-  onHire: (workerKind: 'human' | 'agent') => void
+  onHire: () => void
 }) {
   const heldHere = workers.find((w) => w.id === held)
   const droppable = held !== null && heldHere === undefined
@@ -493,13 +500,16 @@ function StaffRow({
               worker.kind === 'agent' ? 'chip--agent' : '',
               held === worker.id ? 'chip--held' : '',
               worker.pendingStation ? 'chip--moving' : '',
+              worker.onboardingTicks > 0 ? 'chip--learning' : '',
             ]
               .filter(Boolean)
               .join(' ')}
             title={
               worker.pendingStation
                 ? `Finishing up, then moving to ${STATION_LABELS[worker.pendingStation]}`
-                : worker.busy
+                : worker.onboardingTicks > 0
+                  ? `Still learning this station: ${LEARNING_SPEED}% speed, and drawing on attention, for another ${(worker.onboardingTicks / TICKS_PER_HOUR).toFixed(0)}h.`
+                  : worker.busy
                   ? `${worker.kind === 'agent' ? 'Agent' : 'Person'}, working. A move lands when they finish.`
                   : `${worker.kind === 'agent' ? 'Agent' : 'Person'}, idle.`
             }
@@ -518,20 +528,12 @@ function StaffRow({
         )}
       </div>
       <div className="staff__hire">
-        <button
-          type="button"
-          className="hire"
-          title="Supplies attention. The tenth person brings less of it than the second did."
-          onClick={() => onHire('human')}
-        >
-          + person
-        </button>
         {station.agentsAllowed ? (
           <button
             type="button"
             className="hire"
             title="Free capacity. Draws on the attention budget, because someone has to read what it wrote."
-            onClick={() => onHire('agent')}
+            onClick={onHire}
           >
             + agent
           </button>

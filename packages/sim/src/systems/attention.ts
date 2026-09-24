@@ -1,5 +1,5 @@
 import { type StationId } from '@flow/content'
-import type { GameState } from '../state.js'
+import { isOnboarding, type GameState } from '../state.js'
 import type { SimEvent } from '../events.js'
 
 /**
@@ -55,9 +55,12 @@ export function attentionSupply(state: GameState): number {
 
   let humans = 0
   let agents = 0
+  let learning = 0
   for (const worker of state.workers) {
-    if (worker.kind === 'human') humans++
-    else agents++
+    if (worker.kind === 'human') {
+      humans++
+      if (isOnboarding(state, worker)) learning++
+    } else agents++
   }
 
   // The exponent is on *people*, not on everybody. The sublinear finding is
@@ -66,7 +69,16 @@ export function attentionSupply(state: GameState): number {
   // What it costs is one person's attention to read its output, and that is
   // `perAgent`, charged linearly. Counting agents into the concave term was
   // the first version's mistake, and it charged them twice.
-  return perHuman * Math.pow(humans, alpha) - perAgent * agents
+  //
+  // Someone moved to a new station still counts as a person, but for a while
+  // somebody who knows the station is answering their questions. That comes
+  // out of the same budget. With the team fixed, it is the only way the human
+  // term changes during play.
+  return (
+    perHuman * Math.pow(humans, alpha) -
+    perAgent * agents -
+    state.tuning.onboarding.attentionPerShift * learning
+  )
 }
 
 /**

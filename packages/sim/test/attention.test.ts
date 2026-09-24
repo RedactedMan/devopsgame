@@ -37,6 +37,19 @@ describe('the attention supply', () => {
     expect(attentionSupply(withAgents)).toBeLessThan(attentionSupply(bare))
   })
 
+  it('is drawn down while a moved person learns the new station, and recovers after', () => {
+    // With the team fixed, this is the only way the human side of the budget
+    // moves during play (docs/HIRING_AND_ATTENTION.md §8).
+    let state = initState({ seed: 1 })
+    const settled = attentionSupply(state)
+    const person = state.workers.find((w) => w.station === 'deploy')!
+    state = step(state, [{ kind: 'assignWorker', workerId: person.id, to: 'spec' }]).state
+
+    expect(attentionSupply(state)).toBeCloseTo(settled - DEFAULT_TUNING.onboarding.attentionPerShift)
+    state = run(state, DEFAULT_TUNING.onboarding.ticks)
+    expect(attentionSupply(state)).toBeCloseTo(settled)
+  })
+
   it('grows sublinearly in people — each hire supplies less than the last, and never nothing', () => {
     // A power law, `perHuman · H^α` with α below one. The first half of this
     // is the well-replicated finding: doubling a team costs each member a

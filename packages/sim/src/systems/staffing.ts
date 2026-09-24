@@ -25,6 +25,14 @@ import type { SimEvent } from '../events.js'
  * One deliberate consequence: a worker holding a STALE item never becomes free,
  * so the move waits on the player's stale decision. That is the same rule as
  * everywhere else — stale work holds its server — arriving somewhere new.
+ *
+ * A person who arrives starts onboarding (docs/HIRING_AND_ATTENTION.md §8).
+ * With the team fixed, a move is how capacity changes, and onboarding is what
+ * a move costs. It is the only cost, so it has to be enough that moving people
+ * back and forth to chase the constraint does not pay. Every move restarts it,
+ * including a move back to a station the person has just left. Agents do not
+ * onboard: what they lose by moving is context, which is a separate mechanic
+ * (design §4.2), not built yet.
  */
 export function applyPendingMoves(state: GameState, events: SimEvent[]): void {
   for (const worker of state.workers) {
@@ -39,6 +47,7 @@ export function applyPendingMoves(state: GameState, events: SimEvent[]): void {
     const from = worker.station
     worker.station = to
     worker.pendingStation = null
+    if (worker.kind === 'human') worker.onboardingUntil = state.tick + state.tuning.onboarding.ticks
     events.push({ kind: 'workerMoved', workerId: worker.id, from, to })
   }
 }
@@ -71,37 +80,37 @@ export function requestMove(
 }
 
 /**
- * Add a worker to the roster.
+ * Add an agent to the roster. Agents are the only thing that can be added.
+ *
+ * The human team is fixed (docs/HIRING_AND_ATTENTION.md §8). Hiring people
+ * taught management rather than flow, and nothing in M1 could stop a player
+ * hiring everywhere. With the team fixed, capacity at the constraint has to be
+ * moved there, and the agents are the backfill. Measured: one person moved to
+ * Review plus one agent at Implement ships exactly what the old human hire did.
  *
  * `nextWorkerSerial` has been on `GameState` since slice 1 for exactly this: a
  * replay that hires must produce the same worker ids on the way through, or a
  * later `assignWorker` in the same log addresses somebody else.
  *
- * There is no cost here yet. That is deliberate and temporary — free hiring
- * solves this game in about four moves (docs/HIRING_AND_ATTENTION.md §4), which
- * is what the attention pool is for. This step is the mechanic; the price is
- * the next one.
+ * Agents cost no money in M1. They pay for themselves in attention: someone
+ * has to read what they wrote.
  */
-export function hire(
-  state: GameState,
-  station: StationId,
-  workerKind: WorkerKind,
-  events: SimEvent[],
-): void {
-  if (!mayStaff(state, workerKind, station)) {
-    events.push({ kind: 'staffingRefused', station, workerKind, why: 'agentsNotAllowed' })
+export function hire(state: GameState, station: StationId, events: SimEvent[]): void {
+  if (!mayStaff(state, 'agent', station)) {
+    events.push({ kind: 'staffingRefused', station, workerKind: 'agent', why: 'agentsNotAllowed' })
     return
   }
 
   const worker = {
     id: `W${state.nextWorkerSerial}`,
-    kind: workerKind,
+    kind: 'agent' as const,
     station,
     pendingStation: null,
+    onboardingUntil: 0,
   }
   state.workers.push(worker)
   state.nextWorkerSerial++
-  events.push({ kind: 'workerHired', workerId: worker.id, at: station, workerKind })
+  events.push({ kind: 'workerHired', workerId: worker.id, at: station, workerKind: 'agent' })
 }
 
 /**

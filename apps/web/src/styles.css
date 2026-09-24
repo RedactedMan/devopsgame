@@ -600,3 +600,8 @@ body {
   color: var(--muted);
   font: 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* A person still learning the station they were moved to. */
+.chip--learning {
+  border-style: dotted;
+}
