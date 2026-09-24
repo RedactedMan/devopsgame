@@ -81,6 +81,11 @@ export type Worker = {
    * progress, and the wait is the honest cost of the decision.
    */
   pendingStation: StationId | null
+  /**
+   * The tick a person finishes learning the station they were moved to. Zero
+   * for anyone who has not moved. Agents never onboard.
+   */
+  onboardingUntil: number
 }
 
 export type ServiceSlot = {
@@ -197,6 +202,11 @@ export function stationOccupancy(station: Station): number {
 
 export function workersAt(state: GameState, station: StationId): Worker[] {
   return state.workers.filter((w) => w.station === station)
+}
+
+/** Still learning the station they were moved to: slower, and drawing on the attention budget. */
+export function isOnboarding(state: GameState, worker: Worker): boolean {
+  return state.tick < worker.onboardingUntil
 }
 
 /** A station's capacity is its roster. There is no separate server count to fall out of sync. */

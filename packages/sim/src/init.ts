@@ -55,6 +55,7 @@ export function initState(options: InitOptions): GameState {
         kind: 'human',
         station: id,
         pendingStation: null,
+        onboardingUntil: 0,
       })
     }
   }
@@ -62,7 +63,13 @@ export function initState(options: InitOptions): GameState {
     if (!tuning.stations[id].agentsAllowed) continue
     const count = options.agents?.[id] ?? 0
     for (let i = 0; i < count; i++) {
-      workers.push({ id: `W${workers.length + 1}`, kind: 'agent', station: id, pendingStation: null })
+      workers.push({
+        id: `W${workers.length + 1}`,
+        kind: 'agent',
+        station: id,
+        pendingStation: null,
+        onboardingUntil: 0,
+      })
     }
   }
 

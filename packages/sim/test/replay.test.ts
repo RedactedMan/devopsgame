@@ -31,24 +31,27 @@ const TICKS = 1500
  * catch a lesson being lost and would not notice a 25% number becoming a 20%
  * one.
  *
- * So: hire the human at the constraint, hire agents where agents may stand,
- * and retune afterwards, which is the whole of the slice in five commands.
+ * So: move a person to the constraint, add agents where the gap is, and
+ * retune afterwards, which is the whole of the slice in five commands. It used
+ * to hire the person. The team is fixed now (docs/HIRING_AND_ATTENTION.md §8)
+ * and the move pays onboarding, so the hash below was re-recorded then.
  */
 const STAFFED: Replay = {
   seed: 20260830,
   commands: [
     { tick: 30, command: { kind: 'setWipLimit', station: 'implement', limit: 3 } },
     { tick: 30, command: { kind: 'setWipLimit', station: 'review', limit: 2 } },
-    { tick: 300, command: { kind: 'hire', station: 'review', workerKind: 'human' } },
-    { tick: 320, command: { kind: 'hire', station: 'implement', workerKind: 'agent' } },
-    { tick: 340, command: { kind: 'hire', station: 'implement', workerKind: 'agent' } },
-    // The retune, which is worth more than a second hire would be.
+    // W2 is an implementer: the roster is laid out in pipeline order.
+    { tick: 300, command: { kind: 'assignWorker', workerId: 'W2', to: 'review' } },
+    { tick: 320, command: { kind: 'hire', station: 'implement' } },
+    { tick: 340, command: { kind: 'hire', station: 'implement' } },
+    // The retune, which is worth more than a second move would be.
     { tick: 700, command: { kind: 'setWipLimit', station: 'implement', limit: 6 } },
     { tick: 700, command: { kind: 'setWipLimit', station: 'review', limit: 4 } },
   ],
 }
 
-const GOLDEN_STAFFED = '3a359b81'
+const GOLDEN_STAFFED = '7ce23854'
 
 describe('replay', () => {
   it('reproduces a run exactly from seed and command log', () => {
@@ -59,7 +62,7 @@ describe('replay', () => {
     expect(fingerprint(runReplay(REPLAY, TICKS))).toBe(GOLDEN)
   })
 
-  it('matches the golden fingerprint for a run that hires', () => {
+  it('matches the golden fingerprint for a run that restaffs', () => {
     expect(fingerprint(runReplay(STAFFED, TICKS))).toBe(GOLDEN_STAFFED)
   })
 

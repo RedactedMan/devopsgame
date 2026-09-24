@@ -133,6 +133,24 @@ export const TuningSchema = z.object({
     rebaseCost: z.number().nonnegative(),
   }),
 
+  /**
+   * What a person costs for a while after being moved to a new station.
+   * The team is fixed, so this is the only price a move has. It is Brooks's
+   * actual claim, a transient rather than a steady state. See
+   * docs/HIRING_AND_ATTENTION.md §8.
+   */
+  onboarding: z.object({
+    /** How long the new station takes to learn, in ticks. */
+    ticks: z.number().int().nonnegative(),
+    /** Service time multiplier on anything they start while still learning. */
+    serviceMult: z.number().min(1),
+    /**
+     * Drawn from each shift's budget per person still learning. Someone who
+     * already knows the station is answering their questions.
+     */
+    attentionPerShift: z.number().nonnegative(),
+  }),
+
   /** How often the metrics sampler appends a point to the chart series. */
   sampleEveryTicks: z.number().int().positive(),
 })
@@ -214,6 +232,18 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
     perAgent: 1.2,
     reviewCost: 1,
     rebaseCost: 2,
+  },
+
+  // Two shifts at half speed, drawing what an agent draws. Mild on purpose: a
+  // good move loses 3–7 items to it and still beats staying put by 15 or
+  // more. It does not measurably deter moving people back and forth, and that
+  // was decided rather than missed. Making it bite would shrink the
+  // move-and-backfill lesson the game exists to teach. See
+  // docs/HIRING_AND_ATTENTION.md §8.
+  onboarding: {
+    ticks: 160,
+    serviceMult: 2,
+    attentionPerShift: 1.2,
   },
 
   sampleEveryTicks: 10,
