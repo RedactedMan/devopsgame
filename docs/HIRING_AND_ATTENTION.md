@@ -9,6 +9,12 @@ bound them. Measured against the sim as it stands after slices 1 and 2, before
 being specced — and as with the two slices before it, the measurement moved the
 plan. Section 3 is the part that moved.
 
+> **Superseded in part, 2026-09-23 — see §8.** People can no longer be hired.
+> The team is fixed at nine, a person who is moved spends a while onboarding,
+> and agents are the only thing a player can add. §2–§7 are kept as the record
+> of how the game got here. Where they talk about hiring a human, read "moving
+> one, and backfilling with an agent".
+
 ---
 
 ## 1. What this slice owes the milestone
@@ -495,9 +501,167 @@ it, because each is a mechanic with its own measurement to do:
   function of humans *per station*, not roster size. Best-evidenced of
   anything in this document; belongs with board building (slice 5), which is
   where stations get shape.
-- **Onboarding transient.** A newly hired person draws on a veteran's
-  attention for a few shifts and supplies less meanwhile. This is Brooks's
+- **Onboarding transient.** *(Built in §8, for moves rather than hires.)* A
+  newly hired person draws on a veteran's attention for a few shifts and
+  supplies less meanwhile. This is Brooks's
   actual claim — adding people to a late project makes it later — as a shock
   rather than a steady state, and the only place a rising marginal cost
   belongs. Cheap to build; needs the money loop (M2) before hiring timing is a
   real decision.
+
+## 8. The team is fixed
+
+Decided 2026-09-23. **People are no longer hired.** The nine the game starts
+with are the team. Moving one to another station costs an onboarding period.
+Agents are the only thing a player can add.
+
+### Why
+
+Two reasons, one about the game and one about the room it will be played in.
+
+- **Hiring taught the wrong lessons.** Deciding how many people to hire, and
+  when, is a management lesson. The game is about WIP and flow. And in M1
+  nothing stopped a player hiring people everywhere: §5 reopened that hole on
+  purpose, waiting for money in M2 to close it. A fixed team closes it by
+  construction, and needs no penalty invented to do it.
+- **The game will be played in a 30–45 minute session.** A short talk on
+  DevOps, then everyone in the room plays, then a leaderboard. That needs one
+  short game, the same for everyone, with the decisions a player has to find
+  kept to the ones the talk just introduced. An economy of hires is not one of
+  them.
+
+Removing staffing changes entirely was considered and rejected. Two of the
+milestone's measured lessons need capacity to change somewhere: the WIP
+optimum moving (§2, CONSTRAINT_AND_CAPACITY §8), and money not being able to
+buy attention (§3). Agents are where the capacity comes from now.
+
+### Measured: nothing important is lost
+
+12 seeds × 4000 ticks, diligent rebaser, always nine people. Moves and agents
+are set at t=0, so these are steady-state numbers with no onboarding in them.
+
+```
+                      config    0.4x   0.5x  0.75x    1x   1.5x   best     at   vs base
+             starting team       165    165    132   115    103    165   0.5x     0.0%
+    [old] hire 1 for review      187    209    188   161    142    209   0.5x    26.6%
+          move impl→review       179    165    138   119    103    179   0.4x     8.6%
+            move ci→review       184    188    162   150    136    188   0.5x    13.8%
+        move 2 impl→review       121    110     91    74     63    121   0.4x   -26.6%
+        +4 agents, no move       169    161    125   116    103    169   0.4x     2.2%
+        +8 agents, no move       143    140    118    98     78    143   0.4x   -13.2%
+     move 1, +1 agent impl       187    209    188   161    143    209   0.5x    26.6%
+    move 1, +4 agents impl       183    209    223   210    202    223  0.75x    34.8%
+    move 2, +4 agents impl       183    209    230   216    202    230  0.75x    39.3%
+    move 2, +6 agents impl       187    207    187   169    142    207   0.5x    25.1%
+```
+
+- **One person moved to Review and one agent to fill their place ships
+  exactly what the old human hire did.** 209 against 209. Every station has
+  the same number of workers in both.
+- **The WIP optimum still moves**, from 0.4–0.5× on the starting team to 0.75×
+  once the constraint is relieved and backfilled. 0.4× is the best setting at
+  the start and costs a fifth of the line after (183 against 230). Target 3's
+  strong form holds.
+- **The agent trap holds.** Four agents with nobody moved to Review are worth
+  +2.2%. The same four after the move are worth +34.8%. Past four it turns
+  down again, so the player is still looking for a ratio.
+- **The ceiling drops about 5%**, from 242 with thirteen people to 230 with
+  nine. There is still a best configuration to find, and it is still not a
+  maximum of anything.
+
+### Two lessons hiring could not teach
+
+- **You can over-correct.** Two implementers moved to Review with nothing to
+  fill the gap ship *less* than the untouched line, 121 against 165. Implement
+  becomes the constraint. With hiring there was always another body to add;
+  now the constraint moving is something the player can do to themselves.
+- **Where the person comes from matters.** From CI, which has slack, the move
+  is worth +13.8%. From Implement, which is nearly as busy as Review, +8.6%.
+
+Both are asserted in `staffing.test.ts`, under *a fixed team*.
+
+### Onboarding
+
+A person who is moved spends `onboarding.ticks` learning the new station.
+While they do, anything they start takes `serviceMult` times as long, and each
+shift's attention budget is `attentionPerShift` lower, because someone who
+knows the station is answering their questions. Every move restarts it,
+including a move straight back. Agents do not onboard. What they lose by
+moving is context, which is slice 3b's mechanic.
+
+Values: **two shifts (160 ticks), half speed, 1.2 attention per
+shift** — the same draw as an agent. Measured with each move made at t=1200,
+after the constraint has been named, which is when a player would first act.
+Whole-run shipped, 12 seeds:
+
+```
+                        script     none   1sh    2sh    3sh  2sh×3,a2   4sh
+                     stay 0.5x    165.1  165.1  165.1  165.1    165.1  165.1
+                ci→review 0.5x    186.9  182.9  180.3  183.5    182.7  181.8
+     impl→review +1 agent 0.5x    202.2  202.2  195.9  195.5    198.8  198.2
+             full play → 0.75x    200.0  209.2  202.4  198.0    204.5  201.5
+        ci⇄review every 2 shifts  183.3  182.3  179.8  179.8    173.6  179.8
+        ci⇄review every 4 shifts  176.9  175.7  176.8  174.8    173.9  176.8
+        ci⇄review every 8 shifts  175.8  172.3  175.3  176.6    178.0  176.5
+```
+
+(Columns are ×2 speed and 1.2 attention unless labelled. The *full play* row
+moves an implementer, adds two agents, and retunes to 0.75× 400 ticks later.)
+
+What this does and does not show:
+
+- **A good move still pays, comfortably.** Onboarding costs a good move 3–7
+  items. The same moves are worth 15–37 over staying put. Asserted: moving a CI
+  person to Review at t=1200 must beat staying by 5%.
+- **The noise is about as big as the effect.** The *full play* row is not
+  monotonic: 200 with no onboarding, 209 with one shift. At twelve seeds,
+  differences under about ten items in one cell are not a finding.
+- **Onboarding does not, at these values, punish moving people back and
+  forth.** Swapping a CI person between CI and Review is already a little
+  worse than one committed move with no onboarding at all (183, 177, 176
+  against 187). Onboarding does not widen that gap by anything the noise
+  can resolve. Only the harshest variant tried (two shifts, a third of normal
+  speed, 2 attention) moves it, and that costs good moves too.
+
+So as tuned, onboarding is **a small, visible cost, not a deterrent.** The
+chip shows who is still learning, and the attention panel says someone is
+answering their questions. Whether that is enough for players to hesitate
+before a move, which is the lesson Brooks's Law is actually about, is a
+playtest question. The sim cannot answer it at a size the noise would allow.
+
+**Decided 2026-09-23: keep it mild.** The alternative was to push
+`serviceMult` or `attentionPerShift` up until moving people back and forth
+visibly cost something. That also narrows what a good move is worth, and a
+good move — relieve the constraint, backfill with agents — is the lesson the
+session is built to teach. Brooks's Law is not. So the values above stand.
+Onboarding is there to make a move feel like it cost something, not to make
+the player afraid of moving. Revisit only if playtesting shows players
+reshuffling people every shift and doing well out of it.
+
+### What this retires
+
+- **The power-law supply curve is inert in play.** With the team fixed at
+  nine, `perHuman · H^α` is a constant 13.69. §5's curve, and `alpha`,
+  still decide what that constant is, and still apply to sweeps that set
+  `staffing`. No player moves along the curve any more. The tests that
+  asserted sprawl reaches the same ceiling at higher cost are removed, because
+  sprawl can no longer be reached. The mechanism test in `attention.test.ts`
+  stays.
+- **`hire` adds agents only.** `{ kind: 'hire'; station }`. The `workerKind`
+  field is gone, and so is the HUD's *+ person* button.
+- **The second golden replay was re-recorded**, `3a359b81` → `7ce23854`. It
+  used to hire a person at Review; now it moves W2 there. The new hash depends
+  on onboarding (`4695148a` without it), so it pins the mechanic. The first
+  golden replay never moves anyone and did not change.
+
+### Still to do for the session
+
+- **Everyone plays the same game.** A fixed seed and a fixed length. `reset()`
+  currently draws a random seed. 4000 ticks is the length every table in this
+  document was measured at: about 13 minutes at 1×, 3½ at 4×.
+- **A score, and a leaderboard.** Items shipped alone rewards shipping stale
+  work, so the score needs deciding before the board is built. A run is
+  already `{ seed, commands }` and replays exactly, so a submitted score can
+  be checked by replaying it rather than trusted. The same replay lets the
+  debrief show what the top player did and when.
+

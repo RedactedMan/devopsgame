@@ -46,6 +46,11 @@ playable on its own:
    maximum of either. Its playtest gate — *can someone told nothing about
    worker kinds work out why their agents are doing nothing?* — has not been
    run yet.
+
+   **Since 2026-09-23 the team is fixed**: people are moved, not hired, and a
+   moved person spends two shifts onboarding. Agents are the only addition.
+   Moving one person to Review plus one agent ships exactly what the human hire
+   did. See [HIRING_AND_ATTENTION.md](docs/HIRING_AND_ATTENTION.md) §8.
 4. **Save / load** from the command log.
 5. **Board building and placement.**
 
