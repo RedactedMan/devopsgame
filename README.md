@@ -79,9 +79,13 @@ pnpm deploy     # build, then deploy the game and the API as one Worker
 ```
 
 Presentation mode needs `pnpm dev:server` running alongside `pnpm dev`.
+Locally the presenter key is `dev`.
+
 Deploying needs a Cloudflare account on the **Workers paid plan**, because
 each submitted score is re-played on the server and that takes more than the
-free plan's 10 ms of CPU.
+free plan's 10 ms of CPU. Before the first deploy, set the presenter key:
+`cd apps/server && npx wrangler secret put PRESENTER_KEY`. Without it, nobody
+can start a session.
 
 `pnpm test:e2e` uses the Chrome already on your machine (`channel: 'chrome'`)
 rather than downloading its own, and starts the dev server itself. It exists
