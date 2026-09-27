@@ -916,3 +916,47 @@ body {
   color: var(--muted);
   font: 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
+
+/* The join QR code. A button, so clicking it puts a bigger one on the projector. */
+.present__qr {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  width: clamp(120px, 14vw, 200px);
+  line-height: 0;
+}
+
+.present__qr svg {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.present__qr:focus-visible {
+  outline: 2px solid var(--flow);
+  outline-offset: 3px;
+}
+
+.qr-overlay {
+  cursor: zoom-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgb(10 14 15 / 0.92);
+}
+
+.qr-overlay__code {
+  width: min(78vh, 90vw);
+  height: auto;
+  border-radius: 8px;
+}
+
+.qr-overlay__code-text {
+  color: var(--flow);
+  font: 700 clamp(28px, 5vw, 56px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.12em;
+}
