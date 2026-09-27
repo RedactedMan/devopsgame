@@ -49,9 +49,13 @@ If these constants change, update this table and the `agenda` and `play` slides.
 
 ## Before the session
 
-- Deploy (`pnpm deploy`) and set the presenter key. See the README.
-- Attendees need **laptops**: phones get the small-screen notice until the phone
-  layout exists.
+- The game is live at <https://flow-state.mschrenk.workers.dev>. Every push to
+  `main` deploys, so don't merge anything on the day of the talk that you haven't
+  played. The presenter key is set. Rotate it with `wrangler secret put
+  PRESENTER_KEY` (see the README).
+- Attendees can play on **laptops or phones**, held upright. The phone layout was
+  tried on a real phone on 2026-09-27. A laptop still shows the whole board at
+  once, which makes the debrief easier to follow.
 - Start the session at `?present` no more than an hour or two ahead. It takes
   players for four hours.
 
@@ -66,5 +70,6 @@ If these constants change, update this table and the `agenda` and `play` slides.
 
 ## Still to fill in
 
-The deck has bracketed placeholders: your name, event and date, the deployed URL,
-and the `mine` slide, which is for your own team's experience this year.
+The deck has bracketed placeholders: your name, event and date, the deployed URL
+(<https://flow-state.mschrenk.workers.dev>), and the `mine` slide, which is for
+your own team's experience this year.
