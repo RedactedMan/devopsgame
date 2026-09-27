@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "flow-state",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  // One deploy serves both halves: the static game from apps/web/dist, and the
+  // leaderboard API. `/api/*` reaches the Worker; everything else is a file.
+  "assets": {
+    "directory": "../web/dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "durable_objects": {
+    "bindings": [{ "name": "SESSIONS", "class_name": "Session" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Session"] }],
+  // Every submission is re-played to check its score: 40–70ms for a real run,
+  // under a second for the worst log the parser accepts. That needs the Workers
+  // paid plan — the free plan's 10ms CPU limit cannot replay a game.
+  "limits": { "cpu_ms": 5000 },
+  "observability": { "enabled": true }
+}

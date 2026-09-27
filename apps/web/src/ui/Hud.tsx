@@ -32,7 +32,10 @@ const STARTUP_GRACE_TICKS = TICKS_PER_DAY * 5
  */
 const CONSTRAINT_NEWS_TICKS = TICKS_PER_DAY
 
-export function Hud({ sim }: { sim: SimHandle }) {
+/** Present when the run belongs to a presentation session rather than free play. */
+export type HudSession = { code: string; name: string }
+
+export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) {
   const { snapshot: snap, dispatch } = sim
   const stale = snap.items.filter((it) => it.stale)
   const blocked = snap.stations.filter((s) => s.blocked)
@@ -47,10 +50,26 @@ export function Hud({ sim }: { sim: SimHandle }) {
     <>
       <header className="topbar">
         <div className="brand">
-          Flow State <span className="brand__tag">M1</span>
+          Flow State{' '}
+          {session ? (
+            <span className="brand__tag" title={`Playing as ${session.name}`}>
+              {session.code} · {session.name}
+            </span>
+          ) : (
+            <span className="brand__tag">M1</span>
+          )}
         </div>
 
-        <Stat label="Day" value={(snap.tick / TICKS_PER_DAY + 1).toFixed(1)} />
+        <Stat
+          label="Day"
+          value={
+            sim.endTick === null
+              ? (snap.tick / TICKS_PER_DAY + 1).toFixed(1)
+              : // Everyone in the room is racing the same clock, so it counts
+                // days gone against days there are.
+                `${(snap.tick / TICKS_PER_DAY).toFixed(1)} / ${(sim.endTick / TICKS_PER_DAY).toFixed(0)}`
+          }
+        />
         <Stat label="Trunk" value={`v${snap.trunkVersion}`} />
         <Stat label="Shipped" value={snap.shippedTotal} />
         <Stat
@@ -97,11 +116,14 @@ export function Hud({ sim }: { sim: SimHandle }) {
             </button>
           ))}
           <button type="button" className="btn" onClick={() => sim.reset(sim.seed)}>
-            Restart seed
+            {session ? 'Restart' : 'Restart seed'}
           </button>
-          <button type="button" className="btn" onClick={() => sim.reset()}>
-            New seed
-          </button>
+          {/* A session is one game for the whole room. A new seed would be a different one. */}
+          {!session && (
+            <button type="button" className="btn" onClick={() => sim.reset()}>
+              New seed
+            </button>
+          )}
         </div>
       </header>
 
@@ -225,7 +247,15 @@ export function Hud({ sim }: { sim: SimHandle }) {
           </ul>
         </section>
 
-        <footer className="seed">seed {sim.seed}</footer>
+        <footer className="seed">
+          seed {sim.seed}
+          {!session && (
+            <>
+              {' · '}
+              <a href="?present">presentation mode</a>
+            </>
+          )}
+        </footer>
       </aside>
     </>
   )

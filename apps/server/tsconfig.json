@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "paths": {
+      "@flow/content": ["../../packages/content/src/index.ts"],
+      "@flow/sim": ["../../packages/sim/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

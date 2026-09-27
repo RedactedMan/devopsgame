@@ -7,6 +7,10 @@ const r = (p: string) => fileURLToPath(new URL(p, import.meta.url))
 export default defineConfig({
   base: './',
   plugins: [react()],
+  server: {
+    // The leaderboard API. Run `pnpm dev:server` alongside `pnpm dev`.
+    proxy: { '/api': 'http://localhost:8787' },
+  },
   resolve: {
     alias: {
       '@flow/sim': r('../../packages/sim/src/index.ts'),

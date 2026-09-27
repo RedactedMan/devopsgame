@@ -27,10 +27,20 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chrome', use: { ...devices['Desktop Chrome'], channel: 'chrome' } }],
-  webServer: {
-    command: 'pnpm --filter @flow/web dev --port 5180 --strictPort',
-    url: 'http://localhost:5180',
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: 'pnpm --filter @flow/web dev --port 5180 --strictPort',
+      url: 'http://localhost:5180',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+    {
+      // The leaderboard API, which Vite proxies `/api` to. Local Durable
+      // Objects, so nothing leaves the machine.
+      command: 'pnpm --filter @flow/server dev',
+      url: 'http://localhost:8787/api/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+  ],
 })
