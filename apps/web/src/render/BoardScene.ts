@@ -47,6 +47,86 @@ const STRIP_FLOOR = 4
 /** How far an item that shares nothing with the hovered one recedes. */
 const DIMMED = 0.24
 
+/**
+ * Below this a column cannot hold the laptop drawing: "Implement" overruns
+ * its neighbour and an item label does not fit. A phone held upright gives
+ * each column about 65px.
+ */
+const COMPACT_COLUMN = 110
+
+/** Station names that fit a 65px column. */
+const SHORT_LABELS: Record<ColumnId, string> = {
+  backlog: 'Queue',
+  spec: 'Spec',
+  implement: 'Impl',
+  review: 'Review',
+  ci: 'CI',
+  deploy: 'Deploy',
+}
+
+/**
+ * Every size the board draws at. Two sets rather than a scale factor: at phone
+ * size the header drops what the panel already says (staff, utilisation as a
+ * number), and items drop everything but their id and their colour. The WIP
+ * line and a column that grows with its limit stay. They are the lesson.
+ */
+type Metrics = {
+  compact: boolean
+  headerH: number
+  rowH: number
+  itemH: number
+  /** Gap between neighbouring columns. */
+  gutter: number
+  /** Gap between a column's edge and the items in it. */
+  inset: number
+  /** How far waiting and finished work sit either side of the column's centre. */
+  phase: number
+  titleY: number
+  detailY: number
+  barY: number
+  statusY: number
+}
+
+const WIDE: Metrics = {
+  compact: false,
+  headerH: HEADER_H,
+  rowH: ROW_H,
+  itemH: ITEM_H,
+  gutter: 16,
+  inset: 12,
+  phase: 8,
+  titleY: 12,
+  detailY: 32,
+  barY: 50,
+  statusY: 62,
+}
+
+const COMPACT: Metrics = {
+  compact: true,
+  headerH: 64,
+  rowH: 22,
+  itemH: 18,
+  gutter: 5,
+  inset: 4,
+  phase: 3,
+  titleY: 7,
+  detailY: 23,
+  barY: 38,
+  statusY: 45,
+}
+
+/**
+ * Remove the canvas, and leave Pixi's global pools alone.
+ *
+ * `destroy(true)` also means `releaseGlobalResources`, which clears the texture
+ * pool every Pixi application on the page shares. StrictMode mounts the board
+ * twice, so the first one is torn down while the second is drawing, and when
+ * that teardown landed late it emptied the live board's pool. The next text
+ * change then handed a texture back to a pool that no longer existed:
+ * "reading 'push'" in TexturePool.returnTexture, intermittently.
+ */
+const RENDERER_DESTROY = { removeView: true, releaseGlobalResources: false }
+
 type ItemView = {
   container: Container
   body: Graphics
@@ -74,6 +154,7 @@ export class BoardScene {
    * run together and the negative space is the only thing that reads.
    */
   private hovered: string | null = null
+  private metrics: Metrics = WIDE
   private getSnapshot: () => Snapshot = () => {
     throw new Error('BoardScene not mounted')
   }
@@ -92,7 +173,7 @@ export class BoardScene {
     // is torn down before it finishes initialising, which takes the whole React
     // tree with it.
     if (this.disposed) {
-      this.app.destroy(true, { children: true })
+      this.app.destroy(RENDERER_DESTROY, { children: true })
       return
     }
     parent.appendChild(this.app.canvas)
@@ -110,6 +191,13 @@ export class BoardScene {
     this.stripTitle = text('', 10, COLORS.muted)
     this.stage.addChild(this.overflow, this.stripTitle)
     this.app.stage.addChild(this.stage)
+    // A finger has no hover. Tapping an item asks "who am I fighting?", and
+    // tapping anywhere else puts the question down.
+    this.app.stage.eventMode = 'static'
+    this.app.stage.hitArea = this.app.screen
+    this.app.stage.on('pointertap', () => {
+      this.hovered = null
+    })
 
     this.app.ticker.add((ticker) => this.draw(this.getSnapshot(), ticker.deltaTime))
     this.ready = true
@@ -119,7 +207,7 @@ export class BoardScene {
     this.disposed = true
     if (!this.ready) return
     this.ready = false
-    this.app.destroy(true, { children: true })
+    this.app.destroy(RENDERER_DESTROY, { children: true })
   }
 
   private columnX(index: number): number {
@@ -129,20 +217,27 @@ export class BoardScene {
   private draw(snap: Snapshot, delta: number): void {
     const width = this.app.screen.width
     const colWidth = width / COLUMNS.length
-    const panelWidth = colWidth - 16
+    const m = colWidth < COMPACT_COLUMN ? COMPACT : WIDE
+    if (m !== this.metrics) {
+      this.metrics = m
+      this.rebuildText()
+    }
+    const panelWidth = colWidth - m.gutter
 
     // The column is as tall as the work it is allowed to hold, so raising a WIP
     // limit visibly makes the station bigger before any of the consequences
     // arrive. The lever should look like it did something.
     const tallest = Math.max(...snap.stations.map((s) => Math.max(s.wipLimit, s.occupancy)))
-    const rowsShown = Math.min(MAX_ROWS_DRAWN, Math.max(MIN_ROWS_DRAWN, tallest))
-    const panelHeight = Math.min(
-      // The strip lives below the columns, so the columns are not allowed to
-      // grow into it — a readout that falls off the bottom of a short board is
-      // the same as not having built it.
-      this.app.screen.height - TOP_PAD * 2 - STRIP_RESERVE,
-      HEADER_H + rowsShown * ROW_H + 16,
-    )
+    // The strip lives below the columns, so the columns are not allowed to
+    // grow into it — a readout that falls off the bottom of a short board is
+    // the same as not having built it.
+    const room = this.app.screen.height - TOP_PAD * 2 - STRIP_RESERVE
+    // Items get the rows the board has room for, and no more. Past that the
+    // "+N more not drawn" line carries the count, rather than items spilling
+    // out under the strip on a short screen.
+    const rowsFit = Math.max(1, Math.floor((room - m.headerH - 16) / m.rowH))
+    const rowsShown = Math.min(MAX_ROWS_DRAWN, rowsFit, Math.max(MIN_ROWS_DRAWN, tallest))
+    const panelHeight = Math.min(room, m.headerH + rowsShown * m.rowH + 16)
 
     this.panels.clear()
     for (let i = 0; i < COLUMNS.length; i++) {
@@ -164,48 +259,61 @@ export class BoardScene {
       // WIP limit as a physical line on the column: slots below it are yours to
       // fill, and the board goes red-edged the moment rework pushes past it.
       if (station) {
-        const limitY = HEADER_H + Math.min(station.wipLimit, rowsShown) * ROW_H + 4
+        const limitY = m.headerH + Math.min(station.wipLimit, rowsShown) * m.rowH + 4
         this.panels
-          .moveTo(x + 10, limitY)
-          .lineTo(x + panelWidth - 10, limitY)
+          .moveTo(x + m.inset, limitY)
+          .lineTo(x + panelWidth - m.inset, limitY)
           .stroke({ color: over ? COLORS.overLimit : COLORS.panelEdge, width: 1 })
       }
 
       const header = this.headers.get(id)
       if (header) {
-        header.title.x = x + 12
-        header.title.y = TOP_PAD + 12
-        header.detail.x = x + 12
-        header.detail.y = TOP_PAD + 32
+        const left = x + (m.compact ? 5 : 12)
+        header.title.x = left
+        header.title.y = TOP_PAD + m.titleY
+        header.detail.x = left
+        header.detail.y = TOP_PAD + m.detailY
+        // On a phone the Team tab carries staff and utilisation; the column
+        // keeps what the WIP line is measured against.
         header.detail.text = station
-          ? `${station.occupancy}/${station.wipLimit} wip · ${station.servers} staff · ${Math.round(
-              station.utilisation * 100,
-            )}%`
-          : `${snap.backlog} waiting`
+          ? m.compact
+            ? `${station.occupancy}/${station.wipLimit}`
+            : `${station.occupancy}/${station.wipLimit} wip · ${station.servers} staff · ${Math.round(
+                station.utilisation * 100,
+              )}%`
+          : m.compact
+            ? `${snap.backlog}`
+            : `${snap.backlog} waiting`
         header.detail.style.fill = over ? COLORS.overLimit : COLORS.muted
 
         // "Busy" and "blocked" look identical if you only count occupancy, and
         // the difference is the whole diagnosis. Say it in words.
-        header.status.x = x + 12
-        header.status.y = TOP_PAD + 62
+        header.status.x = left
+        header.status.y = TOP_PAD + m.statusY
         header.status.text =
-          station && station.blocked ? `BLOCKED · ${station.outbound} parked` : ''
+          station && station.blocked
+            ? m.compact
+              ? 'BLOCKED'
+              : `BLOCKED · ${station.outbound} parked`
+            : ''
 
-        header.mark.text = isConstraint ? 'CONSTRAINT' : ''
-        header.mark.x = x + panelWidth - 12 - header.mark.width
-        header.mark.y = TOP_PAD + 14
+        // A phone has no room for the word. The drift-coloured edge says it,
+        // and the status line under the board names the station.
+        header.mark.text = isConstraint ? (m.compact ? '◆' : 'CONSTRAINT') : ''
+        header.mark.x = x + panelWidth - (m.compact ? 5 : 12) - header.mark.width
+        header.mark.y = TOP_PAD + (m.compact ? m.titleY + 1 : 14)
       }
 
       // Utilisation, as a bar, because it is a share and reads as one. Occupancy
       // is already three numbers on the line above; this is the one that says
       // how hard the station has actually been worked.
       if (station) {
-        const barX = x + 12
-        const barW = panelWidth - 24
+        const barX = x + (m.compact ? 5 : 12)
+        const barW = panelWidth - (m.compact ? 10 : 24)
         this.panels
-          .roundRect(barX, TOP_PAD + 50, barW, 4, 2)
+          .roundRect(barX, TOP_PAD + m.barY, barW, 4, 2)
           .fill({ color: COLORS.slot })
-          .roundRect(barX, TOP_PAD + 50, Math.max(2, barW * station.utilisation), 4, 2)
+          .roundRect(barX, TOP_PAD + m.barY, Math.max(2, barW * station.utilisation), 4, 2)
           .fill({ color: isConstraint ? COLORS.drift : COLORS.muted })
       }
     }
@@ -227,14 +335,14 @@ export class BoardScene {
       const phaseOffset =
         item.location.where === 'station'
           ? item.location.phase === 'queue'
-            ? -8
+            ? -m.phase
             : item.location.phase === 'outbound'
-              ? 8
+              ? m.phase
               : 0
           : 0
       targets.set(item.id, {
         x: this.columnX(index) + phaseOffset,
-        y: HEADER_H + row * ROW_H + ITEM_H / 2,
+        y: m.headerH + row * m.rowH + m.itemH / 2,
       })
       drawn.add(item.id)
     }
@@ -270,7 +378,7 @@ export class BoardScene {
       }
     }
 
-    const itemWidth = panelWidth - 24
+    const itemWidth = panelWidth - m.inset * 2
     for (const item of ordered) {
       const target = targets.get(item.id)
       if (!target) continue
@@ -295,20 +403,58 @@ export class BoardScene {
     }
   }
 
+  /**
+   * A layout change replaces every piece of text rather than restyling it, so
+   * a size is set once, when a Text is made, and never written per frame.
+   * Item views are simply dropped: the next frame recreates them at the new
+   * size, from wherever the sim has put them.
+   */
+  private rebuildText(): void {
+    const compact = this.metrics.compact
+    for (const [id, old] of this.headers) {
+      for (const t of [old.title, old.detail, old.status, old.mark]) t.destroy()
+      const header = {
+        title: text(
+          compact ? SHORT_LABELS[id] : id === 'backlog' ? 'Backlog' : STATION_LABELS[id as StationId],
+          compact ? 11 : 13,
+          COLORS.text,
+        ),
+        detail: text('', compact ? 10 : 11, COLORS.muted),
+        status: text('', compact ? 8 : 11, COLORS.drift),
+        mark: text('', 10, COLORS.drift),
+      }
+      // Directly above the panels, under the items, where mount put them.
+      for (const t of [header.title, header.detail, header.status, header.mark]) {
+        this.stage.addChildAt(t, 1)
+      }
+      this.headers.set(id, header)
+    }
+    for (const view of this.views.values()) view.container.destroy({ children: true })
+    this.views.clear()
+    this.hovered = null
+  }
+
   private createView(id: string): ItemView {
     const container = new Container()
     const body = new Graphics()
-    const label = text('', 10, COLORS.ground)
+    const label = text('', this.metrics.compact ? 9 : 10, COLORS.ground)
     label.x = 8
-    label.y = -6
+    label.y = this.metrics.compact ? -5 : -6
     container.addChild(body, label)
     container.eventMode = 'static'
     container.cursor = 'pointer'
-    container.on('pointerover', () => {
-      this.hovered = id
+    // On a touch screen pointerover and pointerout arrive together on a tap,
+    // so hover would flash and clear. Hover is for a mouse; a tap toggles.
+    container.on('pointerover', (e) => {
+      if (e.pointerType === 'mouse') this.hovered = id
     })
-    container.on('pointerout', () => {
-      if (this.hovered === id) this.hovered = null
+    container.on('pointerout', (e) => {
+      if (e.pointerType === 'mouse' && this.hovered === id) this.hovered = null
+    })
+    container.on('pointertap', (e) => {
+      if (e.pointerType === 'mouse') return
+      e.stopPropagation()
+      this.hovered = this.hovered === id ? null : id
     })
     this.stage.addChild(container)
     const view: ItemView = { container, body, label, x: 0, y: 0, placed: false }
@@ -335,7 +481,9 @@ export class BoardScene {
     const barW = Math.max(6, cellW - 6)
     const busiest = Math.max(STRIP_FLOOR, ...cells.map((c) => c.inFlight))
 
-    this.stripTitle.text = 'Codebase — work in flight per area. Two items on one colour are fighting.'
+    this.stripTitle.text = this.metrics.compact
+      ? 'Codebase — work in flight per area'
+      : 'Codebase — work in flight per area. Two items on one colour are fighting.'
     this.stripTitle.x = left
     this.stripTitle.y = y
 
@@ -374,6 +522,8 @@ export class BoardScene {
   }
 
   private paintItem(view: ItemView, item: SnapshotItem, width: number): void {
+    const m = this.metrics
+    const ITEM_H = m.itemH
     const inBacklog = item.location.where === 'backlog'
     // Finished here, and going nowhere: the station downstream has no room.
     const parked = item.location.where === 'station' && item.location.phase === 'outbound'
@@ -414,7 +564,10 @@ export class BoardScene {
     // limits the game starts you on comes from two items sharing a square, and
     // until now that was the one force on the board with nothing to look at.
     // Right-aligned, because the label owns the left.
-    for (let i = 0; i < item.areas.length; i++) {
+    // A phone tile has room for its id and two chips. The strip below still
+    // counts every area; the chips are a pointer to it, not the whole record.
+    const chips = m.compact ? Math.min(2, item.areas.length) : item.areas.length
+    for (let i = 0; i < chips; i++) {
       const area = item.areas[item.areas.length - 1 - i] as number
       const cx = width / 2 - 5 - i * (CHIP + CHIP_GAP) - CHIP
       view.body
@@ -423,8 +576,10 @@ export class BoardScene {
         .stroke({ color: 0x0d1213, width: 1, alpha: 0.7 })
     }
 
-    view.label.x = -width / 2 + 8
-    view.label.text = item.stale
+    view.label.x = -width / 2 + (m.compact ? 3 : 8)
+    view.label.text = m.compact
+      ? item.id
+      : item.stale
       ? `${item.id}  STALE`
       : inBacklog
         ? `${item.id}  ${Math.round(item.ageTicks / TICKS_PER_HOUR)}h waiting`

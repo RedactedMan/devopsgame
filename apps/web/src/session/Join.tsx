@@ -4,7 +4,7 @@ import type { SessionStatus, SubmitOutcome } from '@flow/sim'
 import { useSim, type SimHandle } from '../bridge/useSim.js'
 import { Board } from '../render/Board.js'
 import { Hud } from '../ui/Hud.js'
-import { SmallScreenGate, SmallScreenNote, useSmallScreen } from '../ui/SmallScreen.js'
+import { TurnUpright } from '../ui/Sideways.js'
 import { ApiError, api, playerId, rememberName, rememberedName, type Player } from './api.js'
 
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
@@ -20,7 +20,6 @@ export function Join({ code: initialCode }: { code: string | null }) {
   const [busy, setBusy] = useState(false)
   const [joined, setJoined] = useState<{ session: SessionStatus; player: Player } | null>(null)
   const [id] = useState(playerId)
-  const small = useSmallScreen()
 
   if (joined) return <SessionGame session={joined.session} player={joined.player} />
 
@@ -54,7 +53,6 @@ export function Join({ code: initialCode }: { code: string | null }) {
           Everyone in the room plays the same game. Ship as much as you can before the clock runs
           out. Work that ships stale counts for less.
         </p>
-        {small && <SmallScreenNote />}
         <label className="field">
           <span>Session code</span>
           <input
@@ -92,7 +90,7 @@ function SessionGame({ session, player }: { session: SessionStatus; player: Play
     <div className="app">
       <Hud sim={sim} session={{ code: session.code, name: player.name }} />
       <Board latest={sim.latest} />
-      <SmallScreenGate />
+      <TurnUpright />
       {sim.finished && <EndScreen sim={sim} session={session} player={player} />}
     </div>
   )

@@ -40,6 +40,7 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
   const stale = snap.items.filter((it) => it.stale)
   const blocked = snap.stations.filter((s) => s.blocked)
   const [held, setHeld] = useState<string | null>(null)
+  const [tab, setTab] = useState<PanelTab>('wip')
 
   const sinceShip = snap.lastShipTick === null ? snap.tick : snap.tick - snap.lastShipTick
   const stalled =
@@ -70,21 +71,23 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
                 `${(snap.tick / TICKS_PER_DAY).toFixed(1)} / ${(sim.endTick / TICKS_PER_DAY).toFixed(0)}`
           }
         />
-        <Stat label="Trunk" value={`v${snap.trunkVersion}`} />
+        <Stat label="Trunk" value={`v${snap.trunkVersion}`} secondary />
         <Stat label="Shipped" value={snap.shippedTotal} />
         <Stat
+          secondary
           label="Lead time"
           value={`${(snap.recentLeadTimeTicks / TICKS_PER_HOUR).toFixed(1)}h`}
         />
-        <Stat label="Throughput" value={`${snap.throughputPerDay}/day`} />
+        <Stat label="Throughput" value={`${snap.throughputPerDay}/day`} secondary />
         <Stat
+          secondary
           label="Oldest"
           // Lead time averages only what shipped. This one counts what has not.
           value={`${(snap.oldestInFlightTicks / TICKS_PER_HOUR).toFixed(0)}h`}
           alarm={stalled}
         />
         <Stat label="WIP" value={snap.items.filter((i) => i.location.where !== 'backlog').length} />
-        <Stat label="Backlog" value={snap.backlog} />
+        <Stat label="Backlog" value={snap.backlog} secondary />
         <Stat
           label="Attention"
           // The only scarcity in M1. Money buys capacity, attention buys
@@ -127,12 +130,43 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
         </div>
       </header>
 
-      <aside className="panel">
-        {stalled && <StallAlarm days={sinceShip / TICKS_PER_DAY} stale={stale.length} blocked={blocked} />}
+      {/* A phone has no room for the whole panel, so it shows one tab of it
+          at a time (styles.css). These two sit outside it, and are hidden on a
+          laptop. The status line carries the news a phone player must not
+          miss behind the wrong tab. */}
+      <StatusLine
+        snap={snap}
+        stalled={stalled ? sinceShip / TICKS_PER_DAY : null}
+        onOpen={() => setTab('flow')}
+      />
+      <nav className="tabs" role="tablist" aria-label="Panel">
+        {PANEL_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={tab === t.id ? 'tab tab--on' : 'tab'}
+            onClick={() => setTab(t.id)}
+          >
+            {t.label}
+            {t.id === 'stale' && stale.length > 0 && <span className="tab__badge">{stale.length}</span>}
+          </button>
+        ))}
+      </nav>
 
-        <Constraint snap={snap} />
+      <aside className={`panel panel--${tab}`}>
+        {stalled && (
+          <div data-tab="flow">
+            <StallAlarm days={sinceShip / TICKS_PER_DAY} stale={stale.length} blocked={blocked} />
+          </div>
+        )}
 
-        <section>
+        <div data-tab="flow">
+          <Constraint snap={snap} />
+        </div>
+
+        <section data-tab="wip">
           <h2>WIP limits</h2>
           <p className="hint">
             How much work each station is allowed to hold at once. Raising a limit lets more work
@@ -150,7 +184,7 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
           ))}
         </section>
 
-        <section>
+        <section data-tab="team">
           <h2>Staffing</h2>
           <Attention snap={snap} />
           <p className="hint">
@@ -176,12 +210,12 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
           ))}
         </section>
 
-        <section>
+        <section data-tab="flow">
           <h2>Flow</h2>
           <Chart samples={snap.samples} ticksPerHour={TICKS_PER_HOUR} />
         </section>
 
-        <section>
+        <section data-tab="stale">
           <h2>
             Stale work <span className="count">{stale.length}</span>
           </h2>
@@ -247,7 +281,7 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
           </ul>
         </section>
 
-        <footer className="seed">
+        <footer className="seed" data-tab="flow">
           seed {sim.seed}
           {!session && (
             <>
@@ -357,6 +391,65 @@ function WipSlider({
  * at the warmest one would send the player to staff a station that is already
  * idle a third of the time.
  */
+type PanelTab = 'flow' | 'wip' | 'team' | 'stale'
+
+const PANEL_TABS: { id: PanelTab; label: string }[] = [
+  { id: 'wip', label: 'WIP' },
+  { id: 'team', label: 'Team' },
+  { id: 'stale', label: 'Stale' },
+  { id: 'flow', label: 'Flow' },
+]
+
+/** The first line of the constraint callout, which the status line repeats. */
+function constraintHeadline(snap: Snapshot): { text: string; news: boolean } {
+  if (snap.constraintIsPolicy) return { text: 'The constraint is your WIP limits', news: false }
+  if (snap.constraint === null) return { text: 'Finding the constraint…', news: false }
+  const fresh =
+    snap.constraintMoves > 0 && snap.tick - snap.constraintSinceTick < CONSTRAINT_NEWS_TICKS
+  return {
+    text: `${fresh ? 'The constraint moved to' : 'The constraint is'} ${STATION_LABELS[snap.constraint]}`,
+    news: fresh,
+  }
+}
+
+/**
+ * One line between the board and the tabs, on a phone only.
+ *
+ * The constraint moving is the highest-value feedback in the milestone, and a
+ * stalled line is the one the dashboard otherwise lies about. On a laptop both
+ * sit at the top of the panel. On a phone the panel is one tab at a time, so
+ * without this a player adjusting WIP would never see either. Tapping it opens
+ * the tab with the whole story.
+ */
+function StatusLine({
+  snap,
+  stalled,
+  onOpen,
+}: {
+  snap: Snapshot
+  stalled: number | null
+  onOpen: () => void
+}) {
+  const headline = constraintHeadline(snap)
+  const alarm = stalled !== null
+  return (
+    <button
+      type="button"
+      className={[
+        'statusline',
+        alarm ? 'statusline--alarm' : '',
+        !alarm && headline.news ? 'statusline--news' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onClick={onOpen}
+    >
+      {alarm ? `Nothing shipped in ${stalled.toFixed(1)} days` : headline.text}
+      <span className="statusline__more">›</span>
+    </button>
+  )
+}
+
 function Constraint({ snap }: { snap: Snapshot }) {
   if (snap.constraintIsPolicy) {
     return (
@@ -384,8 +477,7 @@ function Constraint({ snap }: { snap: Snapshot }) {
 
   // Naming the bottleneck for the first time is not the same event as watching
   // it relocate, and only the second one means the player's answer expired.
-  const moved = snap.constraintMoves > 0
-  const fresh = moved && snap.tick - snap.constraintSinceTick < CONSTRAINT_NEWS_TICKS
+  const { text: headline, news: fresh } = constraintHeadline(snap)
 
   // The constraint is a station agents may not stand at, and the player has
   // agents. Without this line the game is very hard to read correctly: a
@@ -398,10 +490,7 @@ function Constraint({ snap }: { snap: Snapshot }) {
 
   return (
     <div className={fresh ? 'constraint constraint--news' : 'constraint'} role="status">
-      <div className="constraint__head">
-        {fresh ? 'The constraint moved to ' : 'The constraint is '}
-        {STATION_LABELS[snap.constraint]}
-      </div>
+      <div className="constraint__head">{headline}</div>
       <p className="constraint__body">
         {fresh
           ? 'The bottleneck is not where it was. Whatever was holding the line back before is not what is holding it back now.'
@@ -583,13 +672,16 @@ function Stat({
   label,
   value,
   alarm = false,
+  secondary = false,
 }: {
   label: string
   value: string | number
   alarm?: boolean
+  /** Dropped on a phone, where the top bar has room for four readouts. */
+  secondary?: boolean
 }) {
   return (
-    <div className="stat">
+    <div className={secondary ? 'stat stat--secondary' : 'stat'}>
       <span className="stat__label">{label}</span>
       <span className={alarm ? 'stat__value stat__value--alarm' : 'stat__value'}>{value}</span>
     </div>

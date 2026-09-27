@@ -53,7 +53,9 @@ playable on its own:
    did. See [HIRING_AND_ATTENTION.md](docs/HIRING_AND_ATTENTION.md) §8.
    **Presentation mode** is built for the session this is for: a short talk,
    everyone plays the same seed for 50 days, then a leaderboard. Open
-   `?present` to start one and put the join link on the projector. Every score
+   `?present` to start one and put the join link and its QR code on the
+   projector. It plays on a phone held upright: the panel becomes tabs under
+   the board. Every score
    on the board was replayed on the server before it got there. See
    [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §7.
 4. **Save / load** from the command log.

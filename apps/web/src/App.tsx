@@ -3,7 +3,7 @@ import { Board } from './render/Board.js'
 import { Hud } from './ui/Hud.js'
 import { Join } from './session/Join.js'
 import { Presenter } from './session/Presenter.js'
-import { SmallScreenGate } from './ui/SmallScreen.js'
+import { TurnUpright } from './ui/Sideways.js'
 
 /**
  * Three ways in, chosen by the URL so a link is all anyone needs:
@@ -26,7 +26,7 @@ function FreePlay() {
     <div className="app">
       <Hud sim={sim} />
       <Board latest={sim.latest} />
-      <SmallScreenGate />
+      <TurnUpright />
     </div>
   )
 }
