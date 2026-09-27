@@ -18,7 +18,14 @@ import type {
  * queueing a whole room's replays behind one object.
  */
 
-/** Sessions are for one talk. A week later nobody is coming back for them. */
+/**
+ * How long a session accepts players and runs. A talk is under an hour; this
+ * leaves room for a late start and a second round. After it, the session costs
+ * nothing: every request that could trigger a replay is refused before one runs.
+ */
+export const SUBMIT_WINDOW_MS = 4 * 60 * 60 * 1000
+
+/** The board outlives the talk, for the write-up. A week later nobody is coming back for it. */
 const EXPIRE_AFTER_MS = 7 * 24 * 60 * 60 * 1000
 
 type Row = {
@@ -76,7 +83,7 @@ export class Session extends DurableObject<Record<string, unknown>> {
       createdAt,
     )
     await this.ctx.storage.setAlarm(createdAt + EXPIRE_AFTER_MS)
-    return { code, seed, ticks, createdAt }
+    return { code, seed, ticks, createdAt, closesAt: createdAt + SUBMIT_WINDOW_MS }
   }
 
   async info(): Promise<SessionStatus | null> {
@@ -88,7 +95,8 @@ export class Session extends DurableObject<Record<string, unknown>> {
    * A player has the seed and is playing. Recorded so the presenter's screen
    * can show the room arriving long before anyone has a score.
    */
-  async join(playerId: string, name: string): Promise<void> {
+  async join(playerId: string, name: string): Promise<boolean> {
+    if (this.isClosed()) return false
     this.ctx.storage.sql.exec(
       `INSERT INTO players (player_id, name, joined_at) VALUES (?, ?, ?)
        ON CONFLICT (player_id) DO UPDATE SET name = excluded.name`,
@@ -96,6 +104,7 @@ export class Session extends DurableObject<Record<string, unknown>> {
       name,
       Date.now(),
     )
+    return true
   }
 
   /**
@@ -107,9 +116,11 @@ export class Session extends DurableObject<Record<string, unknown>> {
     name: string,
     result: SessionResult,
     commands: LoggedCommand[],
-  ): Promise<SubmitOutcome> {
+  ): Promise<SubmitOutcome | null> {
+    // The Worker checks this before it replays anything. Checked again here so
+    // the object never takes a result after its window, whoever asks.
+    if (!(await this.join(playerId, name))) return null
     const now = Date.now()
-    await this.join(playerId, name)
     this.ctx.storage.sql.exec(
       `INSERT INTO results
          (player_id, name, score, shipped, avg_quality, avg_lead_time, commands, runs, submitted_at)
@@ -178,7 +189,18 @@ export class Session extends DurableObject<Record<string, unknown>> {
       .toArray()[0]
     return row === undefined
       ? null
-      : { code: row.code, seed: row.seed, ticks: row.ticks, createdAt: row.created_at }
+      : {
+          code: row.code,
+          seed: row.seed,
+          ticks: row.ticks,
+          createdAt: row.created_at,
+          closesAt: row.created_at + SUBMIT_WINDOW_MS,
+        }
+  }
+
+  private isClosed(): boolean {
+    const info = this.readInfo()
+    return info === null || Date.now() >= info.closesAt
   }
 
   private joinedCount(): number {

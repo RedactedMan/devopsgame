@@ -4,7 +4,7 @@ import type { SessionStatus, SubmitOutcome } from '@flow/sim'
 import { useSim, type SimHandle } from '../bridge/useSim.js'
 import { Board } from '../render/Board.js'
 import { Hud } from '../ui/Hud.js'
-import { api, playerId, rememberName, rememberedName, type Player } from './api.js'
+import { ApiError, api, playerId, rememberName, rememberedName, type Player } from './api.js'
 
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 
@@ -97,7 +97,7 @@ function SessionGame({ session, player }: { session: SessionStatus; player: Play
 type Submission =
   | { state: 'sending' }
   | { state: 'sent'; outcome: SubmitOutcome }
-  | { state: 'failed'; error: string }
+  | { state: 'failed'; error: string; closed: boolean }
 
 /**
  * The whistle. The score is shown from the local run at once; the rank arrives
@@ -123,7 +123,12 @@ function EndScreen({
       .submit(session.code, player, sim.commandLog())
       .then((outcome) => setSubmission({ state: 'sent', outcome }))
       .catch((err: unknown) =>
-        setSubmission({ state: 'failed', error: err instanceof Error ? err.message : String(err) }),
+        setSubmission({
+          state: 'failed',
+          error: err instanceof Error ? err.message : String(err),
+          // Retrying a closed session only gets the same answer.
+          closed: err instanceof ApiError && err.status === 410,
+        }),
       )
   }
 
@@ -161,14 +166,19 @@ function EndScreen({
 
         <div className="end__rank" role="status">
           {submission.state === 'sending' && 'Checking your run…'}
-          {submission.state === 'failed' && (
-            <>
-              <span className="error">Could not reach the leaderboard: {submission.error}</span>{' '}
-              <button type="button" className="btn btn--sm" onClick={send}>
-                Try again
-              </button>
-            </>
-          )}
+          {submission.state === 'failed' &&
+            (submission.closed ? (
+              <span className="error">
+                The session has closed, so this run is not on the board.
+              </span>
+            ) : (
+              <>
+                <span className="error">Could not reach the leaderboard: {submission.error}</span>{' '}
+                <button type="button" className="btn btn--sm" onClick={send}>
+                  Try again
+                </button>
+              </>
+            ))}
           {outcome !== null && (
             <>
               {improved ? 'On the board at' : 'Your best is still'} <b>#{outcome.rank}</b> of{' '}

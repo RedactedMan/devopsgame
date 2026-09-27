@@ -8,7 +8,7 @@ import {
   type LoggedCommand,
   type SessionStatus,
 } from '@flow/sim'
-import { api, joinUrl } from './api.js'
+import { api, joinUrl, rememberKey, rememberedKey } from './api.js'
 
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 const TICKS_PER_DAY = TICKS_PER_HOUR * 8
@@ -26,6 +26,7 @@ export function Presenter({ code }: { code: string | null }) {
 
 function StartSession() {
   const [seed, setSeed] = useState(String(SESSION_DEFAULT_SEED))
+  const [key, setKey] = useState(rememberedKey)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -34,7 +35,8 @@ function StartSession() {
     setBusy(true)
     setError(null)
     try {
-      const session = await api.create(seed.trim() === '' ? undefined : Number(seed))
+      const session = await api.create(key, seed.trim() === '' ? undefined : Number(seed))
+      rememberKey(key)
       // A reload of the projector should not start a second session.
       window.location.search = `?present=${session.code}`
     } catch (err) {
@@ -54,6 +56,16 @@ function StartSession() {
           {(SESSION_TICKS / TICKS_PER_DAY).toFixed(0)} days. Each run is replayed on the server before it
           reaches the leaderboard, so every score on it was earned.
         </p>
+        <label className="field">
+          <span>Presenter key</span>
+          <input
+            type="password"
+            value={key}
+            onChange={(e) => setKey(e.currentTarget.value)}
+            autoComplete="current-password"
+            required
+          />
+        </label>
         <label className="field">
           <span>Seed</span>
           <input
@@ -99,6 +111,7 @@ function LiveSession({ code }: { code: string }) {
   }, [code])
 
   const url = joinUrl(code)
+  const closed = status !== null && Date.now() >= status.closesAt
 
   return (
     <main className="present">
@@ -125,6 +138,12 @@ function LiveSession({ code }: { code: string }) {
       </header>
 
       {error && <p className="error">{error}</p>}
+      {closed && (
+        <p className="hint">
+          This session has closed: it takes no new players or runs. The board stays here for a
+          week.
+        </p>
+      )}
 
       <div className="present__body">
         <section className="present__board">

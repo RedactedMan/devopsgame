@@ -15,12 +15,23 @@ export { Session }
  *   GET  /api/sessions/:code/results                                  → the board
  *   GET  /api/sessions/:code/results/:id                              → one run, for the debrief
  *
- * No accounts and no secrets. A player is a random id their browser keeps, and
- * a score is whatever replaying their commands produces, so the only way to
- * claim a score is to have made the decisions that earn it.
+ * No player accounts. A player is a random id their browser keeps, and a score
+ * is whatever replaying their commands produces, so the only way to claim a
+ * score is to have made the decisions that earn it.
+ *
+ * Replays cost CPU, and CPU is billed with no hard cap, so the API is shut to
+ * strangers in two ways. Creating a session takes the presenter key (a Worker
+ * secret, `wrangler secret put PRESENTER_KEY`), so the only sessions that exist
+ * are ones the presenter started. And a session stops taking players and runs
+ * `SUBMIT_WINDOW_MS` after it starts, refused before any replay. What is left
+ * is a code on a projector for a few hours.
  */
 
-type Env = { SESSIONS: DurableObjectNamespace<Session> }
+type Env = {
+  SESSIONS: DurableObjectNamespace<Session>
+  /** Unset means nobody can create a session. Fail closed. */
+  PRESENTER_KEY?: string
+}
 
 /** No 0/O or 1/I/L: read off a projector across a room. */
 const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -49,10 +60,11 @@ export default {
       if (parts[3] === 'join' && parts.length === 4 && request.method === 'POST') {
         const info = await stub.info()
         if (info === null) return json({ error: 'no such session' }, 404)
+        if (Date.now() >= info.closesAt) return closed()
         const body = await readBody(request)
         const player = parsePlayer(body)
         if (typeof player === 'string') return json({ error: player }, 400)
-        await stub.join(player.playerId, player.name)
+        if (!(await stub.join(player.playerId, player.name))) return closed()
         return json(info)
       }
       if (parts[3] === 'results' && parts.length === 4) {
@@ -72,6 +84,7 @@ export default {
 } satisfies ExportedHandler<Env>
 
 async function createSession(request: Request, env: Env): Promise<Response> {
+  if (!(await isPresenter(request, env))) return json({ error: 'wrong presenter key' }, 401)
   const body = await readBody(request)
   const requested = (body as { seed?: unknown } | null)?.seed
   const seed =
@@ -100,6 +113,8 @@ async function createSession(request: Request, env: Env): Promise<Response> {
 async function submit(request: Request, stub: DurableObjectStub<Session>): Promise<Response> {
   const info = await stub.info()
   if (info === null) return json({ error: 'no such session' }, 404)
+  // Before parsing or replaying: a closed session costs nothing to ask.
+  if (Date.now() >= info.closesAt) return closed()
 
   const body = await readBody(request)
   const player = parsePlayer(body)
@@ -109,7 +124,27 @@ async function submit(request: Request, stub: DurableObjectStub<Session>): Promi
 
   // The score is not read from the request. It is the replay.
   const result = verifyRun({ seed: info.seed, commands: log.commands }, info.ticks)
-  return json(await stub.submit(player.playerId, player.name, result, log.commands))
+  const outcome = await stub.submit(player.playerId, player.name, result, log.commands)
+  return outcome === null ? closed() : json(outcome)
+}
+
+/**
+ * `Authorization: Bearer <key>`. Both sides are hashed before comparing, so the
+ * comparison is constant-time and length-independent.
+ */
+async function isPresenter(request: Request, env: Env): Promise<boolean> {
+  const expected = env.PRESENTER_KEY
+  if (!expected) return false
+  const given = (request.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '')
+  if (!given) return false
+  const digest = async (s: string) =>
+    new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)))
+  const [a, b] = await Promise.all([digest(given), digest(expected)])
+  return crypto.subtle.timingSafeEqual(a, b)
+}
+
+function closed(): Response {
+  return json({ error: 'this session has closed' }, 410)
 }
 
 function parsePlayer(body: unknown): { playerId: string; name: string } | string {

@@ -51,7 +51,14 @@ export type SessionResult = {
  * The leaderboard's wire format, shared by the Worker that serves it and the
  * pages that read it. Types only: the sim does no I/O.
  */
-export type SessionInfo = { code: string; seed: number; ticks: number; createdAt: number }
+export type SessionInfo = {
+  code: string
+  seed: number
+  ticks: number
+  createdAt: number
+  /** After this, the session takes no more players or runs. Its board stays readable. */
+  closesAt: number
+}
 export type SessionStatus = SessionInfo & { joined: number; finished: number }
 
 export type BoardEntry = SessionResult & {

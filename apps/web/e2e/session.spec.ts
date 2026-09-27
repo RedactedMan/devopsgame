@@ -12,6 +12,9 @@ import { expect, test, type ConsoleMessage, type Page } from '@playwright/test'
 /** A tenth of a real session, so the test plays to the end in seconds. */
 const SHORT_TICKS = 400
 
+/** What `pnpm dev:server` sets. The deployed key is a Worker secret. */
+const PRESENTER_KEY = 'dev'
+
 const ENVIRONMENT_NOISE = [/^\[\.WebGL-/, /GL Driver Message/]
 
 function watchForErrors(page: Page) {
@@ -32,7 +35,10 @@ test('a player joins a session, finishes, and lands on the presenter board', asy
   browser,
   request,
 }) => {
-  const created = await request.post('/api/sessions', { data: { ticks: SHORT_TICKS } })
+  const created = await request.post('/api/sessions', {
+    data: { ticks: SHORT_TICKS },
+    headers: { authorization: `Bearer ${PRESENTER_KEY}` },
+  })
   expect(created.status()).toBe(201)
   const { code, seed } = (await created.json()) as { code: string; seed: number }
 
@@ -98,4 +104,27 @@ test('joining a session that does not exist says so', async ({ page }) => {
   await page.getByLabel(/your name/i).fill('Bob')
   await page.getByRole('button', { name: 'Play' }).click()
   await expect(page.locator('.error')).toContainText(/no such session/i)
+})
+
+test('only the presenter can start a session', async ({ request }) => {
+  // Every run is replayed on the server, and CPU is billed without a cap. A
+  // stranger who could create sessions could make the Worker replay anything.
+  const anonymous = await request.post('/api/sessions', { data: {} })
+  expect(anonymous.status()).toBe(401)
+  const wrong = await request.post('/api/sessions', {
+    data: {},
+    headers: { authorization: 'Bearer not-the-key' },
+  })
+  expect(wrong.status()).toBe(401)
+})
+
+test('the presenter screen asks for the key and says when it is wrong', async ({ page }) => {
+  await page.goto('/?present')
+  await page.getByLabel('Presenter key').fill('not-the-key')
+  await page.getByRole('button', { name: 'Start session' }).click()
+  await expect(page.locator('.error')).toContainText(/wrong presenter key/i)
+
+  await page.getByLabel('Presenter key').fill(PRESENTER_KEY)
+  await page.getByRole('button', { name: 'Start session' }).click()
+  await expect(page.locator('.present__code')).toHaveText(/^[A-Z2-9]{5}$/)
 })

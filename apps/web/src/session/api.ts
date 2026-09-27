@@ -14,24 +14,43 @@ import type {
 
 export type Player = { playerId: string; name: string }
 
-async function call<T>(path: string, init?: { method: 'POST'; body: unknown }): Promise<T> {
+/** A refusal from the API, with its status, so a caller can tell "closed" from "offline". */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message)
+  }
+}
+
+async function call<T>(
+  path: string,
+  init?: { method: 'POST'; body: unknown; key?: string },
+): Promise<T> {
   const response = await fetch(
     `/api/sessions${path}`,
     init
       ? {
           method: init.method,
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            ...(init.key ? { authorization: `Bearer ${init.key}` } : {}),
+          },
           body: JSON.stringify(init.body),
         }
       : {},
   )
   const body = (await response.json().catch(() => ({}))) as { error?: string }
-  if (!response.ok) throw new Error(body.error ?? `request failed (${response.status})`)
+  if (!response.ok) {
+    throw new ApiError(body.error ?? `request failed (${response.status})`, response.status)
+  }
   return body as T
 }
 
 export const api = {
-  create: (seed?: number) => call<SessionInfo>('', { method: 'POST', body: { seed } }),
+  create: (key: string, seed?: number) =>
+    call<SessionInfo>('', { method: 'POST', body: { seed }, key }),
   status: (code: string) => call<SessionStatus>(`/${code}`),
   join: (code: string, player: Player) =>
     call<SessionStatus>(`/${code}/join`, { method: 'POST', body: player }),
@@ -72,6 +91,27 @@ export function rememberName(name: string): void {
     localStorage.setItem('flow.name', name)
   } catch {
     // Not worth failing a join over.
+  }
+}
+
+/**
+ * The presenter key, kept on the presenter's own machine so it is typed once.
+ * `pnpm dev:server` uses `dev`. A deployed Worker uses whatever was set with
+ * `wrangler secret put PRESENTER_KEY`.
+ */
+export function rememberedKey(): string {
+  try {
+    return localStorage.getItem('flow.presenterKey') ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function rememberKey(key: string): void {
+  try {
+    localStorage.setItem('flow.presenterKey', key)
+  } catch {
+    // Typed again next time.
   }
 }
 
