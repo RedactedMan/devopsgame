@@ -78,17 +78,24 @@ pnpm test:e2e   # Playwright smoke test: load it, play it, fail on console noise
 pnpm typecheck
 pnpm sweep      # headless balance sweep: WIP settings, then staffing
 pnpm dev:server # the leaderboard API (wrangler dev, :8787); pnpm dev proxies /api to it
-pnpm deploy     # build, then deploy the game and the API as one Worker
+pnpm deploy     # manual deploy; normally unnecessary, since every push to main deploys
 ```
 
 Presentation mode needs `pnpm dev:server` running alongside `pnpm dev`.
 Locally the presenter key is `dev`.
 
-Deploying needs a Cloudflare account on the **Workers paid plan**, because
-each submitted score is re-played on the server and that takes more than the
-free plan's 10 ms of CPU. Before the first deploy, set the presenter key:
-`cd apps/server && npx wrangler secret put PRESENTER_KEY`. Without it, nobody
-can start a session.
+**Every push to `main` is a production deploy.** The game is live at
+<https://flow-state.mschrenk.workers.dev>. Cloudflare Workers Builds is connected
+to this repository, builds each commit on `main`, and deploys it. The build shows
+up on the commit as the *Workers Builds: flow-state* check. Merging a PR is
+shipping it. `pnpm deploy` does the same thing by hand and is only needed without
+the GitHub integration.
+
+The Worker runs on the **Workers paid plan**, because each submitted score is
+re-played on the server and that takes more than the free plan's 10 ms of CPU.
+The presenter key is a Worker secret, and it is set in production. To rotate it:
+`cd apps/server && npx wrangler secret put PRESENTER_KEY`. Without it, nobody can
+start a session.
 
 `pnpm test:e2e` uses the Chrome already on your machine (`channel: 'chrome'`)
 rather than downloading its own, and starts the dev server itself. It exists
