@@ -50,6 +50,16 @@ test('a player joins a session, finishes, and lands on the presenter board', asy
   await expect(presenter.locator('.present__code')).toHaveText(code)
   await expect(presenter.locator('.present__seed')).toHaveText(`seed ${seed}`)
 
+  // The QR code carries the join link, and clicking it makes it big enough for
+  // the back of the room.
+  const qr = presenter.getByRole('img', { name: /QR code for .*\?join=/ })
+  await expect(qr).toHaveAccessibleName(new RegExp(`\\?join=${code}$`))
+  await presenter.locator('.present__qr').click()
+  const big = presenter.getByRole('dialog', { name: 'Join QR code' })
+  await expect(big).toBeVisible()
+  await big.click()
+  await expect(big).toBeHidden()
+
   // A player on their own laptop: a separate context, so a separate player id.
   const playerContext = await browser.newContext()
   const player = await playerContext.newPage()

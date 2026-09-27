@@ -9,6 +9,7 @@ import {
   type SessionStatus,
 } from '@flow/sim'
 import { api, joinUrl, rememberKey, rememberedKey } from './api.js'
+import { QrCode } from './QrCode.js'
 
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 const TICKS_PER_DAY = TICKS_PER_HOUR * 8
@@ -88,6 +89,7 @@ function LiveSession({ code }: { code: string }) {
   const [entries, setEntries] = useState<BoardEntry[]>([])
   const [error, setError] = useState<string | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  const [enlarged, setEnlarged] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -116,6 +118,14 @@ function LiveSession({ code }: { code: string }) {
   return (
     <main className="present">
       <header className="present__join">
+        <button
+          type="button"
+          className="present__qr"
+          title="Show larger, for the back of the room"
+          onClick={() => setEnlarged(true)}
+        >
+          <QrCode value={url} />
+        </button>
         <div>
           <div className="present__label">Join at</div>
           <a className="present__url" href={url} target="_blank" rel="noreferrer">
@@ -136,6 +146,20 @@ function LiveSession({ code }: { code: string }) {
           {status && <div className="present__seed">seed {status.seed}</div>}
         </div>
       </header>
+
+      {enlarged && (
+        // Anywhere dismisses it: the presenter is at a laptop mid-talk, not
+        // hunting for a close button.
+        <div
+          className="overlay qr-overlay"
+          role="dialog"
+          aria-label="Join QR code"
+          onClick={() => setEnlarged(false)}
+        >
+          <QrCode value={url} className="qr-overlay__code" />
+          <div className="qr-overlay__code-text">{code}</div>
+        </div>
+      )}
 
       {error && <p className="error">{error}</p>}
       {closed && (
