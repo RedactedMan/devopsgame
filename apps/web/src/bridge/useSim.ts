@@ -2,9 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   initState,
   snapshot,
-  step,
+  stepLogged,
   type Command,
   type GameState,
+  sessionResult,
+  type LoggedCommand,
+  type SessionResult,
   type Snapshot,
 } from '@flow/sim'
 
@@ -36,6 +39,22 @@ export type SimHandle = {
   paused: boolean
   speed: Speed
   seed: number
+  /** The tick the run stops at, or null for free play, which never ends. */
+  endTick: number | null
+  /** True once a fixed-length run has reached `endTick`. */
+  finished: boolean
+  /**
+   * The run's score, once it has finished. The snapshot deliberately hides true
+   * quality while the game is running; the end of the run is where it is
+   * revealed.
+   */
+  result: SessionResult | null
+  /**
+   * Everything the player did, keyed by the tick it was applied at. With the
+   * seed this is the whole run: `runReplay` reproduces it exactly, which is
+   * what lets the leaderboard check a score instead of trusting it.
+   */
+  commandLog: () => LoggedCommand[]
   dispatch: (command: Command) => void
   setPaused: (paused: boolean) => void
   setSpeed: (speed: Speed) => void
@@ -44,10 +63,20 @@ export type SimHandle = {
   latest: { current: Snapshot }
 }
 
-export function useSim(initialSeed: number): SimHandle {
+export type SimOptions = {
+  /** Stop here. Presentation mode sets it so the whole room plays one length. */
+  endTick?: number
+}
+
+export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle {
+  const endTick = options.endTick ?? null
   const [seed, setSeed] = useState(initialSeed)
   const stateRef = useRef<GameState>(initState({ seed: initialSeed }))
   const pendingRef = useRef<Command[]>([])
+  const logRef = useRef<LoggedCommand[]>([])
+  const [result, setResult] = useState<SessionResult | null>(null)
+  const finished = result !== null
+  const [runId, setRunId] = useState(0)
   const latest = useRef<Snapshot>(snapshot(stateRef.current))
   const [snap, setSnap] = useState<Snapshot>(latest.current)
   const [paused, setPaused] = useState(false)
@@ -62,13 +91,18 @@ export function useSim(initialSeed: number): SimHandle {
     pendingRef.current.push(command)
   }, [])
 
+  const commandLog = useCallback(() => [...logRef.current], [])
+
   const reset = useCallback((nextSeed?: number) => {
     const s = nextSeed ?? Math.floor(Math.random() * 1_000_000)
     stateRef.current = initState({ seed: s })
     pendingRef.current = []
+    logRef.current = []
+    setResult(null)
     latest.current = snapshot(stateRef.current)
     setSnap(latest.current)
     setSeed(s)
+    setRunId((n) => n + 1)
   }, [])
 
   useEffect(() => {
@@ -77,22 +111,37 @@ export function useSim(initialSeed: number): SimHandle {
     let accumulator = 0
     let lastPausedDrain = 0
 
+    const ended = () => endTick !== null && stateRef.current.tick >= endTick
+
+    /**
+     * The one place the sim advances, and it logs as it goes: with the seed,
+     * the log is the run, and it is what the leaderboard replays.
+     */
+    const advance = () => {
+      const commands = pendingRef.current
+      pendingRef.current = []
+      stateRef.current = stepLogged(stateRef.current, commands, logRef.current)
+    }
+
     const loop = (now: number) => {
       frame = requestAnimationFrame(loop)
       const dt = Math.min((now - last) / 1000, 0.25)
       last = now
+
+      if (ended()) {
+        // The run is over. Anything the player did after the whistle is not
+        // part of it, and is not in the log.
+        pendingRef.current = []
+        return
+      }
 
       if (!pausedRef.current) {
         accumulator += dt * TICKS_PER_SECOND * speedRef.current
         let ticks = Math.min(Math.floor(accumulator), MAX_TICKS_PER_FRAME)
         accumulator -= Math.floor(accumulator)
 
-        while (ticks-- > 0) {
-          // Commands are consumed here and only here.
-          const commands = pendingRef.current
-          pendingRef.current = []
-          stateRef.current = step(stateRef.current, commands).state
-        }
+        // Commands are consumed in `advance` and only there.
+        while (ticks-- > 0 && !ended()) advance()
       } else if (
         pendingRef.current.length > 0 &&
         now - lastPausedDrain >= PAUSED_DRAIN_INTERVAL_MS
@@ -101,24 +150,29 @@ export function useSim(initialSeed: number): SimHandle {
         // decision made while stopped still has to land. It costs the one tick
         // the architecture requires, no more.
         lastPausedDrain = now
-        const commands = pendingRef.current
-        pendingRef.current = []
-        stateRef.current = step(stateRef.current, commands).state
+        advance()
       }
 
       latest.current = snapshot(stateRef.current)
       setSnap(latest.current)
+      if (ended()) setResult((r) => r ?? sessionResult(stateRef.current))
     }
 
     frame = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(frame)
-  }, [seed])
+    // `finished` is reset with the run, so `reset` has to restart this loop even
+    // when the seed is the same one — which in a session it always is.
+  }, [seed, endTick, runId])
 
   return {
     snapshot: snap,
     paused,
     speed,
     seed,
+    endTick,
+    finished,
+    result,
+    commandLog,
     dispatch,
     setPaused,
     setSpeed,

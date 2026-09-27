@@ -5,11 +5,13 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --pretty false",
+    "typecheck": "tsc -b --pretty false && tsc -p apps/server --pretty false",
     "dev": "pnpm --filter @flow/web dev",
     "build": "pnpm --filter @flow/web build",
     "sweep": "tsx packages/headless/src/cli.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "dev:server": "pnpm --filter @flow/server dev",
+    "deploy": "pnpm build && pnpm --filter @flow/server deploy"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
@@ -20,7 +22,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "esbuild"
+      "esbuild",
+      "workerd"
     ]
   }
 }

@@ -59,3 +59,20 @@ export function fingerprint(state: GameState): string {
   }
   return hash.toString(16).padStart(8, '0')
 }
+
+/**
+ * Step once and record what was applied, in the form `runReplay` reads back.
+ *
+ * Commands are keyed by the tick the state was at *before* the step, because
+ * that is the key `runReplay` looks them up by. Every shell that wants its run
+ * to be replayable — the web bridge, a leaderboard submission — steps through
+ * here, so the two can never disagree about which tick a command belongs to.
+ */
+export function stepLogged(
+  state: GameState,
+  commands: readonly Command[],
+  log: LoggedCommand[],
+): GameState {
+  for (const command of commands) log.push({ tick: state.tick, command })
+  return step(state, commands).state
+}
