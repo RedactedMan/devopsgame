@@ -32,9 +32,9 @@ body {
   grid-template-columns: 1fr 320px;
   grid-template-rows: 48px 1fr;
   height: 100%;
-  /* The top bar does not fit a phone. Unclipped, it widens the page, a phone
-     lays out at that width, and anything centred on screen (the small-screen
-     notice, the end of a run) lands off to the side of what the player can see. */
+  /* Nothing may widen the page. A phone lays out at the width of its widest
+     content, and anything centred on screen (the end of a run, the sideways
+     notice) then lands off to the side of what the player can see. */
   overflow: hidden;
 }
 
@@ -965,12 +965,173 @@ body {
   letter-spacing: 0.12em;
 }
 
-/* Until the phone layout lands. */
-.small-screen-note {
-  margin: 0;
-  padding: 10px 12px;
-  border-left: 3px solid var(--drift);
-  background: var(--ground);
-  border-radius: 4px;
-  font-size: 12px;
+/* Phone layout ---------------------------------------------------------------
+
+   Below 1000px the panel cannot sit beside the board, so the screen stacks:
+   a two-row top bar, the board, one status line, the tab bar, and one tab of
+   the panel. The breakpoint is the one measured for the top bar (it overflows
+   at 768px, fits at 900px) with room to spare. The board picks its own
+   compact drawing from its size (BoardScene), so a tablet held upright gets
+   full columns in this layout and a phone gets compact ones. */
+
+.statusline,
+.tabs {
+  display: none;
+}
+
+@media (max-width: 999px) {
+  .app {
+    /* The address bar comes and goes on a phone; dvh follows it. */
+    height: 100dvh;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto auto minmax(0, 38%);
+    grid-template-areas: 'top' 'board' 'status' 'tabs' 'panel';
+  }
+
+  .topbar {
+    grid-area: top;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    padding: 8px 12px;
+  }
+
+  .brand,
+  .stat--secondary {
+    display: none;
+  }
+
+  .stat__value {
+    font-size: 15px;
+  }
+
+  .controls {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .controls .btn {
+    flex: 1;
+    min-height: 36px;
+    font-size: 12px;
+  }
+
+  .board {
+    grid-area: board;
+    min-height: 0;
+  }
+
+  .statusline {
+    grid-area: status;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 9px 12px;
+    border: 0;
+    border-top: 1px solid var(--edge);
+    background: var(--panel);
+    color: var(--text);
+    font: 600 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .statusline--news {
+    color: var(--drift);
+  }
+
+  .statusline--alarm {
+    color: #ffb59b;
+    background: color-mix(in srgb, var(--stale) 28%, var(--panel));
+  }
+
+  .statusline__more {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  .tabs {
+    grid-area: tabs;
+    display: flex;
+    border-top: 1px solid var(--edge);
+    border-bottom: 1px solid var(--edge);
+    background: var(--panel);
+  }
+
+  .tab {
+    flex: 1;
+    min-height: 44px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font: 600 12px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .tab--on {
+    color: var(--text);
+    border-bottom-color: var(--flow);
+  }
+
+  .tab__badge {
+    display: inline-block;
+    margin-left: 6px;
+    min-width: 18px;
+    padding: 2px 5px;
+    border-radius: 9px;
+    background: var(--stale);
+    color: #fff;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+
+  .panel {
+    grid-area: panel;
+    border-left: 0;
+    gap: 14px;
+    padding: 12px;
+  }
+
+  /* One tab at a time. The DOM is the laptop's, so nothing moves for the
+     laptop layout or for the tests that drive it. */
+  .panel > [data-tab] {
+    display: none;
+  }
+
+  .panel--wip > [data-tab='wip'],
+  .panel--team > [data-tab='team'],
+  .panel--stale > [data-tab='stale'],
+  .panel--flow > [data-tab='flow'] {
+    display: block;
+  }
+
+  /* Fingers, not a mouse. */
+  .wip {
+    min-height: 40px;
+  }
+
+  .wip input[type='range'] {
+    height: 32px;
+  }
+
+  .chip,
+  .hire {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .staff__crew {
+    gap: 6px;
+  }
+
+  .stale__actions .btn {
+    min-height: 36px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
 }
