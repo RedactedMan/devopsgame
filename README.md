@@ -64,6 +64,7 @@ playable on its own:
 - [The Moving Constraint](docs/CONSTRAINT_AND_CAPACITY.md) — M1's headline mechanic, measured
 - [Dispatch and Area Collisions](docs/DISPATCH_AND_COLLISIONS.md) — what M1 gets, and what waits for M2
 - [Hiring and the Attention Pool](docs/HIRING_AND_ATTENTION.md) — why 64 extra workers are worth 2% and one is worth 27%
+- [The Presentation](docs/PRESENTATION.md) — the 45-minute talk this is played in, its timing, and the deck
 
 ## Running it
 
