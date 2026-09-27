@@ -654,14 +654,26 @@ reshuffling people every shift and doing well out of it.
   on onboarding (`4695148a` without it), so it pins the mechanic. The first
   golden replay never moves anyone and did not change.
 
-### Still to do for the session
+### The session (built 2026-09-23, slice 3d)
 
-- **Everyone plays the same game.** A fixed seed and a fixed length. `reset()`
-  currently draws a random seed. 4000 ticks is the length every table in this
-  document was measured at: about 13 minutes at 1×, 3½ at 4×.
-- **A score, and a leaderboard.** Items shipped alone rewards shipping stale
-  work, so the score needs deciding before the board is built. A run is
-  already `{ seed, commands }` and replays exactly, so a submitted score can
-  be checked by replaying it rather than trusted. The same replay lets the
-  debrief show what the top player did and when.
+- **Everyone plays the same game.** The presenter opens `?present` and starts
+  a session. It gets a five-letter code and a seed, 20260830 unless the
+  presenter picks another. Players join at `?join=CODE` and play that seed
+  for 4000 ticks, the length every table in this document was measured at:
+  about 13 minutes at 1×, 3½ at 4×. The clock stops there, and a restart
+  replays the same seed.
+- **The score is quality-weighted shipped**: the sum of `trueQuality` over
+  every shipped item (`sessionScore`, `packages/sim/src/session.ts`). Drift
+  takes quality off an item as it deploys, so a stale item shipped anyway
+  counts for less than one that was rebased. Items shipped alone would have
+  rewarded exactly that move. Shown at the end of the run only, because the
+  snapshot hides true quality while the game runs.
+- **Scores are replayed, not trusted.** The bridge logs every command against
+  the tick it was applied at (`stepLogged`). The Worker parses the log,
+  replays it against the session's seed, and ranks what the replay produced.
+  `session.test.ts` asserts that a logged live run replays to the same
+  fingerprint.
+- **The debrief is the board.** Clicking a row on the presenter's screen lists
+  that player's best run as a timeline: moves, agents, WIP changes (a slider
+  drag collapsed to where it was let go), and every stale call.
 

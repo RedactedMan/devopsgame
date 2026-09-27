@@ -51,6 +51,11 @@ playable on its own:
    moved person spends two shifts onboarding. Agents are the only addition.
    Moving one person to Review plus one agent ships exactly what the human hire
    did. See [HIRING_AND_ATTENTION.md](docs/HIRING_AND_ATTENTION.md) §8.
+   **Presentation mode** is built for the session this is for: a short talk,
+   everyone plays the same seed for 50 days, then a leaderboard. Open
+   `?present` to start one and put the join link on the projector. Every score
+   on the board was replayed on the server before it got there. See
+   [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §7.
 4. **Save / load** from the command log.
 5. **Board building and placement.**
 
@@ -69,7 +74,14 @@ pnpm test       # unit, invariant, and golden-replay tests (~2s)
 pnpm test:e2e   # Playwright smoke test: load it, play it, fail on console noise
 pnpm typecheck
 pnpm sweep      # headless balance sweep: WIP settings, then staffing
+pnpm dev:server # the leaderboard API (wrangler dev, :8787); pnpm dev proxies /api to it
+pnpm deploy     # build, then deploy the game and the API as one Worker
 ```
+
+Presentation mode needs `pnpm dev:server` running alongside `pnpm dev`.
+Deploying needs a Cloudflare account on the **Workers paid plan**, because
+each submitted score is re-played on the server and that takes more than the
+free plan's 10 ms of CPU.
 
 `pnpm test:e2e` uses the Chrome already on your machine (`channel: 'chrome'`)
 rather than downloading its own, and starts the dev server itself. It exists
@@ -159,6 +171,7 @@ for why each of those is load-bearing.
 | `packages/content` | Stations and tuning, as zod-validated data |
 | `packages/headless` | Balance sweeps with no browser involved |
 | `apps/web` | PixiJS board, React HUD, and the bridge between them |
+| `apps/server` | Cloudflare Worker + Durable Object: presentation-mode sessions and the verified leaderboard |
 
 ## License
 
