@@ -32,6 +32,10 @@ body {
   grid-template-columns: 1fr 320px;
   grid-template-rows: 48px 1fr;
   height: 100%;
+  /* The top bar does not fit a phone. Unclipped, it widens the page, a phone
+     lays out at that width, and anything centred on screen (the small-screen
+     notice, the end of a run) lands off to the side of what the player can see. */
+  overflow: hidden;
 }
 
 /* Topbar ------------------------------------------------------------------ */
@@ -959,4 +963,14 @@ body {
   color: var(--flow);
   font: 700 clamp(28px, 5vw, 56px)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.12em;
+}
+
+/* Until the phone layout lands. */
+.small-screen-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--drift);
+  background: var(--ground);
+  border-radius: 4px;
+  font-size: 12px;
 }
