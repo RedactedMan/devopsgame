@@ -8,6 +8,7 @@ import { resolveStale, updateDrift } from './systems/drift.js'
 import { sampleMetrics } from './systems/metrics.js'
 import { arrivals, pull } from './systems/routing.js'
 import { advanceService, startService } from './systems/service.js'
+import { updateContext } from './systems/context.js'
 import {
   applyPendingMoves,
   hire,
@@ -38,6 +39,7 @@ export function step(state: GameState, commands: readonly Command[] = []): StepR
   arrivals(s, events)
   updateDrift(s, events)
   advanceService(s, events)
+  updateContext(s)
   // Between finishing and starting: a worker who just came free can move before
   // the station hands them the next thing.
   applyPendingMoves(s, events)

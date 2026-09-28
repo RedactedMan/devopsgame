@@ -525,6 +525,11 @@ function Attention({ snap }: { snap: Snapshot }) {
   const humans = snap.workers.filter((w) => w.kind === 'human').length
   const agents = snap.workers.length - humans
   const learning = snap.workers.filter((w) => w.onboardingTicks > 0).length
+  // Agent output that has waited past the grace. The cost has not been paid
+  // yet — it lands when Review picks each one up — so this is the one line on
+  // the panel about the future, and the only warning before the bar drops.
+  const decayed = snap.items.filter((it) => it.rebrief !== null && it.rebrief > 0)
+  const owed = decayed.reduce((sum, it) => sum + (it.rebrief ?? 0), 0)
 
   return (
     <div className={underwater ? 'attention attention--underwater' : 'attention'}>
@@ -557,6 +562,14 @@ function Attention({ snap }: { snap: Snapshot }) {
           </>
         )}
       </p>
+      {decayed.length > 0 && (
+        <p className="attention__body attention__decay">
+          {decayed.length === 1 ? 'One piece' : `${decayed.length} pieces`} of agent work{' '}
+          {decayed.length === 1 ? 'has' : 'have'} waited over a shift for review. Whoever picks{' '}
+          {decayed.length === 1 ? 'it' : 'them'} up has to work out what the agent was doing first:{' '}
+          {owed.toFixed(0)} more attention, and growing.
+        </p>
+      )}
     </div>
   )
 }

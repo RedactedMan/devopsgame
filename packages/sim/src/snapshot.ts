@@ -13,6 +13,7 @@ import { inFlightItems, locateItem, serversAt, workerIsBusy } from './state.js'
 import { recentLeadTime } from './systems/metrics.js'
 import { constraintIsPolicy } from './systems/staffing.js'
 import { attentionFloor, attentionSupply } from './systems/attention.js'
+import { rebriefCost } from './systems/context.js'
 
 /**
  * The view the renderer subscribes to.
@@ -48,6 +49,12 @@ export type SnapshotItem = {
   stale: boolean
   displayedQuality: number
   contextFidelity: number
+  /**
+   * Finished agent output waiting for Review: the attention a reviewer would
+   * pay on top of the review to pick it up now. Zero inside the grace. Null
+   * for anything that is not agent output waiting (systems/context.ts).
+   */
+  rebrief: number | null
   ageTicks: number
   /** 0..1 through the current service, for interpolated motion. Null when not being worked. */
   progress: number | null
@@ -186,6 +193,7 @@ export function snapshot(state: GameState): Snapshot {
       stale: item.stale,
       displayedQuality: item.displayedQuality,
       contextFidelity: item.contextFidelity,
+      rebrief: item.agentOutputSince === null ? null : rebriefCost(state, item),
       ageTicks: state.tick - item.createdTick,
       progress,
       location,

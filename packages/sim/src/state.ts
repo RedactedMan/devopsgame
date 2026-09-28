@@ -40,7 +40,18 @@ export type WorkItem = {
   trueQuality: number
   displayedQuality: number
 
+  /**
+   * How much of an agent's context survives on its finished output, 1 down to
+   * 0, while that output waits for a reviewer. 1 for anything a person did.
+   * Cached each tick by systems/context.ts. See `agentOutputSince`.
+   */
   contextFidelity: number
+  /**
+   * The tick an agent finished this at the station before Review, while it
+   * waits to be picked up there. Null for a person's work, and cleared the
+   * moment Review starts on it. See systems/context.ts.
+   */
+  agentOutputSince: number | null
   areas: AreaId[]
   history: StationVisit[]
 

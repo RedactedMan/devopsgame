@@ -31,8 +31,8 @@ import type { SimEvent } from '../events.js'
  * a move costs. It is the only cost, so it has to be enough that moving people
  * back and forth to chase the constraint does not pay. Every move restarts it,
  * including a move back to a station the person has just left. Agents do not
- * onboard: what they lose by moving is context, which is a separate mechanic
- * (design §4.2), not built yet.
+ * onboard, and moving one is free. Their context decays while their output
+ * waits for review, not when they move (systems/context.ts).
  */
 export function applyPendingMoves(state: GameState, events: SimEvent[]): void {
   for (const worker of state.workers) {

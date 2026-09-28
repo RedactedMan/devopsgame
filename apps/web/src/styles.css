@@ -226,6 +226,12 @@ body {
   line-height: 1.4;
 }
 
+/* Agent blue, the same as the chip and the context bar on the board. */
+.attention__decay {
+  margin-top: 4px;
+  color: #93b6d6;
+}
+
 /* Staffing ------------------------------------------------------------------ */
 
 .staff {

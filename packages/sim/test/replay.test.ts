@@ -53,6 +53,26 @@ const STAFFED: Replay = {
 
 const GOLDEN_STAFFED = '7ce23854'
 
+/**
+ * A third script, because neither of the first two can see context decay.
+ * Nothing in them keeps an agent's output waiting a full shift for review, so
+ * both hashes held when decay was built, which also means neither pins it.
+ *
+ * This is the pattern decay exists to punish: start five agents and leave
+ * everything else as it was. Built 2026-09-27 (docs/HIRING_AND_ATTENTION.md
+ * §7). With decay switched off it fingerprints as `87dcabe9`, so the hash
+ * below depends on the mechanic.
+ */
+const IGNORED: Replay = {
+  seed: 20260830,
+  commands: [30, 31, 32, 33, 34].map((tick) => ({
+    tick,
+    command: { kind: 'hire', station: 'implement' },
+  })),
+}
+
+const GOLDEN_IGNORED = 'e97ce11e'
+
 describe('replay', () => {
   it('reproduces a run exactly from seed and command log', () => {
     expect(fingerprint(runReplay(REPLAY, TICKS))).toBe(fingerprint(runReplay(REPLAY, TICKS)))
@@ -64,6 +84,10 @@ describe('replay', () => {
 
   it('matches the golden fingerprint for a run that restaffs', () => {
     expect(fingerprint(runReplay(STAFFED, TICKS))).toBe(GOLDEN_STAFFED)
+  })
+
+  it('matches the golden fingerprint for a run that starts agents and walks away', () => {
+    expect(fingerprint(runReplay(IGNORED, TICKS))).toBe(GOLDEN_IGNORED)
   })
 
   it('is actually a different run to the one that never staffs up', () => {

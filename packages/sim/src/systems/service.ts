@@ -4,6 +4,7 @@ import type { SimEvent } from '../events.js'
 import { reworkProbability, serviceMultiplier } from './drift.js'
 import { costsAttention, reviewCostOf, spendAttention } from './attention.js'
 import { nextFloat } from '../rng.js'
+import { contextRestored, noteFinished, rebriefCost } from './context.js'
 
 /**
  * Service time is size-driven and then stretched by drift. The stretch is the
@@ -38,7 +39,9 @@ export function advanceService(state: GameState, events: SimEvent[]): void {
     for (const itemId of completed) {
       const item = state.items.find((it) => it.id === itemId)
       if (!item) continue
+      const slot = station.inService.find((s) => s.itemId === itemId)
       station.inService = station.inService.filter((s) => s.itemId !== itemId)
+      noteFinished(state, item, stationId, state.workers.find((w) => w.id === slot?.workerId))
 
       const visit = [...item.history].reverse().find((v) => v.station === stationId && v.exitedTick === null)
       if (visit) visit.exitedTick = state.tick
@@ -97,8 +100,13 @@ export function startService(state: GameState, events: SimEvent[]): void {
     // judgment happens. A station that cannot afford to start is not idle for
     // want of people — it is idle for want of attention, and the two look
     // identical on a board that only counts heads.
+    //
+    // What a review costs depends on the item: an agent's output that has
+    // waited past the grace carries a re-brief (systems/context.ts). Clamped
+    // to one shift's budget, because the budget is floored at a single review
+    // and a line of agents at that floor would otherwise meet an item it can
+    // never afford, and Review would never start again.
     const charged = costsAttention(state, stationId)
-    const cost = charged ? reviewCostOf(state) : 0
 
     while (free.length > 0) {
       const at = station.queue.findIndex((id) => {
@@ -107,6 +115,12 @@ export function startService(state: GameState, events: SimEvent[]): void {
       })
       if (at < 0) break
 
+      const next = state.items.find((it) => it.id === station.queue[at]) as WorkItem
+      const rebrief = charged ? rebriefCost(state, next) : 0
+      const cost = charged ? Math.min(state.attention.perShift, reviewCostOf(state) + rebrief) : 0
+
+      // First in, first out, even when the head is the expensive one. Skipping
+      // to cheaper work would leave the oldest output rotting for good.
       if (charged && !spendAttention(state, cost)) {
         events.push({
           kind: 'attentionExhausted',
@@ -121,6 +135,11 @@ export function startService(state: GameState, events: SimEvent[]): void {
       station.queue.splice(at, 1)
       const item = state.items.find((it) => it.id === itemId)
       if (!item) continue
+
+      if (charged) {
+        if (rebrief > 0) events.push({ kind: 'rebriefed', itemId, cost: cost - reviewCostOf(state) })
+        contextRestored(item)
+      }
 
       const worker = free.shift() as (typeof free)[number]
       // Set once, when the item is picked up. Someone who starts an item while
