@@ -11,6 +11,7 @@ import { SPEEDS } from '../bridge/useSim.js'
 import { Chart } from './Chart.js'
 import { SaveLoad } from './SaveLoad.js'
 import { cssAreaColor, cssDriftColor } from '../render/theme.js'
+import { Guide, GuideOffer, type GuideMode } from './guide/Guide.js'
 
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 const TICKS_PER_DAY = TICKS_PER_HOUR * 8
@@ -54,6 +55,22 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
   const blocked = snap.stations.filter((s) => s.blocked)
   const [held, setHeld] = useState<string | null>(null)
   const [tab, setTab] = useState<PanelTab>('wip')
+  const [guide, setGuide] = useState<GuideMode | null>(null)
+  // The guide stops the clock while it is open, and gives it back the way it
+  // found it: a player who had paused to think is still paused afterwards.
+  const resumeAfterGuide = useRef(false)
+  const openGuide = (mode: GuideMode) => {
+    if (guide === null) {
+      resumeAfterGuide.current = !sim.paused
+      sim.setPaused(true)
+    }
+    setGuide(mode)
+  }
+  const closeGuide = () => {
+    setGuide(null)
+    if (resumeAfterGuide.current) sim.setPaused(false)
+    resumeAfterGuide.current = false
+  }
 
   const sinceShip = snap.lastShipTick === null ? snap.tick : snap.tick - snap.lastShipTick
   const stalled =
@@ -151,6 +168,15 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
               New seed
             </button>
           )}
+          <button
+            type="button"
+            className="btn btn--help"
+            aria-label="Guide"
+            title="How to read the screen, and a tour of it"
+            onClick={() => openGuide('key')}
+          >
+            ?
+          </button>
         </div>
         {/* Free play only: see SaveLoad for why a session has no save. Its own
             group so a phone can put it on the stats row, where there is room
@@ -188,6 +214,8 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
       </nav>
 
       <aside className={`panel panel--${tab}`}>
+        <GuideOffer onOpen={openGuide} />
+
         {stalled && (
           <div data-tab="flow">
             <StallAlarm days={sinceShip / TICKS_PER_DAY} stale={stale.length} blocked={blocked} />
@@ -344,6 +372,16 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
           )}
         </footer>
       </aside>
+
+      {guide !== null && (
+        <Guide
+          mode={guide}
+          session={session !== undefined}
+          onMode={setGuide}
+          onClose={closeGuide}
+          onTab={setTab}
+        />
+      )}
     </>
   )
 }
@@ -444,7 +482,7 @@ function WipSlider({
  * at the warmest one would send the player to staff a station that is already
  * idle a third of the time.
  */
-type PanelTab = 'flow' | 'wip' | 'team' | 'stale'
+export type PanelTab = 'flow' | 'wip' | 'team' | 'stale'
 
 const PANEL_TABS: { id: PanelTab; label: string }[] = [
   { id: 'wip', label: 'WIP' },

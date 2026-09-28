@@ -64,6 +64,11 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
 - Attendees can play on **laptops or phones**, held upright. The phone layout was
   tried on a real phone on 2026-09-27. A laptop still shows the whole board at
   once, which makes the debrief easier to follow.
+- Players new to the game can take a two-minute tour, offered in the panel on
+  their first visit, and **?** in the top bar opens it or a board key at any
+  time. It pauses their clock while open. It explains the screen, not the
+  answer, so it is safe to point people at it during *How to play* (added
+  2026-09-28).
 - Start the session at `?present` no more than an hour or two ahead. It takes
   players for four hours.
 

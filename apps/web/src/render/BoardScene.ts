@@ -127,6 +127,9 @@ const COMPACT: Metrics = {
  */
 const RENDERER_DESTROY = { removeView: true, releaseGlobalResources: false }
 
+/** The item under the pointer, and where it is drawn, in CSS pixels from the board's corner. */
+export type Inspected = { id: string; x: number; y: number; width: number; height: number }
+
 type ItemView = {
   container: Container
   body: Graphics
@@ -155,6 +158,13 @@ export class BoardScene {
    */
   private hovered: string | null = null
   private metrics: Metrics = WIDE
+  /**
+   * Told which item is hovered and where it sits, so the DOM can describe it
+   * beside the tile. Called when either changes, not every frame: a tile
+   * eases into place and then stops, so a settled hover costs nothing.
+   */
+  onInspect: (inspected: Inspected | null) => void = () => {}
+  private lastInspected = ''
   private getSnapshot: () => Snapshot = () => {
     throw new Error('BoardScene not mounted')
   }
@@ -401,6 +411,26 @@ export class BoardScene {
 
       this.paintItem(view, item, itemWidth)
     }
+
+    this.reportInspected(itemWidth)
+  }
+
+  private reportInspected(itemWidth: number): void {
+    const view = this.hovered === null ? undefined : this.views.get(this.hovered)
+    const inspected =
+      this.hovered === null || view === undefined
+        ? null
+        : {
+            id: this.hovered,
+            x: Math.round(view.x - itemWidth / 2),
+            y: Math.round(view.y - this.metrics.itemH / 2),
+            width: Math.round(itemWidth),
+            height: this.metrics.itemH,
+          }
+    const key = inspected === null ? '' : JSON.stringify(inspected)
+    if (key === this.lastInspected) return
+    this.lastInspected = key
+    this.onInspect(inspected)
   }
 
   /**

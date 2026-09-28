@@ -1246,3 +1246,332 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--muted);
 }
+
+/* Guide: the tour, the key, and the item card (added 2026-09-28) ------------
+
+   Optional, and never opened by the game itself. See ui/guide/Guide.tsx. */
+
+.btn--help {
+  font-weight: 700;
+  min-width: 26px;
+}
+
+.guide-offer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--flow);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--flow) 10%, var(--panel));
+}
+
+.guide-offer__text {
+  font-size: 12px;
+}
+
+.guide-offer__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.guide-offer__close {
+  margin-left: auto;
+}
+
+/* The key: every topic on one page. */
+.guide {
+  width: min(640px, 100%);
+  max-height: calc(100dvh - 32px);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.guide__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.guide__head h2 {
+  margin: 0 auto 0 0;
+  font-size: 15px;
+}
+
+.guide__body {
+  overflow-y: auto;
+  padding: 4px 18px 18px;
+}
+
+.guide__topic {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--edge);
+}
+
+.guide__topic:last-child {
+  border-bottom: 0;
+}
+
+.guide__topic h3,
+.tour__card h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.guide__topic p,
+.tour__body p {
+  margin: 0 0 8px;
+  color: #b9c4c3;
+}
+
+.guide__art {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+
+.guide__tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 240px;
+}
+
+.guide__terms {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0 0 8px;
+}
+
+.guide__terms dt {
+  font-weight: 600;
+}
+
+.guide__terms dd {
+  margin: 0;
+  color: #b9c4c3;
+}
+
+/* A work item as the canvas draws it (BoardScene.paintItem). */
+.tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 5px 0 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  font: 500 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre;
+}
+
+.tile--stale {
+  overflow: visible;
+  outline: 2px solid #ffd9c6;
+  outline-offset: 2px;
+}
+
+.tile__label {
+  flex: 1;
+}
+
+.tile__chips {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 2px;
+}
+
+.tile__chips span {
+  width: 7px;
+  height: 7px;
+  border-radius: 1.5px;
+  box-shadow: 0 0 0 1px rgb(13 18 19 / 0.7);
+}
+
+.tile__context {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: rgb(147 182 214 / 0.25);
+}
+
+.tile__context span {
+  display: block;
+  height: 100%;
+  background: #93b6d6;
+}
+
+.tile__progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgb(13 18 19 / 0.55);
+}
+
+.ramp {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 240px;
+}
+
+.ramp__bar {
+  height: 10px;
+  border-radius: 3px;
+}
+
+.ramp__labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font: 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* The tour: a spotlight on one part of the screen, and a card beside it. */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.tour__shade {
+  position: absolute;
+  inset: 0;
+  background: rgb(10 14 15 / 0.7);
+}
+
+.tour__spot {
+  position: absolute;
+  border: 2px solid var(--flow);
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgb(10 14 15 / 0.62);
+  pointer-events: none;
+  transition: left 0.2s, top 0.2s, width 0.2s, height 0.2s;
+}
+
+.tour__card {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: min(330px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  padding: 16px;
+  border-color: var(--flow);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.5);
+}
+
+.tour__card:focus {
+  outline: none;
+}
+
+.tour__step {
+  color: var(--muted);
+  font: 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin-bottom: 6px;
+}
+
+.tour__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.tour__key {
+  margin-right: auto;
+}
+
+/* The item under the pointer, in words. Never takes the pointer itself, or
+   hovering the card would un-hover the tile under it. */
+.itemcard {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11px;
+  line-height: 1.4;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.45);
+}
+
+/* The tour is about the board in general, not the tile last hovered. */
+body:has(.tour) .itemcard {
+  display: none;
+}
+
+.itemcard__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.itemcard__swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.itemcard__where {
+  margin-left: auto;
+  color: var(--muted);
+  text-align: right;
+}
+
+.itemcard dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 3px 8px;
+  margin: 0;
+}
+
+.itemcard dt {
+  color: var(--muted);
+}
+
+.itemcard dd {
+  margin: 0;
+}
+
+.itemcard__area {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.itemcard__area span {
+  width: 8px;
+  height: 8px;
+  border-radius: 1.5px;
+}
+
+@media (max-width: 999px) {
+  .controls .btn--help {
+    flex: 0 0 40px;
+  }
+
+  .guide-offer {
+    padding: 8px 10px;
+  }
+
+  .guide-offer .btn {
+    min-height: 32px;
+  }
+
+  .tour__actions .btn {
+    min-height: 36px;
+  }
+}

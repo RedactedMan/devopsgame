@@ -75,6 +75,13 @@ playable on its own:
    to the same place. Free play only. Built 2026-09-27, merged and deployed
    2026-09-28 (PR #9). See
    [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §3.
+4a. **The guide** (2026-09-28): an optional tour and board key, for a new
+   player who could not tell what a tile's colour, its `5u` or the blue bar
+   on agent work meant. A first visit is offered the tour in the panel; the
+   **?** in the top bar opens it any time, and the clock stops while it is
+   open. Hovering an item, or tapping it on a phone, describes it in words.
+   It explains how to read the screen, never what to do. See
+   [GAME_DESIGN.md](docs/GAME_DESIGN.md) §9.
 5. **Board building and placement.**
 
 - [Game Design Document](docs/GAME_DESIGN.md) — mechanics, campaign, pedagogy
