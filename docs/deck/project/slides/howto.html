@@ -1,0 +1,33 @@
+<section id="howto" data-transition="fade" style="background:#14191a; color:#d9e0df; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:48px">
+<div style="display:flex; flex-direction:column; gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; letter-spacing:2px">HOW TO PLAY</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:72px; font-weight:700; line-height:1.1; color:#f2f4f1">Nine people, five stations, 50 days</h2>
+</div>
+<div style="display:flex; gap:16px; align-items:center">
+<p style="flex:1; font-size:32px; font-weight:600; text-align:center; background:#1c2325; border:2px solid #2fa39a; color:#f2f4f1; padding:20px; border-radius:12px">Spec</p>
+<x-icon name="Play" style="color:#7c8b8a; width:32px; height:32px"></x-icon>
+<p style="flex:1; font-size:32px; font-weight:600; text-align:center; background:#1c2325; border:2px solid #2fa39a; color:#f2f4f1; padding:20px; border-radius:12px">Implement</p>
+<x-icon name="Play" style="color:#7c8b8a; width:32px; height:32px"></x-icon>
+<p style="flex:1; font-size:32px; font-weight:600; text-align:center; background:#1c2325; border:2px solid #2fa39a; color:#f2f4f1; padding:20px; border-radius:12px">Review</p>
+<x-icon name="Play" style="color:#7c8b8a; width:32px; height:32px"></x-icon>
+<p style="flex:1; font-size:32px; font-weight:600; text-align:center; background:#1c2325; border:2px solid #2fa39a; color:#f2f4f1; padding:20px; border-radius:12px">CI</p>
+<x-icon name="Play" style="color:#7c8b8a; width:32px; height:32px"></x-icon>
+<p style="flex:1; font-size:32px; font-weight:600; text-align:center; background:#1c2325; border:2px solid #2fa39a; color:#f2f4f1; padding:20px; border-radius:12px">Deploy</p>
+</div>
+<table style="font-size:30px; color:#d9e0df">
+<tr><th style="width:26%; text-align:left; color:#2fa39a">Your lever</th><th style="width:74%; text-align:left; color:#2fa39a">What it does</th></tr>
+<tr><td><b>WIP limits</b></td><td>A slider per station: how much work may be in flight there</td></tr>
+<tr><td><b>Move a person</b></td><td>Your nine are fixed. A moved person spends two shifts learning the station</td></tr>
+<tr><td><b>Add an agent</b></td><td>Free capacity. It draws on your attention budget, because someone reads its output</td></tr>
+<tr><td><b>Stale work</b></td><td>Rebase it, abandon it, or ship it anyway at whatever quality it's in</td></tr>
+</table>
+<p style="font-size:32px; line-height:1.4; color:#f2f4f1"><b>You keep up</b> if 10 or fewer items are unfinished when the clock stops. Watch <b>Unfinished</b> in the top bar.</p>
+<p style="position:absolute; left:128px; bottom:64px; width:1664px; font-size:24px; color:#7c8b8a">Score: items shipped, each counted at the quality it actually shipped with</p>
+<aside>Two minutes, no more. Work arrives in the backlog and flows through five stations. Every deploy advances trunk, and anything still in flight drifts behind it: teal is healthy, amber is drifting, rust is stale.
+
+You have four levers. Don't explain what the right settings are. Resist it, even if someone asks.
+
+Two results. You keep up if 10 or fewer items are unfinished, waiting or in flight, when the clock stops; the top bar shows Unfinished against that line all game. The leaderboard ranks by score, which is quality-weighted: every shipped item counts for the true quality it shipped at, so shipping stale work anyway pays less than rebasing it. Keeping up is possible, and not by default: leave the line alone and you finish with dozens unfinished.
+
+Mention the attention meter in the top bar. It'll matter.</aside>
+</section>

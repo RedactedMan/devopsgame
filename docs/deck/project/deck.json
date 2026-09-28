@@ -1,0 +1,20 @@
+{
+  "v": 4,
+  "createdOnFiles": {"v": 1, "at": "2026-09-27T12:00:00Z"},
+  "title": "Flow State: DevOps in the Age of Agents",
+  "order": ["cover", "agenda", "join", "threeways", "flow", "constraint", "feedback", "learning", "dora", "question", "howto", "play", "leaderboard", "wip", "agents", "attention", "changed", "evidence", "replit", "kiro", "amazon", "mine", "ends", "rubber", "checklist", "close", "sources"],
+  "sections": {
+    "s1": {"description": "Welcome, the session plan, and getting everyone into the game", "start": "cover"},
+    "s2": {"description": "The core principles of DevOps: the Three Ways and the DORA keys", "start": "threeways"},
+    "s3": {"description": "How to play Flow State, then one full run for everyone", "start": "question"},
+    "s4": {"description": "The leaderboard and what the simulation measured", "start": "leaderboard"},
+    "s5": {"description": "What changed in the last year with agents writing and reviewing code", "start": "changed"},
+    "s6": {"description": "A checklist to take back to your team on Monday", "start": "checklist"}
+  },
+  "faces": {
+    "space-grotesk": {"family": "Space Grotesk", "href": "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&display=swap"},
+    "ibm-plex-sans": {"family": "IBM Plex Sans", "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap"},
+    "jetbrains-mono": {"family": "JetBrains Mono", "href": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap"}
+  },
+  "designSystems": []
+}

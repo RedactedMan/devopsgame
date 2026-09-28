@@ -3,9 +3,11 @@
 Companion to [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) §7, which is the
 presentation mode this talk runs on.
 
-**Deck:** <https://claude.ai/artifact/USk8xhe7uwjvDmVEsbfB2G> — *Code is cheap now.
-Attention isn't.* 27 slides with speaker notes. Private until shared from the
-deck's Share menu.
+**Deck:** [`docs/deck/`](./deck/README.md) — *Code is cheap now. Attention
+isn't.* 27 slides with speaker notes. Open `docs/deck/deck.html` to present it.
+In the repo since 2026-09-28, which is the copy of record. It was written as a
+claude.ai Slides artifact, <https://claude.ai/artifact/USk8xhe7uwjvDmVEsbfB2G>,
+private until shared from its Share menu, and the two hold the same files.
 
 The talk teaches the core principles of DevOps, then has the room play one run of
 Flow State, then uses the room's own results to make the argument that human
@@ -45,7 +47,8 @@ eight minutes of game time. First-time players who pause to think land at 10–1
 minutes, so the 15-minute block fits one careful run, or a second quick one for
 fast players. The leaderboard keeps each player's best.
 
-If these constants change, update this table and the `agenda` and `play` slides.
+If these constants change, update this table and the `agenda` and `play` slides
+in `docs/deck/project/slides/`, then run `pnpm deck`.
 
 ## Before the session
 
@@ -80,7 +83,8 @@ every seed measured, and leaving Review alone loses on every one
 
 The room plays the session, so these are the session's numbers (four items a
 day, 12 seeds × 4000 ticks, HIRING_AND_ATTENTION §10). The free-play figures
-the deck used before 2026-09-28 are in brackets. With less work arriving, the
+the deck used before 2026-09-28 are in brackets. The `wip` and `agents` slides
+carry these, with the free-play figures in their speaker notes. With less work arriving, the
 best line ships only so much more, and its gain shows up as lead time.
 
 - WIP: 0.4× ships 39% more at 39% lower lead time than 1× (was 43% and 26%).
