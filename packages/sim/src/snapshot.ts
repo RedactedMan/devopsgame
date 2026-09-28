@@ -101,6 +101,8 @@ export type SnapshotWorker = {
   busy: boolean
   /** Where they are headed, if the player has asked them to move and they are mid-item. */
   pendingStation: StationId | null
+  /** An agent the player has removed, finishing its item before it goes. */
+  leaving: boolean
   /** Ticks left learning the station they were moved to. Zero once settled. */
   onboardingTicks: number
 }
@@ -254,6 +256,7 @@ export function snapshot(state: GameState): Snapshot {
       station: w.station,
       busy: workerIsBusy(state, w.id),
       pendingStation: w.pendingStation,
+      leaving: w.leaving,
       onboardingTicks: Math.max(0, w.onboardingUntil - state.tick),
     })),
     constraint: state.constraint,

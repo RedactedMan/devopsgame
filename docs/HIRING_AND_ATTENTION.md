@@ -780,3 +780,83 @@ reshuffling people every shift and doing well out of it.
   that player's best run as a timeline: moves, agents, WIP changes (a slider
   drag collapsed to where it was let go), and every stale call.
 
+
+## 9. Agents can be removed
+
+Decided 2026-09-28, after a play of the deployed game. **An agent can be taken
+off the roster.** `{ kind: 'removeAgent'; workerId }`. People still cannot:
+the team is fixed (§8), and a person refused is told so
+(`staffingRefused`, `why: 'teamIsFixed'`).
+
+### Why
+
+Until now an agent was a one-way door. Each one draws `perAgent` for the rest
+of the run, and nothing in the game said that before the player clicked
+*+ agent*. The lesson is that the fleet is sized by review capacity. A player
+who has learned that should be able to act on it, not only on the next run.
+
+### The run that found it
+
+A playtest moved three implementers to Review and added five agents to
+Implement at about day 15, with Implement's WIP limit at 7 and Review's at 5.
+Throughput fell to 0–2 a day and stayed there. Reproduced headless, 8 seeds,
+the same moves at t=1200:
+
+```
+day after the move:  1    2    3    4    5    6    7    8   ... 35
+shipped per day:    2.1  5.9  3.0  2.8  2.4  1.5  1.8  1.3 ... ~1.0
+attention budget:   4.2  4.1  7.5  7.7  7.7  7.7 ...
+```
+
+The mechanism is context decay (§7) with no way back. Five agents leave 7.7
+of 13.7 attention. Three people onboarding take another 3.6 for two shifts.
+Agent output queues for Review while the budget is at 4, waits past the
+grace, and then costs 5 to review rather than 1. At 7.7 a shift that is about
+1.5 reviews, so the next batch waits too. The same roster and sliders set
+from t=0 ship 3.5 a day, because there is no queue of stale agent output to
+start the spiral. **The re-brief spiral is a place a line can fall into, not
+a property of the roster.**
+
+### Measured: removing helps, the sliders help more
+
+From inside that spiral at t=2000, shipped per day over the last ten days of
+a 4000-tick run, 12 seeds:
+
+```
+do nothing                   1.0
+remove 2 agents              1.2
+remove 3 agents              1.8
+remove all 5                 0.5     one implementer is left
+all sliders to ~0.5×         4.2
+remove 3 + sliders ~0.5×     3.2
+```
+
+Removing agents is worth something and is not the fix. Tightening every WIP
+limit stops agent output queueing for Review, which is what keeps the spiral
+going. That is the game's first lesson again, and it is kept that way on
+purpose: removal is an undo for a hire, not a second answer to the WIP
+question.
+
+### Rules
+
+- An idle agent leaves the tick it is removed. A busy one finishes its item
+  first, the same rule a move follows (`leaving` on the worker, applied in
+  `applyPendingMoves`), and draws attention until it has gone.
+- Assigning a leaving agent to the station it stands at keeps it, the way the
+  same gesture calls off a move.
+- Worker ids are never reused, so a replay that removes and then hires
+  addresses the same agents.
+- No golden replay and no rules probe moved: no existing run can contain the
+  command, so `RULES_VERSION` stays 1. A save that uses it will not load in a
+  build from before this change.
+
+### The Rebase button that did nothing
+
+The same playtest reported that Rebase did nothing when clicked. It was
+working as designed, and failing to say so. A rebase costs `rebaseCost` (2)
+attention and the sim refuses it when the shift cannot pay, while abandon and
+ship-anyway stay open (§4). In the run above the refusal fired 1,458 times:
+Review spends the budget as soon as it refills, so a rebase never got a turn.
+The HUD showed the button live the whole time. Now the button carries its
+cost (*Rebase · 2*), goes dead when the budget is short, and the stale list
+says why and what is still open. The sim is unchanged.

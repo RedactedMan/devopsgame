@@ -428,6 +428,12 @@ body {
   font-size: 10px;
 }
 
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--edge);
+}
+
 .btn--danger:hover {
   border-color: var(--stale);
   color: #ffb59b;

@@ -270,7 +270,8 @@ function Timeline({ commands }: { commands: LoggedCommand[] }) {
   return (
     <>
       <p className="debrief__summary">
-        {count('assignWorker')} moves · {count('hire')} agents · {steps.filter((s) => s.command.kind === 'setWipLimit').length}{' '}
+        {count('assignWorker')} moves · {count('hire')} agents
+        {count('removeAgent') > 0 && <> ({count('removeAgent')} removed)</>} · {steps.filter((s) => s.command.kind === 'setWipLimit').length}{' '}
         WIP changes · {stale('rebase')} rebased · {stale('abandon')} abandoned ·{' '}
         {stale('shipAnyway')} shipped stale
       </p>
@@ -322,6 +323,8 @@ function describe(command: LoggedCommand['command']): string {
       return `Moved ${command.workerId} to ${STATION_LABELS[command.to]}`
     case 'hire':
       return `Added an agent at ${STATION_LABELS[command.station]}`
+    case 'removeAgent':
+      return `Removed agent ${command.workerId}`
     case 'resolveStale':
       return command.choice === 'rebase'
         ? `Rebased ${command.itemId}`

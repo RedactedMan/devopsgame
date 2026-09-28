@@ -105,7 +105,8 @@ describe('parseCommandLog', () => {
       { tick: 0, command: { kind: 'setWipLimit', station: 'review', limit: 2 } },
       { tick: 1, command: { kind: 'resolveStale', itemId: 'I4', choice: 'abandon' } },
       { tick: 1, command: { kind: 'assignWorker', workerId: 'W2', to: 'review' } },
-      { tick: 3999, command: { kind: 'hire', station: 'ci' } },
+      { tick: 3998, command: { kind: 'hire', station: 'ci' } },
+      { tick: 3999, command: { kind: 'removeAgent', workerId: 'W10' } },
     ]
     expect(parseCommandLog(log)).toEqual({ ok: true, commands: log })
   })

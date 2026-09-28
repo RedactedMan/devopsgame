@@ -158,6 +158,9 @@ function parseCommand(raw: unknown): Command | null {
     case 'hire':
       if (!isStation(c.station)) return null
       return { kind: 'hire', station: c.station }
+    case 'removeAgent':
+      if (!isId(c.workerId)) return null
+      return { kind: 'removeAgent', workerId: c.workerId }
     default:
       return null
   }

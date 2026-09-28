@@ -10,6 +10,7 @@ import { cssAreaColor, cssDriftColor } from '../render/theme.js'
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 const TICKS_PER_DAY = TICKS_PER_HOUR * 8
 const LEARNING_SPEED = Math.round(100 / DEFAULT_TUNING.onboarding.serviceMult)
+const REBASE_COST = DEFAULT_TUNING.attention.rebaseCost
 
 /**
  * How long a line may go without shipping before the HUD says so.
@@ -39,6 +40,11 @@ export type HudSession = { code: string; name: string }
 export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) {
   const { snapshot: snap, dispatch } = sim
   const stale = snap.items.filter((it) => it.stale)
+  // The sim refuses a rebase it cannot pay for, and leaves abandon and ship
+  // anyway open. A Rebase button that stayed live through that read as broken:
+  // one playtest clicked it over and over on a line whose budget never got to
+  // two. So the button says what it costs and goes dead when it is out of reach.
+  const canRebase = snap.attention.remaining >= REBASE_COST
   const blocked = snap.stations.filter((s) => s.blocked)
   const [held, setHeld] = useState<string | null>(null)
   const [tab, setTab] = useState<PanelTab>('wip')
@@ -198,7 +204,7 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
           <Attention snap={snap} />
           <p className="hint">
             {held === null
-              ? 'Click someone to pick them up, then click a station to move them there. Nobody new is coming — the team is who you have. A person who moves is slower for a while, learning the new station.'
+              ? 'Click someone to pick them up, then click a station to move them there. Nobody new is coming — the team is who you have. A person who moves is slower for a while, learning the new station. An agent you pick up can be removed.'
               : `Where should ${held} go? Click a station, or click ${held} again to put them down.`}
           </p>
           {snap.stations.map((station) => (
@@ -215,6 +221,11 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
                 setHeld(null)
               }}
               onHire={() => dispatch({ kind: 'hire', station: station.id })}
+              onRemove={() => {
+                if (held === null) return
+                dispatch({ kind: 'removeAgent', workerId: held })
+                setHeld(null)
+              }}
             />
           ))}
         </section>
@@ -238,6 +249,17 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
             <p className="hint">
               The trunk moved on while these were open. They are holding their slots until you
               decide.
+              {!canRebase && (
+                <>
+                  {' '}
+                  <strong>
+                    A rebase costs {REBASE_COST} attention and there is{' '}
+                    {snap.attention.remaining.toFixed(1)} left this shift.
+                  </strong>{' '}
+                  Review spends the budget first, so while it has a queue a rebase may never get
+                  a turn. Abandon or ship anyway, or cut what is drawing on attention.
+                </>
+              )}
             </p>
           )}
           <ul className="stale">
@@ -257,12 +279,17 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
                   <button
                     type="button"
                     className="btn btn--sm"
-                    title="Catch up to trunk. Costs a share of the work again."
+                    title={
+                      canRebase
+                        ? `Catch up to trunk. Costs a share of the work again, and ${REBASE_COST} attention.`
+                        : `Needs ${REBASE_COST} attention, and this shift has ${snap.attention.remaining.toFixed(1)} left.`
+                    }
+                    disabled={!canRebase}
                     onClick={() =>
                       dispatch({ kind: 'resolveStale', itemId: item.id, choice: 'rebase' })
                     }
                   >
-                    Rebase
+                    Rebase · {REBASE_COST}
                   </button>
                   <button
                     type="button"
@@ -555,7 +582,8 @@ function Attention({ snap }: { snap: Snapshot }) {
         {underwater ? (
           <>
             {agents} agents against {humans} people. This roster produces more than it can read —
-            Review is running on a floor, not a budget. Hiring more of them makes it worse.
+            Review is running on a floor, not a budget. Hiring more of them makes it worse; removing
+            some is the way back.
           </>
         ) : (
           <>
@@ -606,6 +634,7 @@ function StaffRow({
   onHold,
   onDrop,
   onHire,
+  onRemove,
 }: {
   station: Snapshot['stations'][number]
   workers: Snapshot['workers']
@@ -614,12 +643,17 @@ function StaffRow({
   onHold: (id: string) => void
   onDrop: () => void
   onHire: () => void
+  onRemove: () => void
 }) {
   const heldHere = workers.find((w) => w.id === held)
   const droppable = held !== null && heldHere === undefined
   // Someone already on their way out can be kept: assigning a worker to the
-  // station they are standing in is how a pending move is called off.
-  const cancellable = heldHere !== undefined && heldHere.pendingStation !== null
+  // station they are standing in is how a pending move, or a removal, is
+  // called off.
+  const cancellable =
+    heldHere !== undefined && (heldHere.pendingStation !== null || heldHere.leaving)
+  // The undo for "+ agent". People are the team and have no such button.
+  const removable = heldHere !== undefined && heldHere.kind === 'agent' && !heldHere.leaving
 
   return (
     <div className={constraint ? 'staff staff--constraint' : 'staff'}>
@@ -640,13 +674,15 @@ function StaffRow({
               worker.busy ? 'chip--busy' : '',
               worker.kind === 'agent' ? 'chip--agent' : '',
               held === worker.id ? 'chip--held' : '',
-              worker.pendingStation ? 'chip--moving' : '',
+              worker.pendingStation || worker.leaving ? 'chip--moving' : '',
               worker.onboardingTicks > 0 ? 'chip--learning' : '',
             ]
               .filter(Boolean)
               .join(' ')}
             title={
-              worker.pendingStation
+              worker.leaving
+                ? 'Finishing up, then leaving. Still drawing on attention until it goes.'
+                : worker.pendingStation
                 ? `Finishing up, then moving to ${STATION_LABELS[worker.pendingStation]}`
                 : worker.onboardingTicks > 0
                   ? `Still learning this station: ${LEARNING_SPEED}% speed, and drawing on attention, for another ${(worker.onboardingTicks / TICKS_PER_HOUR).toFixed(0)}h.`
@@ -659,12 +695,23 @@ function StaffRow({
             {worker.kind === 'agent' ? '⌁' : ''}
             {worker.id}
             {worker.pendingStation ? ' →' : ''}
+            {worker.leaving ? ' ×' : ''}
           </button>
         ))}
         {workers.length === 0 && <span className="staff__empty">nobody</span>}
         {(droppable || cancellable) && (
           <button type="button" className="chip chip--drop" onClick={onDrop}>
             {cancellable ? 'keep' : 'move'} {held} here
+          </button>
+        )}
+        {removable && (
+          <button
+            type="button"
+            className="chip chip--drop"
+            title="Take this agent off the roster. If it is mid-item it finishes first."
+            onClick={onRemove}
+          >
+            remove {held}
           </button>
         )}
       </div>

@@ -55,6 +55,7 @@ export function initState(options: InitOptions): GameState {
         kind: 'human',
         station: id,
         pendingStation: null,
+        leaving: false,
         onboardingUntil: 0,
       })
     }
@@ -68,6 +69,7 @@ export function initState(options: InitOptions): GameState {
         kind: 'agent',
         station: id,
         pendingStation: null,
+        leaving: false,
         onboardingUntil: 0,
       })
     }

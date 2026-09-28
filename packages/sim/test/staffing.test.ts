@@ -516,3 +516,83 @@ describe('hiring', () => {
     expect(moved?.station === 'review' || moved?.pendingStation === 'review').toBe(true)
   })
 })
+
+describe('removing an agent', () => {
+  const hired = (station: StationId, n: number) => {
+    let state = initState({ seed: 1 })
+    for (let i = 0; i < n; i++) state = step(state, [{ kind: 'hire', station }]).state
+    return state
+  }
+
+  it('takes an idle agent off the roster at once, and gives back its attention', () => {
+    // Deploy is quiet at t=0, so a fresh agent there is idle.
+    let state = hired('deploy', 1)
+    const agent = state.workers.at(-1)!
+    const supplyWith = snapshot(state).attention.supply
+    const result = step(state, [{ kind: 'removeAgent', workerId: agent.id }])
+    state = result.state
+
+    expect(state.workers.some((w) => w.id === agent.id)).toBe(false)
+    expect(result.events).toContainEqual({ kind: 'workerRemoved', workerId: agent.id, from: 'deploy' })
+    expect(snapshot(state).attention.supply).toBeCloseTo(supplyWith + DEFAULT_TUNING.attention.perAgent)
+  })
+
+  it('lets a busy agent finish its item first, drawing attention until it goes', () => {
+    let state = hired('implement', 1)
+    const agent = state.workers.at(-1)!
+    while (!state.stations.implement.inService.some((s) => s.workerId === agent.id)) {
+      state = step(state).state
+    }
+    state = step(state, [{ kind: 'removeAgent', workerId: agent.id }]).state
+    const leaving = state.workers.find((w) => w.id === agent.id)
+    expect(leaving?.leaving).toBe(true)
+    expect(snapshot(state).workers.find((w) => w.id === agent.id)?.leaving).toBe(true)
+
+    let gone = false
+    for (let i = 0; i < 400 && !gone; i++) {
+      state = step(state).state
+      gone = !state.workers.some((w) => w.id === agent.id)
+    }
+    expect(gone).toBe(true)
+    // The item it was holding went on down the line, not back to the queue.
+    expect(state.stations.implement.inService.some((s) => s.workerId === agent.id)).toBe(false)
+  })
+
+  it('can be called off, the way a move is, by keeping the agent where it stands', () => {
+    let state = hired('implement', 1)
+    const agent = state.workers.at(-1)!
+    while (!state.stations.implement.inService.some((s) => s.workerId === agent.id)) {
+      state = step(state).state
+    }
+    state = step(state, [{ kind: 'removeAgent', workerId: agent.id }]).state
+    state = step(state, [{ kind: 'assignWorker', workerId: agent.id, to: 'implement' }]).state
+    state = run(state, 400)
+    expect(state.workers.find((w) => w.id === agent.id)?.leaving).toBe(false)
+  })
+
+  it('refuses to remove a person, and says so', () => {
+    // The team is fixed. Refusing in silence would read as a broken button.
+    const state = initState({ seed: 1 })
+    const person = state.workers[0]!
+    const result = step(state, [{ kind: 'removeAgent', workerId: person.id }])
+    expect(result.state.workers).toHaveLength(9)
+    expect(result.events).toContainEqual({
+      kind: 'staffingRefused',
+      station: person.station,
+      workerKind: 'human',
+      why: 'teamIsFixed',
+    })
+  })
+
+  it('never reuses an id, so a replay that removes and then hires addresses the same agents', () => {
+    let state = hired('ci', 2)
+    const [first, second] = state.workers.slice(-2).map((w) => w.id)
+    state = step(state, [{ kind: 'removeAgent', workerId: second! }]).state
+    state = run(state, 200)
+    state = step(state, [{ kind: 'hire', station: 'ci' }]).state
+    const ids = state.workers.map((w) => w.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toContain(first)
+    expect(ids.at(-1)).not.toBe(second)
+  })
+})

@@ -55,6 +55,10 @@ playable on its own:
    for review costs extra attention to pick up, so five agents and nothing
    else now do worse than doing nothing at the starting sliders. See §7 of
    the same doc.
+   **Agents can be removed** (2026-09-28): the undo for a hire. People cannot.
+   A line that hired past its reviewers can fall into a spiral where every
+   review costs five attention; tightening the WIP limits gets it out faster
+   than removing agents does. See §9.
    **Presentation mode** is built for the session this is for: a short talk,
    everyone plays the same seed for 50 days, then a leaderboard. Open
    `?present` to start one and put the join link and its QR code on the
