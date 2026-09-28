@@ -112,7 +112,7 @@ test('says so when a save was made under other rules, and refuses what is not a 
   await writeFile(older, JSON.stringify({ ...save, rules: save.rules - 1 }))
   await loadInput(page).setInputFiles(older)
   const dialog = page.getByRole('dialog', { name: 'Loaded' })
-  await expect(dialog).toContainText('under new rules')
+  await expect(dialog).toContainText('under different rules')
   await expect(dialog).toContainText(`rules v${save.rules - 1}`)
   await page.screenshot({ path: test.info().outputPath('laptop-rules-changed.png') })
   await dialog.getByRole('button', { name: 'Stay paused' }).click()

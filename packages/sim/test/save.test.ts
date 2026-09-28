@@ -115,7 +115,7 @@ describe('save and load', () => {
     // The case that made versioning the real question: slice 3b's context
     // decay. Five agents and nothing else, saved at 1500 under decay, loaded
     // into rules without it, replays to a different game (golden e97ce11e vs
-    // 87dcabe9 in replay.test.ts).
+    // 87dcabe9, see goldens.ts).
     const log: LoggedCommand[] = [30, 31, 32, 33, 34].map((tick) => ({
       tick,
       command: { kind: 'hire', station: 'implement' },

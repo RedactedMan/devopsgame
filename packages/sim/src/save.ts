@@ -77,8 +77,9 @@ export function makeSave(
  * What a load found.
  *
  * - `same`: saved under today's rules and replayed to the same place.
- * - `rulesChanged`: saved under older rules, but the run up to the save
- *   replays exactly. The rest of the game plays under today's rules.
+ * - `rulesChanged`: saved under other rules (older, or newer when a save
+ *   from the live site is loaded into an older build), but the run up to the
+ *   save replays exactly. The rest of the game plays under this build's rules.
  * - `runChanged`: today's rules replay the player's decisions to a different
  *   place. The game loads anyway, because deploys replace the old build and
  *   refusing would leave the player nothing to play, but it says so.

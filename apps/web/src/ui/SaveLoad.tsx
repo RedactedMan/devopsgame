@@ -46,7 +46,11 @@ export function SaveLoad({ sim }: { sim: SimHandle }) {
     const link = document.createElement('a')
     link.href = url
     link.download = fileName
+    // In the document, because Firefox and older iOS Safari ignore a click on
+    // a link that is not.
+    document.body.appendChild(link)
     link.click()
+    link.remove()
     // Safari reads the blob after the click returns, so it is not revoked at once.
     setTimeout(() => URL.revokeObjectURL(url), 10_000)
     setNotice({ kind: 'saved', fileName, day })
@@ -145,7 +149,7 @@ function NoticeView({ notice, sim, close }: { notice: Notice; sim: SimHandle; cl
       <div className={verdict.kind === 'same' ? 'card saveload' : 'card saveload saveload--changed'}>
         <h2 className="saveload__title">
           {verdict.kind === 'same' && `Loaded day ${day}`}
-          {verdict.kind === 'rulesChanged' && `Loaded day ${day}, under new rules`}
+          {verdict.kind === 'rulesChanged' && `Loaded day ${day}, under different rules`}
           {verdict.kind === 'runChanged' && `Loaded, but it is not the game you saved`}
         </h2>
 
@@ -158,8 +162,8 @@ function NoticeView({ notice, sim, close }: { notice: Notice; sim: SimHandle; cl
         {verdict.kind === 'rulesChanged' && (
           <p>
             Saved under rules v{verdict.savedRules}
-            {stamp(save)}. Your run to day {day} replays exactly, but from here it plays under
-            today’s rules, v{RULES_VERSION}.
+            {stamp(save)}, and this game runs v{RULES_VERSION}. Your run to day {day} replays
+            exactly, but from here it plays under v{RULES_VERSION}.
           </p>
         )}
 
@@ -168,8 +172,8 @@ function NoticeView({ notice, sim, close }: { notice: Notice; sim: SimHandle; cl
             <p>
               {verdict.savedRules === RULES_VERSION
                 ? `Saved${stamp(save) || ' on an earlier build'}, and the game has changed since.`
-                : `Saved under rules v${verdict.savedRules}${stamp(save)}, and today’s are v${RULES_VERSION}.`}{' '}
-              Today’s rules replay your decisions to a different day {day}:
+                : `Saved under rules v${verdict.savedRules}${stamp(save)}, and this game runs v${RULES_VERSION}.`}{' '}
+              Its rules replay your decisions to a different day {day}:
             </p>
             <div className="saveload__compare">
               <span>
@@ -179,7 +183,7 @@ function NoticeView({ notice, sim, close }: { notice: Notice; sim: SimHandle; cl
                 now <Outcome {...verdict.now} />
               </span>
             </div>
-            <p>You are playing the current version from here.</p>
+            <p>You are playing this version from here.</p>
           </>
         )}
 
