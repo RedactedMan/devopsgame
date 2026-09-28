@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   initState,
+  loadSave,
+  makeSave,
   snapshot,
   stepLogged,
   type Command,
   type GameState,
   sessionResult,
+  type LoadVerdict,
   type LoggedCommand,
+  type SaveFile,
   type SessionResult,
   type Snapshot,
 } from '@flow/sim'
+import { BUILD } from '../build.js'
 
 /**
  * The bridge. It owns the clock and nothing else.
@@ -59,6 +64,16 @@ export type SimHandle = {
   setPaused: (paused: boolean) => void
   setSpeed: (speed: Speed) => void
   reset: (seed?: number) => void
+  /**
+   * The run so far as a save file (M1 slice 4): the seed, the log, and the tick
+   * it got to. Commands still queued for the next tick are not in it.
+   */
+  save: () => SaveFile
+  /**
+   * Replaces the run with a saved one, replayed under today's rules, and
+   * pauses so the player can read what the load found before playing on.
+   */
+  load: (save: SaveFile) => LoadVerdict
   /** Live reference for the renderer, so the canvas does not wait on React. */
   latest: { current: Snapshot }
 }
@@ -82,6 +97,8 @@ export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle
   const [paused, setPaused] = useState(false)
   const [speed, setSpeed] = useState<Speed>(1)
 
+  const seedRef = useRef(seed)
+  seedRef.current = seed
   const pausedRef = useRef(paused)
   const speedRef = useRef<Speed>(speed)
   pausedRef.current = paused
@@ -101,8 +118,35 @@ export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle
     setResult(null)
     latest.current = snapshot(stateRef.current)
     setSnap(latest.current)
+    seedRef.current = s
     setSeed(s)
     setRunId((n) => n + 1)
+  }, [])
+
+  const save = useCallback(
+    () =>
+      makeSave(seedRef.current, stateRef.current, logRef.current, {
+        build: BUILD,
+        savedAt: new Date().toISOString(),
+      }),
+    [],
+  )
+
+  const load = useCallback((file: SaveFile) => {
+    const loaded = loadSave(file)
+    stateRef.current = loaded.state
+    pendingRef.current = []
+    // The loaded log is the one play carries on writing to. A fresh one would
+    // make the next save a run that starts at the load.
+    logRef.current = loaded.commands
+    setResult(null)
+    latest.current = snapshot(stateRef.current)
+    setSnap(latest.current)
+    seedRef.current = file.seed
+    setSeed(file.seed)
+    setPaused(true)
+    setRunId((n) => n + 1)
+    return loaded.verdict
   }, [])
 
   useEffect(() => {
@@ -177,6 +221,8 @@ export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle
     setPaused,
     setSpeed,
     reset,
+    save,
+    load,
     latest,
   }
 }

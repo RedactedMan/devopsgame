@@ -1,0 +1,28 @@
+/**
+ * Which rules a run was played under.
+ *
+ * A save, and a leaderboard run, is a seed and a list of decisions. Replaying
+ * it against different tuning or different sim code gives a different game,
+ * and nothing in the log would say so. Slice 3b showed how quietly that
+ * happens: five agents and nothing else replay identically with and without
+ * context decay up to tick 800, and to a different game by 1500.
+ *
+ * So the version is a number, and a test keeps it honest. `RULES_PROBE` is a
+ * hash of the default tuning and the three golden replay fingerprints
+ * (`test/rules.test.ts`). Anything that moves either moves the probe, the test
+ * fails, and the fix is to bump the version and re-record the probe. A number
+ * bumped from memory is one that gets forgotten, and a build id would change on
+ * every docs-only deploy.
+ *
+ * The blind spot is the goldens' blind spot: a code change no golden run
+ * exercises. A save also carries a fingerprint of the state it was saved at,
+ * which catches that when it changes the saved part of the run (`save.ts`).
+ *
+ * History, newest first. Say what changed and why the version moved.
+ *
+ *   1  2026-09-27  First version, recorded with save and load (M1 slice 4).
+ *                  The rules as of slice 3b, context decay.
+ */
+export const RULES_VERSION = 1
+
+export const RULES_PROBE = '58f16988'
