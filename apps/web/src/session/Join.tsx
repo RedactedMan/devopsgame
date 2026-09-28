@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { DEFAULT_TUNING } from '@flow/content'
+import { DEFAULT_TUNING, SESSION_TUNING, SESSION_WIN_UNFINISHED } from '@flow/content'
 import type { SessionStatus, SubmitOutcome } from '@flow/sim'
 import { useSim, type SimHandle } from '../bridge/useSim.js'
 import { Board } from '../render/Board.js'
@@ -85,7 +85,7 @@ export function Join({ code: initialCode }: { code: string | null }) {
 }
 
 function SessionGame({ session, player }: { session: SessionStatus; player: Player }) {
-  const sim = useSim(session.seed, { endTick: session.ticks })
+  const sim = useSim(session.seed, { endTick: session.ticks, tuning: SESSION_TUNING })
   return (
     <div className="app">
       <Hud sim={sim} session={{ code: session.code, name: player.name }} />
@@ -148,6 +148,16 @@ function EndScreen({
   return (
     <div className="overlay" role="dialog" aria-label="Run finished">
       <div className="card end">
+        <div className={result.won ? 'end__verdict end__verdict--won' : 'end__verdict'}>
+          {result.won ? 'You kept up' : 'The work got ahead of you'}
+        </div>
+        <p className="hint">
+          {result.unfinished} {result.unfinished === 1 ? 'item was' : 'items were'} still
+          unfinished when the clock stopped, waiting or in flight.{' '}
+          {result.won
+            ? `${SESSION_WIN_UNFINISHED} or fewer is a win.`
+            : `A win is ${SESSION_WIN_UNFINISHED} or fewer.`}
+        </p>
         <div className="end__label">Your score</div>
         <div className="end__score">{result.score.toFixed(1)}</div>
         <div className="end__stats">

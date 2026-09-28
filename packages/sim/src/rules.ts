@@ -26,3 +26,28 @@
 export const RULES_VERSION = 1
 
 export const RULES_PROBE = '58f16988'
+
+/**
+ * Which rules a *session* run was scored under.
+ *
+ * Presentation mode plays `SESSION_TUNING` and is won on
+ * `SESSION_WIN_UNFINISHED` (2026-09-28), so a change to either moves the
+ * room's game without moving free play, and the free-play version above would
+ * not notice. Kept separate so a session change does not tell every save it
+ * was made under other rules when it was not. `SESSION_RULES_PROBE` hashes the
+ * session tuning, the win line, the free-play goldens and the session golden
+ * (`test/rules.test.ts`); the same rule applies, bump and re-record.
+ *
+ * Nothing sends it yet. The session-deploy fix IMPLEMENTATION_PLAN §3 calls
+ * for, where the client sends its rules and the Worker refuses a mismatch, is
+ * what it is for.
+ *
+ * History, newest first.
+ *
+ *   1  2026-09-28  First version, with the session's win line. Work arrives
+ *                  every 20 ticks rather than 16; won at 10 or fewer
+ *                  unfinished.
+ */
+export const SESSION_RULES_VERSION = 1
+
+export const SESSION_RULES_PROBE = '849a70de'

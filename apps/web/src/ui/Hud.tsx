@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { STATION_LABELS, DEFAULT_TUNING, type StationId } from '@flow/content'
+import {
+  STATION_LABELS,
+  DEFAULT_TUNING,
+  SESSION_WIN_UNFINISHED,
+  type StationId,
+} from '@flow/content'
 import type { Snapshot } from '@flow/sim'
 import type { SimHandle } from '../bridge/useSim.js'
 import { SPEEDS } from '../bridge/useSim.js'
@@ -40,6 +45,7 @@ export type HudSession = { code: string; name: string }
 export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) {
   const { snapshot: snap, dispatch } = sim
   const stale = snap.items.filter((it) => it.stale)
+  const inFlight = snap.items.filter((i) => i.location.where !== 'backlog').length
   // The sim refuses a rebase it cannot pay for, and leaves abandon and ship
   // anyway open. A Rebase button that stayed live through that read as broken:
   // one playtest clicked it over and over on a line whose budget never got to
@@ -93,8 +99,19 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
           value={`${(snap.oldestInFlightTicks / TICKS_PER_HOUR).toFixed(0)}h`}
           alarm={stalled}
         />
-        <Stat label="WIP" value={snap.items.filter((i) => i.location.where !== 'backlog').length} />
+        <Stat label="WIP" value={inFlight} secondary={session !== undefined} />
         <Stat label="Backlog" value={snap.backlog} secondary />
+        {session && (
+          // The session's win line, where the player can watch it. It counts
+          // what is in flight as well as what is waiting, so a loose WIP
+          // limit cannot hit it by pulling the backlog onto the board. On a
+          // phone it takes WIP's place in the top bar.
+          <Stat
+            label="Unfinished"
+            value={`${snap.backlog + inFlight} / ≤${SESSION_WIN_UNFINISHED}`}
+            alarm={snap.backlog + inFlight > SESSION_WIN_UNFINISHED}
+          />
+        )}
         <Stat
           label="Attention"
           // The only scarcity in M1. Money buys capacity, attention buys

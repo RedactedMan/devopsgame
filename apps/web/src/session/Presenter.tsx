@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DEFAULT_TUNING, STATION_LABELS } from '@flow/content'
+import { DEFAULT_TUNING, SESSION_WIN_UNFINISHED, STATION_LABELS } from '@flow/content'
 import {
   SESSION_DEFAULT_SEED,
   SESSION_TICKS,
@@ -175,7 +175,8 @@ function LiveSession({ code }: { code: string }) {
           {entries.length === 0 ? (
             <p className="hint">
               Scores appear here as players finish. A score is every item shipped, weighted by the
-              quality it shipped at.
+              quality it shipped at. A player kept up if {SESSION_WIN_UNFINISHED} or fewer items
+              were unfinished when their clock stopped.
             </p>
           ) : (
             <table className="board-table">
@@ -184,6 +185,9 @@ function LiveSession({ code }: { code: string }) {
                   <th>#</th>
                   <th className="board-table__name">Name</th>
                   <th>Score</th>
+                  <th title="Kept up: unfinished work at the end, and whether it was within the win line">
+                    Kept up
+                  </th>
                   <th>Shipped</th>
                   <th>Quality</th>
                   <th>Lead time</th>
@@ -202,6 +206,9 @@ function LiveSession({ code }: { code: string }) {
                     <td>{i + 1}</td>
                     <td className="board-table__name">{entry.name}</td>
                     <td className="board-table__score">{entry.score.toFixed(1)}</td>
+                    <td className={entry.won ? 'board-table__kept board-table__won' : 'board-table__kept'}>
+                      {entry.unfinished === null ? '–' : `${entry.won ? '✓' : '✗'} ${entry.unfinished} left`}
+                    </td>
                     <td>{entry.shipped}</td>
                     <td>{Math.round(entry.avgQuality * 100)}%</td>
                     <td>{(entry.avgLeadTimeTicks / TICKS_PER_HOUR).toFixed(1)}h</td>

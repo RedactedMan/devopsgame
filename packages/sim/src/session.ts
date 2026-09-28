@@ -1,4 +1,4 @@
-import { STATION_IDS, type StationId } from '@flow/content'
+import { SESSION_TUNING, SESSION_WIN_UNFINISHED, STATION_IDS, type StationId } from '@flow/content'
 import type { Command, LoggedCommand, Replay } from './commands.js'
 import { runReplay } from './replay.js'
 import type { GameState } from './state.js'
@@ -45,6 +45,10 @@ export type SessionResult = {
   shipped: number
   avgQuality: number
   avgLeadTimeTicks: number
+  /** Items not shipped when the clock stopped: the backlog and everything in flight. */
+  unfinished: number
+  /** Whether `unfinished` is within `SESSION_WIN_UNFINISHED`. */
+  won: boolean
 }
 
 /*
@@ -61,7 +65,14 @@ export type SessionInfo = {
 }
 export type SessionStatus = SessionInfo & { joined: number; finished: number }
 
-export type BoardEntry = SessionResult & {
+export type BoardEntry = Omit<SessionResult, 'unfinished' | 'won'> & {
+  /**
+   * Null for a run submitted before the win line existed (2026-09-28). A
+   * session's board lives a week, so a deploy can meet rows without it.
+   */
+  unfinished: number | null
+  won: boolean
+
   playerId: string
   name: string
   /** Finished runs, not just the best one. A restart mid-run submits nothing, so it is not counted. */
@@ -85,6 +96,8 @@ export function sessionResult(state: GameState): SessionResult {
     shipped: summary.shipped,
     avgQuality: Math.round(summary.avgTrueQuality * 1000) / 1000,
     avgLeadTimeTicks: Math.round(summary.avgLeadTimeTicks),
+    unfinished: state.items.length,
+    won: state.items.length <= SESSION_WIN_UNFINISHED,
   }
 }
 
@@ -94,7 +107,7 @@ export function sessionResult(state: GameState): SessionResult {
  * except a better set of decisions — which is the game.
  */
 export function verifyRun(replay: Replay, ticks: number = SESSION_TICKS): SessionResult {
-  return sessionResult(runReplay(replay, ticks))
+  return sessionResult(runReplay(replay, ticks, SESSION_TUNING))
 }
 
 /**

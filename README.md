@@ -60,7 +60,10 @@ playable on its own:
    review costs five attention; tightening the WIP limits gets it out faster
    than removing agents does. See §9.
    **Presentation mode** is built for the session this is for: a short talk,
-   everyone plays the same seed for 50 days, then a leaderboard. Open
+   everyone plays the same seed for 50 days, then a leaderboard. The session
+   can be won and free play cannot: a session arrives four items a day rather
+   than five, and a player who ends with 10 or fewer unfinished kept up
+   (HIRING_AND_ATTENTION §10). Open
    `?present` to start one and put the join link and its QR code on the
    projector. It plays on a phone held upright: the panel becomes tabs under
    the board. Every score
