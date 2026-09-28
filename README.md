@@ -72,7 +72,8 @@ playable on its own:
 4. **Save / load** from the command log: Save downloads the run as a small
    JSON file, and Load replays it. A save records the rules it was played
    under, and loading an older one says whether today's rules still replay it
-   to the same place. Free play only. Built 2026-09-27, in review (PR #9). See
+   to the same place. Free play only. Built 2026-09-27, merged and deployed
+   2026-09-28 (PR #9). See
    [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §3.
 5. **Board building and placement.**
 
