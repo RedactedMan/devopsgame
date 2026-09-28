@@ -554,6 +554,19 @@ export class BoardScene {
         .stroke({ color: 0xffd9c6, width: 2 })
     }
 
+    // An agent's finished output, waiting for a reviewer. The bar along the top
+    // is how much of its context is left: full through the grace, then
+    // draining, and what has drained is what the reviewer pays to rebuild.
+    // Agent blue, the chip colour, because it is a fact about who did the work
+    // and not another shade of drift.
+    if (item.rebrief !== null) {
+      view.body
+        .rect(-width / 2, -ITEM_H / 2, width, 3)
+        .fill({ color: COLORS.agent, alpha: 0.25 })
+        .rect(-width / 2, -ITEM_H / 2, width * item.contextFidelity, 3)
+        .fill({ color: COLORS.agent })
+    }
+
     if (item.progress !== null) {
       view.body
         .rect(-width / 2, ITEM_H / 2 - 3, width * item.progress, 3)
@@ -581,6 +594,10 @@ export class BoardScene {
       ? item.id
       : item.stale
       ? `${item.id}  STALE`
+      : item.rebrief !== null
+        ? item.rebrief > 0
+          ? `${item.id}  agent  +${item.rebrief.toFixed(1)}`
+          : `${item.id}  agent`
       : inBacklog
         ? `${item.id}  ${Math.round(item.ageTicks / TICKS_PER_HOUR)}h waiting`
         : parked

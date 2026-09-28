@@ -20,6 +20,7 @@ export function createItem(state: GameState, type: ItemType = 'feature'): WorkIt
     trueQuality: 1,
     displayedQuality: 1,
     contextFidelity: 1,
+    agentOutputSince: null,
     areas,
     history: [],
     drift: 0,

@@ -151,6 +151,22 @@ export const TuningSchema = z.object({
     attentionPerShift: z.number().nonnegative(),
   }),
 
+  /**
+   * Context decay (design §4.2): an agent's finished output loses its context
+   * while it waits for a reviewer, and whoever picks it up pays to rebuild it.
+   * Charged in attention at Review, never in quality — drift already takes
+   * quality for waiting. Human output does not decay. See
+   * docs/HIRING_AND_ATTENTION.md §7.
+   */
+  contextDecay: z.object({
+    /** Agent output reviewed within this many ticks of being finished costs nothing extra. */
+    graceTicks: z.number().int().nonnegative(),
+    /** Extra attention per shift waited past the grace. */
+    perShift: z.number().nonnegative(),
+    /** The re-brief never costs more than this on top of the review itself. */
+    max: z.number().nonnegative(),
+  }),
+
   /** How often the metrics sampler appends a point to the chart series. */
   sampleEveryTicks: z.number().int().positive(),
 })
@@ -244,6 +260,22 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
     ticks: 160,
     serviceMult: 2,
     attentionPerShift: 1.2,
+  },
+
+  // A shift of grace, then steep. Swept 2026-09-27 against rules with no grace
+  // (linear, saturating) and every one of those backfired: the player who
+  // moved a person to Review and backfilled with agents is the one running
+  // near the attention wall, and the player who ignores their agents is
+  // bound by Review's capacity with attention to spare, so a gentle charge
+  // lands on the wrong one. A well-tuned line never makes agent output wait
+  // a shift (99th percentile 48 ticks at move 1 + 4 agents, 0.75×). A line
+  // with five agents and the sliders untouched has a median wait of 169.
+  // Every cited number and both golden hashes hold. See
+  // docs/HIRING_AND_ATTENTION.md §7.
+  contextDecay: {
+    graceTicks: 80,
+    perShift: 4,
+    max: 4,
   },
 
   sampleEveryTicks: 10,

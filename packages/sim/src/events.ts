@@ -29,5 +29,10 @@ export type SimEvent =
    * can say, because an empty budget looks exactly like an idle station.
    */
   | { kind: 'attentionExhausted'; wanted: 'review' | 'rebase'; cost: number; remaining: number }
+  /**
+   * Review paid to rebuild an agent's lost context before it could start
+   * (systems/context.ts). `cost` is the extra over the review itself.
+   */
+  | { kind: 'rebriefed'; itemId: ItemId; cost: number }
   /** The answer the player found has expired. The most important event in M1. */
   | { kind: 'constraintMoved'; from: StationId | null; to: StationId }

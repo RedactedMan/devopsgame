@@ -152,6 +152,8 @@ Distinct from drift, and specific to the AI-native premise. An item parked in a 
 
 This punishes exactly the real-world behavior the player will bring to the game: starting five agents on five things and coming back later.
 
+> **As built (2026-09-27, M1 slice 3b).** Workers have no queues in the sim, so what decays is an agent's finished output while it waits for Review. The reviewer pays the re-brief, not the agent. Only agent output decays; a person's does not. It is free for one shift, then costs 4 attention per shift waited, capped at 4. A charge with no grace landed on the player who had fixed Review rather than on the one ignoring their agents. Details and the measurement are in [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §7.
+
 ### 4.3 Feedback speed (the Second Way)
 
 The CI station has two dials the player controls, and they trade off:

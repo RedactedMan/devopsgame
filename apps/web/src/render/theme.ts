@@ -14,6 +14,8 @@ export const COLORS = {
   drift: 0xd8973c,
   stale: 0xb4451f,
   overLimit: 0xe0563a,
+  /** The agent chip's colour, so agent output on the board reads as the same kind of thing. */
+  agent: 0x93b6d6,
 }
 
 export const CSS_COLORS = {

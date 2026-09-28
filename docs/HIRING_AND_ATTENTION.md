@@ -491,6 +491,107 @@ anti-pattern — *start five agents on five things and come back later* — is n
 yet punished. Slice 3 makes agents reachable; it does not yet make them
 mismanageable.
 
+*Superseded 2026-09-27: built as slice 3b. The measurement, and how it moved
+the mechanic away from the design's wording, follow.*
+
+### Context decay, built 2026-09-27 (slice 3b)
+
+**Where work can be parked.** Design §4.2 says "an item parked in a worker's
+queue". Workers have no queues, and nothing is ever parked *with* a worker. A
+move waits for the worker to finish what they hold (`applyPendingMoves` checks
+`workerIsBusy`), so a slot is never orphaned. A review nobody can pay for
+leaves the item unbound in Review's queue (`startService` breaks before it
+binds). The only work bound to a worker and not progressing is a STALE item
+holding its slot, and that is drift's. What does sit and wait is finished
+agent output between Implement and Review: in Implement's outbound, then
+Review's queue. So that is what decays.
+
+Three departures from §4.2 follow from that:
+
+- **A station queue, not a worker's.**
+- **The reviewer re-briefs, not the agent.** The cost is a person working out
+  what the agent did and why, not the agent reloading its own context.
+- **Only agent output decays.** A person's work reviewed by another person is
+  §7's ownership overlap, still deferred. Swept at a quarter of the agent rate,
+  it took +8 agents at 0.5× from 139 to 81, which is a different mechanic's
+  worth of effect.
+
+**Charged in attention, never quality.** Drift already takes quality for
+waiting, and design §9 rejects taxing one lesson twice.
+
+**Measured first.** Scratchpad harness, 12 seeds × 4000 ticks, diligent
+rebaser, agents at Implement from t=0. With decay off it reproduces the §8
+table to the item.
+
+The finding that shaped the rule: **a wait-keyed attention charge cannot
+reach the ignore pattern at its best WIP setting**, for two reasons.
+
+- At tight WIP the agents barely work. Workers pick up items in roster order,
+  people first, and Implement's limit (3 at 0.4×) leaves the agents little.
+  Across 12 seeds, five agents at 0.4× produced 35 reviews' worth of output.
+  "Start five agents on five things" is only reachable with the sliders
+  loose.
+- The ignore player is bound by Review's *capacity* (one person, 96%
+  utilised, spending 3.7 attention a shift out of 7.7). The player who moved
+  a person to Review and backfilled with agents is the one running near the
+  attention wall. A gentle charge lands on them.
+
+So every rule without a grace period backfired:
+
+```
+                                   best WIP (vs 165)            1× (untouched sliders)
+rule                         +5 ignore  move1+4  move2+4      +5 ignore  move1+4
+off                            169      223      230            116      210
+linear 1/shift, cap 2          169      221      211            113      185
+saturating max 2, τ 1 shift    169      210      209            114      181
+step: grace 1 shift, +4        169      223      230            107      180
+ramp: grace 1 shift, 4/shift   169      223      230            108      192   ← built
+```
+
+Agent output on a well-tuned line never waits a shift: move 1 + 4 agents at
+0.75× has a 99th-percentile wait of 48 ticks. Five agents with the sliders
+untouched have a median wait of 169. A one-shift grace sits between the two.
+
+At 24 seeds on the deciding rows the ramp leaves every cited number where it
+was (164, 166, 143, 222, 230 at best WIP), and five agents at 1× go from 117
+to 108 against the starting team's 114. **Five agents and nothing else were
+worth +2.6% at the settings a new player starts on, and are now worth −5%.**
+That is design rule 3 holding there for the first time.
+
+What it also does, stated plainly: the bite tracks WIP, whoever you are,
+because a wait is WIP over throughput. Move 1 + 4 agents left at 1× goes from
+211 to 193. That is read here as agents amplifying what loose WIP costs, in a
+different currency and on agent output only, rather than as drift's lesson
+charged twice. A playtest could say otherwise.
+
+Also swept and not built: charging the re-brief as Review *time* instead of
+attention. It separates about as well, but it is not attention, and it moved
+the staffed golden replay to `3cee5d35`.
+
+**As built.** `contextDecay` in `content/tuning.ts`: `graceTicks` 80,
+`perShift` 4, `max` 4. An agent finishing an item at the station before
+Review stamps `agentOutputSince`. A person finishing it, including reworking
+it, clears the stamp. Review picks items first-in-first-out and pays
+`reviewCost + min(max, perShift × shifts late)`, and `contextFidelity` drains
+to match so the board can draw it (`systems/context.ts`).
+
+**The charge is clamped to one shift's budget.** The budget is floored at a
+single review, and +8 agents put it at 4.09 while a fully decayed item costs
+5. Unclamped, Review would never start again, the hang `attention.ts`
+documents. In the sweep the clamp fired on every Review pickup at +8 agents,
+0.75× and looser.
+
+**On the board**, agent output waiting for Review carries a bar in agent blue
+along its top, draining once the grace is up, and on a laptop the label reads
+`agent +1.4`, what picking it up now would cost. The attention panel says how
+many have waited over a shift and what they will cost between them.
+
+**Golden replays.** Both existing hashes held, `bbf2d633` and `7ce23854`,
+because neither run keeps agent output waiting a shift, which also means
+neither pins the mechanic. A third was added: five agents hired at tick 30 on
+seed 20260830 and nothing else touched, 1500 ticks, `e97ce11e` (`87dcabe9`
+with decay off). `pnpm sweep` is unchanged, because it runs no agents.
+
 **Two coordination penalties the evidence does support** (§5, *Checked against
 the literature*) are deferred with the shape change rather than bundled into
 it, because each is a mechanic with its own measurement to do:
@@ -586,8 +687,10 @@ A person who is moved spends `onboarding.ticks` learning the new station.
 While they do, anything they start takes `serviceMult` times as long, and each
 shift's attention budget is `attentionPerShift` lower, because someone who
 knows the station is answering their questions. Every move restarts it,
-including a move straight back. Agents do not onboard. What they lose by
-moving is context, which is slice 3b's mechanic.
+including a move straight back. Agents do not onboard, and moving one costs
+nothing. (This used to say what an agent loses by moving is context, slice
+3b's mechanic. Slice 3b turned out to be about output waiting for review, not
+about moving; see §7.)
 
 Values: **two shifts (160 ticks), half speed, 1.2 attention per
 shift** — the same draw as an agent. Measured with each move made at t=1200,

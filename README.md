@@ -51,6 +51,10 @@ playable on its own:
    moved person spends two shifts onboarding. Agents are the only addition.
    Moving one person to Review plus one agent ships exactly what the human hire
    did. See [HIRING_AND_ATTENTION.md](docs/HIRING_AND_ATTENTION.md) §8.
+   **Context decay** (slice 3b): agent output left waiting more than a shift
+   for review costs extra attention to pick up, so five agents and nothing
+   else now do worse than doing nothing at the starting sliders. See §7 of
+   the same doc.
    **Presentation mode** is built for the session this is for: a short talk,
    everyone plays the same seed for 50 days, then a leaderboard. Open
    `?present` to start one and put the join link and its QR code on the
