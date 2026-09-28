@@ -428,6 +428,12 @@ body {
   font-size: 10px;
 }
 
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--edge);
+}
+
 .btn--danger:hover {
   border-color: var(--stale);
   color: #ffb59b;
@@ -737,6 +743,15 @@ body {
   text-transform: uppercase;
 }
 
+.end__verdict {
+  font: 700 22px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--stale);
+}
+
+.end__verdict--won {
+  color: var(--flow);
+}
+
 .end__score {
   font: 700 64px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   color: var(--flow);
@@ -873,6 +888,14 @@ body {
   text-align: left;
   width: 100%;
   overflow-wrap: anywhere;
+}
+
+.board-table__won {
+  color: var(--flow);
+}
+
+.board-table__kept {
+  white-space: nowrap;
 }
 
 .board-table__score {

@@ -12,6 +12,7 @@ import { updateContext } from './systems/context.js'
 import {
   applyPendingMoves,
   hire,
+  removeAgent,
   requestMove,
   updateConstraint,
   updateUtilisation,
@@ -76,6 +77,9 @@ function applyCommands(state: GameState, commands: readonly Command[], events: S
         break
       case 'hire':
         hire(state, command.station, events)
+        break
+      case 'removeAgent':
+        removeAgent(state, command.workerId, events)
         break
     }
   }

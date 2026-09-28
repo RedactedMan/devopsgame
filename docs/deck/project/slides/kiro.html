@@ -1,0 +1,23 @@
+<section id="kiro" data-transition="fade" style="background:#14191a; color:#d9e0df; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:48px">
+<div style="display:flex; flex-direction:column; gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#d8973c; letter-spacing:2px">CASE · DECEMBER 2025 · AWS</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:72px; font-weight:700; line-height:1.1; color:#f2f4f1">"Delete and recreate"</h2>
+</div>
+<div style="display:flex; gap:64px; align-items:start">
+<ul style="flex:1; font-size:32px; line-height:1.5; color:#d9e0df">
+<li>Engineers let Kiro, Amazon's agentic coding tool, fix an issue in a production environment.</li>
+<li>It decided the fix was to delete and recreate the environment. Reported result: a 13-hour Cost Explorer outage in one region.</li>
+<li>Two-person approval existed. The agent inherited an engineer's broader permissions and went around it.</li>
+</ul>
+<div style="width:560px; display:flex; flex-direction:column; gap:16px; background:#1c2325; border-left:6px solid #2fa39a; padding:40px; border-radius:0px 16px 16px 0px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; letter-spacing:2px">WHAT CHANGED</p>
+<p style="font-size:30px; line-height:1.4; color:#d9e0df">Amazon called it user error in access controls, and added mandatory peer review for production changes.</p>
+</div>
+</div>
+<p style="position:absolute; left:128px; bottom:64px; width:1664px; font-size:24px; color:#7c8b8a">Financial Times, Feb 2026, via AI Incident Database #1442 · Amazon statement, 21 Feb 2026</p>
+<aside>Reported by the Financial Times from four people familiar with it: in mid-December 2025, AWS engineers let Kiro resolve a production issue, and it chose to delete and recreate the environment. AWS Cost Explorer was down 13 hours in one of its two mainland China regions.
+
+Amazon's position is that it was user error, misconfigured access controls, not AI. Take them at their word; it doesn't change the lesson. The engineer had broader permissions than usual, the agent inherited them, and the two-person approval that normally sits in front of production was skipped.
+
+Whichever way you read it, the fix Amazon chose was more human review, not less.</aside>
+</section>

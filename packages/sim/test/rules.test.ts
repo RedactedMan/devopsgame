@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_TUNING } from '@flow/content'
-import { RULES_PROBE, RULES_VERSION, fnv1a } from '@flow/sim'
-import { GOLDEN, GOLDEN_IGNORED, GOLDEN_STAFFED } from './goldens.js'
+import { DEFAULT_TUNING, SESSION_TUNING, SESSION_WIN_UNFINISHED } from '@flow/content'
+import {
+  RULES_PROBE,
+  RULES_VERSION,
+  SESSION_RULES_PROBE,
+  SESSION_RULES_VERSION,
+  fnv1a,
+} from '@flow/sim'
+import { GOLDEN, GOLDEN_IGNORED, GOLDEN_SESSION, GOLDEN_STAFFED } from './goldens.js'
 
 /**
  * Keeps `RULES_VERSION` honest (src/rules.ts). The probe hashes the default
@@ -28,5 +34,29 @@ describe('rules version', () => {
     expect(fnv1a(JSON.stringify([tweaked, GOLDEN, GOLDEN_STAFFED, GOLDEN_IGNORED]))).not.toBe(
       rulesProbe(),
     )
+  })
+})
+
+/** The same check for the room's game, which has its own tuning and win line. */
+function sessionRulesProbe(): string {
+  return fnv1a(
+    JSON.stringify([
+      SESSION_TUNING,
+      SESSION_WIN_UNFINISHED,
+      GOLDEN,
+      GOLDEN_STAFFED,
+      GOLDEN_IGNORED,
+      GOLDEN_SESSION,
+    ]),
+  )
+}
+
+describe('session rules version', () => {
+  it('moves whenever the session tuning, the win line, or a golden replay moves', () => {
+    expect(
+      sessionRulesProbe(),
+      `The session rules changed. Bump SESSION_RULES_VERSION (now ${SESSION_RULES_VERSION}) in ` +
+        `packages/sim/src/rules.ts, say why in its history, and set SESSION_RULES_PROBE to the value received here.`,
+    ).toBe(SESSION_RULES_PROBE)
   })
 })

@@ -144,6 +144,17 @@ test('will not staff Review with an agent, and says so where you try it', async 
   await row('Implement').getByRole('button', { name: '+ agent' }).click()
   await expect(row('Implement').locator('.chip--agent')).toHaveCount(before + 1)
 
+  // And an agent can be taken back off. A person cannot: holding one offers
+  // no remove button, because the team is fixed.
+  await row('Implement').locator('.chip:not(.chip--agent)').first().click()
+  await expect(page.getByRole('button', { name: /^remove / })).toHaveCount(0)
+  await row('Implement').locator('.chip:not(.chip--agent)').first().click()
+
+  await row('Implement').locator('.chip--agent').last().click()
+  await row('Implement').getByRole('button', { name: /^remove W\d+/ }).click()
+  // A busy agent finishes its item first, so this can take a few ticks.
+  await expect(row('Implement').locator('.chip--agent')).toHaveCount(before, { timeout: 60_000 })
+
   expect(problems, problems.join('\n')).toEqual([])
 })
 

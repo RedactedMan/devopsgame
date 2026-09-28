@@ -93,6 +93,12 @@ export type Worker = {
    */
   pendingStation: StationId | null
   /**
+   * The player has asked for this agent to be removed and it is finishing what
+   * it holds first. Removed by `systems/staffing` once it is free. Only agents
+   * ever leave.
+   */
+  leaving: boolean
+  /**
    * The tick a person finishes learning the station they were moved to. Zero
    * for anyone who has not moved. Agents never onboard.
    */

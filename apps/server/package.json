@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --port 8787 --var PRESENTER_KEY:dev",
+    "dev": "node -e \"require('fs').mkdirSync('../web/dist',{recursive:true})\" && wrangler dev --port 8787 --var PRESENTER_KEY:dev",
     "deploy": "wrangler deploy"
   },
   "dependencies": {

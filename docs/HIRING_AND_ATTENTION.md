@@ -780,3 +780,198 @@ reshuffling people every shift and doing well out of it.
   that player's best run as a timeline: moves, agents, WIP changes (a slider
   drag collapsed to where it was let go), and every stale call.
 
+
+## 9. Agents can be removed
+
+Decided 2026-09-28, after a play of the deployed game. **An agent can be taken
+off the roster.** `{ kind: 'removeAgent'; workerId }`. People still cannot:
+the team is fixed (§8), and a person refused is told so
+(`staffingRefused`, `why: 'teamIsFixed'`).
+
+### Why
+
+Until now an agent was a one-way door. Each one draws `perAgent` for the rest
+of the run, and nothing in the game said that before the player clicked
+*+ agent*. The lesson is that the fleet is sized by review capacity. A player
+who has learned that should be able to act on it, not only on the next run.
+
+### The run that found it
+
+A playtest moved three implementers to Review and added five agents to
+Implement at about day 15, with Implement's WIP limit at 7 and Review's at 5.
+Throughput fell to 0–2 a day and stayed there. Reproduced headless, 8 seeds,
+the same moves at t=1200:
+
+```
+day after the move:  1    2    3    4    5    6    7    8   ... 35
+shipped per day:    2.1  5.9  3.0  2.8  2.4  1.5  1.8  1.3 ... ~1.0
+attention budget:   4.2  4.1  7.5  7.7  7.7  7.7 ...
+```
+
+The mechanism is context decay (§7) with no way back. Five agents leave 7.7
+of 13.7 attention. Three people onboarding take another 3.6 for two shifts.
+Agent output queues for Review while the budget is at 4, waits past the
+grace, and then costs 5 to review rather than 1. At 7.7 a shift that is about
+1.5 reviews, so the next batch waits too. The same roster and sliders set
+from t=0 ship 3.5 a day, because there is no queue of stale agent output to
+start the spiral. **The re-brief spiral is a place a line can fall into, not
+a property of the roster.**
+
+### Measured: removing helps, the sliders help more
+
+From inside that spiral at t=2000, shipped per day over the last ten days of
+a 4000-tick run, 12 seeds:
+
+```
+do nothing                   1.0
+remove 2 agents              1.2
+remove 3 agents              1.8
+remove all 5                 0.5     one implementer is left
+all sliders to ~0.5×         4.2
+remove 3 + sliders ~0.5×     3.2
+```
+
+Removing agents is worth something and is not the fix. Tightening every WIP
+limit stops agent output queueing for Review, which is what keeps the spiral
+going. That is the game's first lesson again, and it is kept that way on
+purpose: removal is an undo for a hire, not a second answer to the WIP
+question.
+
+### Rules
+
+- An idle agent leaves the tick it is removed. A busy one finishes its item
+  first, the same rule a move follows (`leaving` on the worker, applied in
+  `applyPendingMoves`), and draws attention until it has gone.
+- Assigning a leaving agent to the station it stands at keeps it, the way the
+  same gesture calls off a move.
+- Worker ids are never reused, so a replay that removes and then hires
+  addresses the same agents.
+- No golden replay and no rules probe moved: no existing run can contain the
+  command, so `RULES_VERSION` stays 1. A save that uses it will not load in a
+  build from before this change.
+
+### The Rebase button that did nothing
+
+The same playtest reported that Rebase did nothing when clicked. It was
+working as designed, and failing to say so. A rebase costs `rebaseCost` (2)
+attention and the sim refuses it when the shift cannot pay, while abandon and
+ship-anyway stay open (§4). In the run above the refusal fired 1,458 times:
+Review spends the budget as soon as it refills, so a rebase never got a turn.
+The HUD showed the button live the whole time. Now the button carries its
+cost (*Rebase · 2*), goes dead when the budget is short, and the stale list
+says why and what is still open. The sim is unchanged.
+
+## 10. The session can be won
+
+Decided 2026-09-28. **Free play stays unwinnable, and the session gets a win
+line.** Free play keeps its arrival rate of one item every 16 ticks, five a
+day, which no line in any sweep can finish. The session (`SESSION_TUNING`)
+arrives every 20 ticks, four a day. A session run is **won if 10 or fewer
+items are unfinished when the clock stops** (`SESSION_WIN_UNFINISHED`). The
+leaderboard still ranks by score, which is shipped work weighted by the
+quality it shipped at. Among players who kept up, that ranks on quality.
+
+### Why
+
+A game about flow where the backlog always wins is honest, and free play
+should stay that way. A room of first-time players, though, needs a result
+they can reach in one run and recognise when they get it. "You kept up" is
+that result, and it has to be reachable only by the moves the talk teaches.
+
+### Where the line sits
+
+Decisions made at day 10 (t=800), when the board names the constraint.
+Stale work rebased as it appears. 12 seeds, 4000 ticks. *Unfinished* is the
+backlog plus everything in flight. The first column is the session seed,
+20260830.
+
+```
+arrival every 20 ticks (4/day)        session   min  med  max   score  shipped
+untouched                                 58     58   78  116    108      122
+sliders 0.5×                              47     20   44   65    148      160
++5 agents only                           114     43   89  121    102      115
+sliders wide open (3×)                    49     49   99  117    100      112
+ci→review, 0.5×                            6      4   21   54    170      184
+ci→review +1 agent at CI, 0.5×            15      5   15   48    177      189
+impl→review +4 agents, 0.75×               4      3    4    8    182      195
+2 impl→review +4 agents, 0.75×             4      3    5    9    182      194
+ci+impl→review +4 agents, 0.75×           44      9   39   70    156      172
+the §9 playtest (3 moved, +5, 7/5)         4      2    8  145    145      156
+```
+
+At 10, every seed of the two good plays wins, with a worst case of 9. Every
+play that leaves Review alone loses on every seed. Moving one person without
+backfilling wins on some seeds and not others, which is where the line
+should leave it. At five a day nobody keeps up. At three a day (every 24
+ticks) the untouched line finishes with a median of 21 unfinished and the
+sliders alone reach 6, so nearly anyone wins and the line means nothing.
+
+The §9 playtest play wins on the session seed and on most others. At four a
+day its spiral usually does not start. Its score (145) is well below the good
+plays (182), so the leaderboard still ranks it where it belongs.
+
+### Unfinished, not backlog
+
+The line was first proposed as backlog alone. It cannot be. A loose WIP limit
+pulls the backlog onto the board, and *sliders wide open* above ends with a
+backlog of 0 on the session seed while 49 items sit unfinished in the line.
+A backlog target is one the sliders can hit without shipping anything, which
+is the opposite of the lesson. So the line counts work in flight as well.
+`session.test.ts` asserts that the wide-open play empties the backlog and
+still loses.
+
+### What it does to the numbers the debrief cites
+
+The talk's numbers were measured at five a day. At four the ceiling is the
+arrival rate, so good play shows up in lead time and in keeping up, not in
+the count shipped. 12 seeds, 4000 ticks, decisions from t=0, as in §8.
+Shipped / mean lead time:
+
+```
+session (4/day)              0.4×      0.5×     0.75×       1×     1.5×    best   vs base
+starting team             168/38h   167/39h   135/65h   121/62h  111/71h    168     0.0%
++4 agents, no move        165/40h   159/42h   137/58h   124/62h  112/65h    165    -2.2%
++8 agents, no move        145/65h   136/67h   100/88h    86/90h   76/91h    145   -14.0%
+move ci→review            174/35h   182/21h   170/27h   166/27h  160/28h    182     8.5%
+move 2 impl→review        122/79h   108/88h    96/93h    79/99h   71/92h    122   -27.5%
+move 1, +4 agents impl    176/33h   190/15h   190/13h   190/13h  189/12h    190    13.2%
+move 2, +4 agents impl    176/33h   190/15h   191/12h   190/13h  190/12h    191    13.3%
+```
+
+The same harness at five a day reproduces the §8 table to the item, so the
+two are comparable. What moves:
+
+- **WIP.** 0.4× against 1× on the starting team: 39% more shipped at 39%
+  lower lead time (168/38h against 121/62h). Free play, as the README's
+  sweep table has it: 43% more at 26% lower.
+- **Agents with nobody moved.** Four are worth −2%, eight −14%. Free play:
+  +2% and −13%.
+- **Move and backfill.** +13% shipped rather than +35%, because there is
+  only so much work to ship. The difference is lead time: 38h down to 13h,
+  about a third. That is the number to cite in the room.
+- **Two implementers moved with no backfill:** −28%, where free play has
+  −27%.
+
+### Rules
+
+- `SESSION_TUNING` and `SESSION_WIN_UNFINISHED` live in `content/tuning.ts`.
+  `verifyRun` replays under the session tuning, and a player's tab plays
+  under it (`useSim`'s `tuning` option). Free play and saves are untouched,
+  and the free-play `RULES_PROBE` did not move.
+- The session has its own `SESSION_RULES_VERSION` (1) and probe, which
+  hashes the session tuning, the win line, and a fourth golden,
+  `GOLDEN_SESSION` = `bc06fb23`. That golden is the first to play a whole
+  session: the good play at day 10, rebasing every 20 ticks, and it wins.
+  Nothing sends the version yet. It is ready for the session-deploy fix
+  IMPLEMENTATION_PLAN §3 calls for.
+- The line is set for a full 4000-tick session. The API still accepts a
+  shorter one (400 ticks and up) for the end-to-end test, and a run that
+  short can keep up by accident, because only about 20 items have arrived.
+  The presenter screen always starts a full session.
+- A board row stores `unfinished` (a new nullable column, added to an
+  existing session's table on first touch). A row from before 2026-09-28
+  shows "–".
+- The HUD in a session shows *Unfinished* against the line (`5 / ≤10`) in
+  the top bar, in place of WIP on a phone. The end screen leads with *You kept
+  up* or *The work got ahead of you*, and the presenter's board has a
+  *Kept up* column.

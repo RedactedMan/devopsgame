@@ -77,3 +77,13 @@ export const IGNORED: Replay = {
 }
 
 export const GOLDEN_IGNORED = 'e97ce11e'
+
+/**
+ * The session's game (packages/sim/test/session.test.ts, *the session can be
+ * won*): `SESSION_TUNING`, the full `SESSION_TICKS`, the good play at day 10
+ * and stale work rebased every 20 ticks. The first golden to finish a whole
+ * session, and the only one to run under the session's tuning. Recorded
+ * 2026-09-28 when the session got its win line (docs/HIRING_AND_ATTENTION.md
+ * §10). Part of the session rules probe, not the free-play one.
+ */
+export const GOLDEN_SESSION = 'bc06fb23'

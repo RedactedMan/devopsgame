@@ -27,6 +27,12 @@ export type Command =
    * a person to the constraint and backfilling with agents is not.
    */
   | { kind: 'hire'; station: StationId }
+  /**
+   * Take an agent off the roster. The only undo `hire` has, and people cannot
+   * be removed: the team is fixed. An agent mid-item finishes it and then
+   * goes, the same rule a move follows, and draws attention until it does.
+   */
+  | { kind: 'removeAgent'; workerId: WorkerId }
 
 /** A save file, and a bug report, are this. */
 export type LoggedCommand = { tick: number; command: Command }

@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers'
+import { SESSION_WIN_UNFINISHED } from '@flow/content'
 import type {
   BoardEntry,
   BoardRun,
@@ -35,6 +36,7 @@ type Row = {
   shipped: number
   avg_quality: number
   avg_lead_time: number
+  unfinished: number | null
   runs: number
   submitted_at: number
 }
@@ -63,11 +65,21 @@ export class Session extends DurableObject<Record<string, unknown>> {
           shipped INTEGER NOT NULL,
           avg_quality REAL NOT NULL,
           avg_lead_time INTEGER NOT NULL,
+          unfinished INTEGER,
           commands TEXT NOT NULL,
           runs INTEGER NOT NULL,
           submitted_at INTEGER NOT NULL
         );
       `)
+      // Added 2026-09-28 with the session's win line. A session created before
+      // then has the table without it, and its board lives for a week.
+      const columns = this.ctx.storage.sql
+        .exec<{ name: string }>('PRAGMA table_info(results)')
+        .toArray()
+        .map((c) => c.name)
+      if (!columns.includes('unfinished')) {
+        this.ctx.storage.sql.exec('ALTER TABLE results ADD COLUMN unfinished INTEGER')
+      }
     })
   }
 
@@ -123,8 +135,8 @@ export class Session extends DurableObject<Record<string, unknown>> {
     const now = Date.now()
     this.ctx.storage.sql.exec(
       `INSERT INTO results
-         (player_id, name, score, shipped, avg_quality, avg_lead_time, commands, runs, submitted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+         (player_id, name, score, shipped, avg_quality, avg_lead_time, unfinished, commands, runs, submitted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
        ON CONFLICT (player_id) DO UPDATE SET
          name = excluded.name,
          runs = results.runs + 1,
@@ -132,6 +144,7 @@ export class Session extends DurableObject<Record<string, unknown>> {
          shipped      = CASE WHEN excluded.score > results.score THEN excluded.shipped      ELSE results.shipped END,
          avg_quality  = CASE WHEN excluded.score > results.score THEN excluded.avg_quality  ELSE results.avg_quality END,
          avg_lead_time= CASE WHEN excluded.score > results.score THEN excluded.avg_lead_time ELSE results.avg_lead_time END,
+         unfinished   = CASE WHEN excluded.score > results.score THEN excluded.unfinished   ELSE results.unfinished END,
          commands     = CASE WHEN excluded.score > results.score THEN excluded.commands     ELSE results.commands END,
          submitted_at = CASE WHEN excluded.score > results.score THEN excluded.submitted_at ELSE results.submitted_at END`,
       playerId,
@@ -140,6 +153,7 @@ export class Session extends DurableObject<Record<string, unknown>> {
       result.shipped,
       result.avgQuality,
       result.avgLeadTimeTicks,
+      result.unfinished,
       JSON.stringify(commands),
       now,
     )
@@ -220,6 +234,8 @@ function toEntry(row: Row): BoardEntry {
     shipped: row.shipped,
     avgQuality: row.avg_quality,
     avgLeadTimeTicks: row.avg_lead_time,
+    unfinished: row.unfinished,
+    won: row.unfinished !== null && row.unfinished <= SESSION_WIN_UNFINISHED,
     runs: row.runs,
     submittedAt: row.submitted_at,
   }

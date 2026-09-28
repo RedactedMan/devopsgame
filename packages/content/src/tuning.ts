@@ -280,3 +280,30 @@ export const DEFAULT_TUNING: Tuning = TuningSchema.parse({
 
   sampleEveryTicks: 10,
 })
+
+/**
+ * The presentation-mode game: the same rules, with less new work.
+ *
+ * Free play arrives at five items a day, more than any line can finish, and
+ * stays that way: a game about flow where the backlog is always winning is
+ * honest. A room needs a result it can reach, so the session arrives at four,
+ * one every 20 ticks. Measured 2026-09-28 over 12 seeds with the decisions made
+ * at day 10: moving a person to Review, backfilling with four agents and
+ * retuning to 0.75× leaves 3–9 items unfinished, while the untouched line
+ * leaves 58–116 and five agents with nothing else 43–121. At three a day
+ * nearly any play clears it. See docs/HIRING_AND_ATTENTION.md §10.
+ */
+export const SESSION_TUNING: Tuning = TuningSchema.parse({
+  ...DEFAULT_TUNING,
+  arrival: { ...DEFAULT_TUNING.arrival, meanTicksBetween: 20 },
+})
+
+/**
+ * A session run is won if no more than this much work is unfinished when the
+ * clock stops: waiting in the backlog *or* in flight. The backlog alone would
+ * be a target the sliders could hit without shipping anything, because a
+ * loose WIP limit just pulls the backlog into the line. Every good play in
+ * the §10 sweep finishes at 9 or fewer on every seed, and every play that
+ * leaves Review alone finishes above it.
+ */
+export const SESSION_WIN_UNFINISHED = 10

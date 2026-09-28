@@ -94,6 +94,15 @@ test('a player joins a session, finishes, and lands on the presenter board', asy
   await expect(row).toBeVisible({ timeout: 10_000 })
   await expect(row.locator('.board-table__score')).toHaveText(localScore)
 
+  // The win line, on both screens, and they agree. Which side a five-day run
+  // lands on says nothing: the line is set for a full session, and only this
+  // test's API call can ask for a shorter one.
+  const verdict = await end.locator('.end__verdict').innerText()
+  expect(verdict).toMatch(/kept up|got ahead of you/i)
+  const left = (await end.locator('.hint').first().innerText()).match(/^(\d+) item/)?.[1]
+  expect(left, 'end screen names the unfinished count').toBeDefined()
+  await expect(row).toContainText(`${/kept up/i.test(verdict) ? '✓' : '✗'} ${left} left`)
+
   // And the debrief shows what they did.
   await row.click()
   await expect(presenter.locator('.present__debrief')).toContainText('Implement WIP limit → 3')

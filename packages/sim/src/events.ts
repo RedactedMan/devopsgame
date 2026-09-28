@@ -22,7 +22,13 @@ export type SimEvent =
    * clicks, nothing happens, and the one constraint that separates the game's
    * two currencies reads as a broken button.
    */
-  | { kind: 'staffingRefused'; station: StationId; workerKind: WorkerKind; why: 'agentsNotAllowed' }
+  | {
+      kind: 'staffingRefused'
+      station: StationId
+      workerKind: WorkerKind
+      why: 'agentsNotAllowed' | 'teamIsFixed'
+    }
+  | { kind: 'workerRemoved'; workerId: WorkerId; from: StationId }
   | { kind: 'attentionReplenished'; to: number }
   /**
    * Judgment the player could not pay for. The most important thing the pool

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_TUNING, SESSION_TUNING, SESSION_WIN_UNFINISHED } from '@flow/content'
 import {
   MAX_SESSION_COMMANDS,
   SESSION_DEFAULT_SEED,
+  SESSION_TICKS,
   fingerprint,
   initState,
   parseCommandLog,
@@ -15,6 +17,7 @@ import {
   type GameState,
   type LoggedCommand,
 } from '@flow/sim'
+import { GOLDEN_SESSION } from './goldens.js'
 
 /**
  * Presentation mode: one seed, one length, and a leaderboard that checks every
@@ -31,7 +34,7 @@ const TICKS = 1500
  * state and the log the shell kept.
  */
 function playLive(seed: number, ticks: number): { state: GameState; log: LoggedCommand[] } {
-  let state = initState({ seed })
+  let state = initState({ seed, tuning: SESSION_TUNING })
   const log: LoggedCommand[] = []
   for (let i = 0; i < ticks; i++) {
     const commands: Command[] = []
@@ -54,8 +57,11 @@ function playLive(seed: number, ticks: number): { state: GameState; log: LoggedC
 describe('presentation mode', () => {
   it('replays a logged live run into exactly the same game', () => {
     const { state, log } = playLive(SESSION_DEFAULT_SEED, TICKS)
-    expect(log.length).toBeGreaterThan(4)
-    const replayed = runReplay({ seed: SESSION_DEFAULT_SEED, commands: log }, TICKS)
+    // At the session's arrival rate nothing has gone stale by tick 1500, so the
+    // log is the four scripted decisions. Rebases in a log are covered by
+    // *the session can be won*, which replays a whole session through verifyRun.
+    expect(log.length).toBeGreaterThanOrEqual(4)
+    const replayed = runReplay({ seed: SESSION_DEFAULT_SEED, commands: log }, TICKS, SESSION_TUNING)
     expect(fingerprint(replayed)).toBe(fingerprint(state))
     expect(sessionScore(replayed)).toBe(sessionScore(state))
   })
@@ -83,7 +89,7 @@ describe('presentation mode', () => {
   it('ranks shipping stale work below rebasing it', () => {
     // The move the score exists to discourage. Same decisions otherwise.
     const play = (choice: 'rebase' | 'shipAnyway') => {
-      let state = initState({ seed: SESSION_DEFAULT_SEED })
+      let state = initState({ seed: SESSION_DEFAULT_SEED, tuning: SESSION_TUNING })
       for (let i = 0; i < 4000; i++) {
         const commands: Command[] =
           state.tick % 20 === 0
@@ -99,13 +105,91 @@ describe('presentation mode', () => {
   })
 })
 
+/**
+ * A session played the way the §10 sweep plays it: one set of decisions at
+ * day 10, when the board has named the constraint, and stale work rebased
+ * every 20 ticks, as a player who is watching the Stale tab would.
+ */
+function playSession(decisions: Command[]): GameState {
+  let state = initState({ seed: SESSION_DEFAULT_SEED, tuning: SESSION_TUNING })
+  for (let i = 0; i < SESSION_TICKS; i++) {
+    const commands: Command[] = state.tick === 800 ? [...decisions] : []
+    if (state.tick % 20 === 0) {
+      for (const item of state.items.filter((it) => it.stale)) {
+        commands.push({ kind: 'resolveStale', itemId: item.id, choice: 'rebase' })
+      }
+    }
+    state = stepLogged(state, commands, [])
+  }
+  return state
+}
+
+const retuneTo = (limits: Record<string, number>): Command[] =>
+  Object.entries(limits).map(([station, limit]) => ({ kind: 'setWipLimit', station, limit }) as Command)
+
+/** Move an implementer to Review, backfill with four agents, retune to 0.75×. */
+const GOOD_PLAY: Command[] = [
+  { kind: 'assignWorker', workerId: 'W2', to: 'review' },
+  ...Array.from({ length: 4 }, (): Command => ({ kind: 'hire', station: 'implement' })),
+  ...retuneTo({ spec: 3, implement: 6, review: 3, ci: 5, deploy: 3 }),
+]
+
+describe('the session can be won', () => {
+  it('arrives slower than free play, and free play is unchanged', () => {
+    // Free play stays unwinnable on purpose. Only the room's game is eased.
+    expect(DEFAULT_TUNING.arrival.meanTicksBetween).toBe(16)
+    expect(SESSION_TUNING.arrival.meanTicksBetween).toBeGreaterThan(
+      DEFAULT_TUNING.arrival.meanTicksBetween,
+    )
+    expect({ ...SESSION_TUNING, arrival: DEFAULT_TUNING.arrival }).toEqual(DEFAULT_TUNING)
+  })
+
+  it('by relieving the constraint, and the run is pinned', () => {
+    const state = playSession(GOOD_PLAY)
+    const result = sessionResult(state)
+    expect(result.won).toBe(true)
+    expect(result.unfinished).toBeLessThanOrEqual(SESSION_WIN_UNFINISHED)
+    expect(fingerprint(state)).toBe(GOLDEN_SESSION)
+  })
+
+  it('not by leaving the line alone, or by adding agents and nothing else', () => {
+    expect(sessionResult(playSession([])).won).toBe(false)
+    const agentsOnly = Array.from({ length: 5 }, (): Command => ({ kind: 'hire', station: 'implement' }))
+    expect(sessionResult(playSession(agentsOnly)).won).toBe(false)
+  })
+
+  it('not by opening the sliders to empty the backlog onto the board', () => {
+    // The reason the line counts work in flight and not just the backlog.
+    const state = playSession(retuneTo({ spec: 12, implement: 24, review: 12, ci: 18, deploy: 12 }))
+    expect(state.backlog.length).toBeLessThanOrEqual(SESSION_WIN_UNFINISHED)
+    expect(sessionResult(state).won).toBe(false)
+  })
+
+  it('and the server scores it under the same rules the player played', () => {
+    const log: LoggedCommand[] = []
+    let state = initState({ seed: SESSION_DEFAULT_SEED, tuning: SESSION_TUNING })
+    for (let i = 0; i < SESSION_TICKS; i++) {
+      const commands: Command[] = state.tick === 800 ? [...GOOD_PLAY] : []
+      if (state.tick % 20 === 0) {
+        for (const item of state.items.filter((it) => it.stale)) {
+          commands.push({ kind: 'resolveStale', itemId: item.id, choice: 'rebase' })
+        }
+      }
+      state = stepLogged(state, commands, log)
+    }
+    expect(log.some((entry) => entry.command.kind === 'resolveStale')).toBe(true)
+    expect(verifyRun({ seed: SESSION_DEFAULT_SEED, commands: log })).toEqual(sessionResult(state))
+  })
+})
+
 describe('parseCommandLog', () => {
   it('accepts every command a player can issue', () => {
     const log = [
       { tick: 0, command: { kind: 'setWipLimit', station: 'review', limit: 2 } },
       { tick: 1, command: { kind: 'resolveStale', itemId: 'I4', choice: 'abandon' } },
       { tick: 1, command: { kind: 'assignWorker', workerId: 'W2', to: 'review' } },
-      { tick: 3999, command: { kind: 'hire', station: 'ci' } },
+      { tick: 3998, command: { kind: 'hire', station: 'ci' } },
+      { tick: 3999, command: { kind: 'removeAgent', workerId: 'W10' } },
     ]
     expect(parseCommandLog(log)).toEqual({ ok: true, commands: log })
   })

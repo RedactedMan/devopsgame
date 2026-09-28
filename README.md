@@ -55,8 +55,15 @@ playable on its own:
    for review costs extra attention to pick up, so five agents and nothing
    else now do worse than doing nothing at the starting sliders. See §7 of
    the same doc.
+   **Agents can be removed** (2026-09-28): the undo for a hire. People cannot.
+   A line that hired past its reviewers can fall into a spiral where every
+   review costs five attention; tightening the WIP limits gets it out faster
+   than removing agents does. See §9.
    **Presentation mode** is built for the session this is for: a short talk,
-   everyone plays the same seed for 50 days, then a leaderboard. Open
+   everyone plays the same seed for 50 days, then a leaderboard. The session
+   can be won and free play cannot: a session arrives four items a day rather
+   than five, and a player who ends with 10 or fewer unfinished kept up
+   (HIRING_AND_ATTENTION §10). Open
    `?present` to start one and put the join link and its QR code on the
    projector. It plays on a phone held upright: the panel becomes tabs under
    the board. Every score
@@ -75,6 +82,7 @@ playable on its own:
 - [Dispatch and Area Collisions](docs/DISPATCH_AND_COLLISIONS.md) — what M1 gets, and what waits for M2
 - [Hiring and the Attention Pool](docs/HIRING_AND_ATTENTION.md) — why 64 extra workers are worth 2% and one is worth 27%
 - [The Presentation](docs/PRESENTATION.md) — the 45-minute talk this is played in, its timing, and the deck
+- [The deck](docs/deck/README.md) — the talk's slides and speaker notes; open `docs/deck/deck.html` to present
 
 ## Running it
 
@@ -85,6 +93,7 @@ pnpm test       # unit, invariant, and golden-replay tests (~2s)
 pnpm test:e2e   # Playwright smoke test: load it, play it, fail on console noise
 pnpm typecheck
 pnpm sweep      # headless balance sweep: WIP settings, then staffing
+pnpm deck       # rebuild docs/deck/deck.html, the talk, from its slide files
 pnpm dev:server # the leaderboard API (wrangler dev, :8787); pnpm dev proxies /api to it
 pnpm deploy     # manual deploy; normally unnecessary, since every push to main deploys
 ```
@@ -105,8 +114,12 @@ The presenter key is a Worker secret, and it is set in production. To rotate it:
 `cd apps/server && npx wrangler secret put PRESENTER_KEY`. Without it, nobody can
 start a session.
 
-`pnpm test:e2e` uses the Chrome already on your machine (`channel: 'chrome'`)
-rather than downloading its own, and starts the dev server itself. It exists
+`pnpm test:e2e` uses a browser already on the machine rather than downloading
+its own, and starts the dev servers itself. On a laptop that is Google Chrome.
+In the Claude Code cloud environment, which has no Chrome, it is the Chromium
+at `$PLAYWRIGHT_BROWSERS_PATH/chromium` (supported since 2026-09-28).
+`PLAYWRIGHT_CHROMIUM=/path/to/chrome` picks one by hand. A fresh clone does not
+need `pnpm build` first. It exists
 because the unit suite structurally cannot see the renderer: the worst bug in M0
 so far — StrictMode tearing down the Pixi application mid-`init()`, taking the
 whole React tree with it — passed every unit test and was only ever caught by

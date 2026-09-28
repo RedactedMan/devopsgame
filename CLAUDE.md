@@ -29,7 +29,8 @@ the same branch:
 | A slice's state: built, merged, deployed, played, tried on a phone | `docs/IMPLEMENTATION_PLAN.md` §4 slice table, the *State* column. Say where it lives (merged / deployed), not the branch name, once it's merged. |
 | How or where it deploys, the URL, secrets, the plan tier | `README.md` *Running it*, `docs/IMPLEMENTATION_PLAN.md` §7, `docs/PRESENTATION.md` *Before the session* |
 | Tuning, sim mechanics, or anything that moves a swept number | The doc that records that number (`HIRING_AND_ATTENTION.md`, `CONSTRAINT_AND_CAPACITY.md`, `DISPATCH_AND_COLLISIONS.md`), the README sweep tables, and `PRESENTATION.md` *What the debrief cites*. Re-run `pnpm sweep` rather than editing numbers by hand. |
-| `SESSION_TICKS`, sim speed, or ticks per day | The run-length table in `docs/PRESENTATION.md`, and tell the user the deck's `agenda` and `play` slides need the same change (the deck is an artifact, not in this repo) |
+| `SESSION_TICKS`, sim speed, or ticks per day | The run-length table in `docs/PRESENTATION.md`, and the deck's `agenda` and `play` slides in `docs/deck/project/slides/`, then `pnpm deck` |
+| Any number the debrief cites, or what a player sees or needs | `docs/PRESENTATION.md` *What the debrief cites*, and the deck slide that shows it (`wip`, `agents`, `howto`, `join`, …), then `pnpm deck`. The deck is also a claude.ai artifact; say that its copy is now behind, see `docs/deck/README.md` |
 | Golden replay hashes | Record the before and after hashes and the reason, in the style of `HIRING_AND_ATTENTION.md` §8 |
 | A design decision, or a reversal of one | The design doc that owns it, with the date and why. Don't silently delete the old reasoning. |
 | Device support, or what a player needs to bring | `docs/PRESENTATION.md` *Before the session* |
@@ -56,4 +57,9 @@ pnpm test        # unit, invariant, golden replay
 pnpm typecheck
 pnpm test:e2e    # Playwright; starts the dev servers itself
 pnpm sweep       # headless balance sweep
+pnpm deck        # rebuild the talk's deck.html from docs/deck/project/
 ```
+
+`pnpm test:e2e` runs on a laptop with Chrome and in the Claude Code cloud
+environment, which has only Chromium; `playwright.config.ts` picks whichever is
+there.

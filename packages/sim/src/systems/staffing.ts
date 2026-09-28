@@ -35,6 +35,13 @@ import type { SimEvent } from '../events.js'
  * waits for review, not when they move (systems/context.ts).
  */
 export function applyPendingMoves(state: GameState, events: SimEvent[]): void {
+  // Agents the player removed go first, and by the same rule: once free.
+  state.workers = state.workers.filter((worker) => {
+    if (!worker.leaving || workerIsBusy(state, worker.id)) return true
+    events.push({ kind: 'workerRemoved', workerId: worker.id, from: worker.station })
+    return false
+  })
+
   for (const worker of state.workers) {
     const to = worker.pendingStation
     if (to === null) continue
@@ -77,6 +84,9 @@ export function requestMove(
     return
   }
   worker.pendingStation = worker.station === to ? null : to
+  // Assigning an agent to where it already stands keeps it, the same way it
+  // calls off a move. One gesture undoes both.
+  if (worker.station === to) worker.leaving = false
 }
 
 /**
@@ -106,11 +116,44 @@ export function hire(state: GameState, station: StationId, events: SimEvent[]): 
     kind: 'agent' as const,
     station,
     pendingStation: null,
+    leaving: false,
     onboardingUntil: 0,
   }
   state.workers.push(worker)
   state.nextWorkerSerial++
   events.push({ kind: 'workerHired', workerId: worker.id, at: station, workerKind: 'agent' })
+}
+
+/**
+ * Take an agent off the roster: the undo for `hire`.
+ *
+ * Without it an agent was a one-way door: every one hired drew on attention
+ * for the rest of the run. The lesson is that the fleet is sized by review
+ * capacity, and a player who has learned it should be able to act on it.
+ * Removing is not the strongest fix, though. On a line in the re-brief spiral
+ * the sliders are worth more than the roster (docs/HIRING_AND_ATTENTION.md §9).
+ *
+ * People cannot be removed. The team is fixed (§8), and a person refused here
+ * says so rather than doing nothing.
+ *
+ * An idle agent goes this tick. A busy one finishes its item first, as a move
+ * does, and draws on the attention budget until it has gone, because its
+ * output still has to be read. The worker serial is not reused, so a replay
+ * that removes and hires gives the same ids on the way through.
+ */
+export function removeAgent(state: GameState, workerId: WorkerId, events: SimEvent[]): void {
+  const worker = state.workers.find((w) => w.id === workerId)
+  if (!worker) return
+  if (worker.kind !== 'agent') {
+    events.push({ kind: 'staffingRefused', station: worker.station, workerKind: worker.kind, why: 'teamIsFixed' })
+    return
+  }
+  worker.pendingStation = null
+  worker.leaving = true
+  if (workerIsBusy(state, worker.id)) return
+
+  state.workers = state.workers.filter((w) => w.id !== workerId)
+  events.push({ kind: 'workerRemoved', workerId, from: worker.station })
 }
 
 /**

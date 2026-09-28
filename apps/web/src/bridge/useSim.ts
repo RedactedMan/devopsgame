@@ -14,6 +14,7 @@ import {
   type SessionResult,
   type Snapshot,
 } from '@flow/sim'
+import type { Tuning } from '@flow/content'
 import { BUILD } from '../build.js'
 
 /**
@@ -81,12 +82,16 @@ export type SimHandle = {
 export type SimOptions = {
   /** Stop here. Presentation mode sets it so the whole room plays one length. */
   endTick?: number
+  /** Presentation mode plays `SESSION_TUNING`. Free play uses the defaults. */
+  tuning?: Tuning
 }
 
 export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle {
   const endTick = options.endTick ?? null
+  const tuning = options.tuning
+  const fresh = (s: number) => (tuning ? initState({ seed: s, tuning }) : initState({ seed: s }))
   const [seed, setSeed] = useState(initialSeed)
-  const stateRef = useRef<GameState>(initState({ seed: initialSeed }))
+  const stateRef = useRef<GameState>(fresh(initialSeed))
   const pendingRef = useRef<Command[]>([])
   const logRef = useRef<LoggedCommand[]>([])
   const [result, setResult] = useState<SessionResult | null>(null)
@@ -112,7 +117,7 @@ export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle
 
   const reset = useCallback((nextSeed?: number) => {
     const s = nextSeed ?? Math.floor(Math.random() * 1_000_000)
-    stateRef.current = initState({ seed: s })
+    stateRef.current = fresh(s)
     pendingRef.current = []
     logRef.current = []
     setResult(null)
@@ -121,6 +126,7 @@ export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle
     seedRef.current = s
     setSeed(s)
     setRunId((n) => n + 1)
+    // `fresh` closes over `tuning`, which a caller passes once and never changes.
   }, [])
 
   const save = useCallback(
