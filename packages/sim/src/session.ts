@@ -100,17 +100,19 @@ export function verifyRun(replay: Replay, ticks: number = SESSION_TICKS): Sessio
 /**
  * Checks a command log that arrived over the network.
  *
- * Returns the log with anything unknown stripped out, or an error string. The
+ * Returns the log with anything unknown stripped out, or an error string. A
+ * save file (`save.ts`) is read with the same checks and a higher cap. The
  * sim already ignores commands that name a worker or item that does not exist,
  * so this only has to guarantee the *shape* is one `step` understands.
  */
 export function parseCommandLog(
   raw: unknown,
   ticks: number = SESSION_TICKS,
+  maxCommands: number = MAX_SESSION_COMMANDS,
 ): { ok: true; commands: LoggedCommand[] } | { ok: false; error: string } {
   if (!Array.isArray(raw)) return { ok: false, error: 'commands must be an array' }
-  if (raw.length > MAX_SESSION_COMMANDS) {
-    return { ok: false, error: `more than ${MAX_SESSION_COMMANDS} commands` }
+  if (raw.length > maxCommands) {
+    return { ok: false, error: `more than ${maxCommands} commands` }
   }
 
   const commands: LoggedCommand[] = []

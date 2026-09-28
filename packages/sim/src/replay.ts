@@ -52,9 +52,14 @@ export function fingerprint(state: GameState): string {
     state.metrics.shipped.map((s) => [s.id, s.tickShipped, s.leadTimeTicks]),
   ])
 
+  return fnv1a(canonical)
+}
+
+/** FNV-1a, as eight hex digits. Shared by `fingerprint` and the rules probe (`rules.ts`). */
+export function fnv1a(text: string): string {
   let hash = 0x811c9dc5
-  for (let i = 0; i < canonical.length; i++) {
-    hash ^= canonical.charCodeAt(i)
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i)
     hash = Math.imul(hash, 0x01000193) >>> 0
   }
   return hash.toString(16).padStart(8, '0')

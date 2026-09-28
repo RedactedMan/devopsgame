@@ -18,7 +18,7 @@ This single constraint buys four things that are otherwise very expensive to add
 
 1. **Testability** — flow invariants become unit tests (work items are conserved; queues never go negative; Little's Law holds within tolerance).
 2. **Balance sweeps** — run 10,000 seeded games headless in CI to tune parameters. For a simulation game this is not optional; hand-tuning a system with this many coupled feedback loops does not converge.
-3. **Replay & tiny saves** — a save file is `{ seed, commandLog }`. Kilobytes. Also the bug-report format: a player sends a broken run and it reproduces exactly.
+3. **Replay & tiny saves** — a save file is `{ seed, commandLog }`. Kilobytes. Also the bug-report format: a player sends a broken run and it reproduces exactly. *(2026-09-27: true of the run, not of the file. A save also has to say which rules it was played under, because a replay runs against whatever rules are live. See §3, *Saves and the rules they were played under*.)*
 4. **Agent-friendly codebase** — pure functions with property tests are the shape AI agents work in most reliably. You will be building this partly with agents; build it in a shape they don't break.
 
 ---
@@ -82,6 +82,64 @@ flow-state/
 - The renderer reads immutable snapshots and **interpolates between ticks** for smooth motion. Sim runs at a fixed 10 ticks/sim-hour; rendering runs at 60fps. Decoupled.
 - Every player action is a command. If it isn't a command, it isn't in the replay, and it isn't real.
 
+### Saves and the rules they were played under
+
+*Decided 2026-09-27, with save and load (M1 slice 4).*
+
+A save is `{ seed, tick, commands }`, and replaying the commands from the seed
+for `tick` steps rebuilds the whole state, not just what the fingerprint hashes
+(`save.test.ts` compares the JSON of both). That half of the slice was as small
+as the plan said.
+
+The other half was not. A replay runs against whatever tuning and sim code are
+live, so a save made before a change loads into a different game and nothing
+in the log says so. Neither a tuning hash nor a version number is enough by
+itself, and a measurement showed why. Five agents and nothing else (the
+`IGNORED` golden), replayed with and without slice 3b's context decay:
+
+| Replayed to tick | With decay | Without | Whole state equal? |
+|---|---|---|---|
+| 100, 300, 800 | same fingerprint | same fingerprint | yes |
+| 1500 | `e97ce11e` | `87dcabe9` | no |
+
+A save made at tick 800 before 3b would have replayed to exactly where it was,
+and then played on under different rules. So checking the position cannot tell
+the rules changed, and checking a rules stamp cannot tell whether the player's
+own run changed. A save carries both:
+
+- **`rules`**, `RULES_VERSION` from `packages/sim/src/rules.ts`. A test hashes
+  the default tuning and the three golden fingerprints and compares the result
+  to a recorded `RULES_PROBE`, so a change that moves either fails the build
+  until the version is bumped. A version bumped from memory gets forgotten, and
+  a build id would change on every docs-only deploy. The blind spot is the
+  goldens' blind spot: a code change no golden run exercises.
+- **`check`**: the fingerprint, shipped count and average quality at the save
+  tick. A load replays and compares, which catches that blind spot whenever the
+  change reaches the saved part of the run, and gives the player then-and-now
+  numbers instead of "something changed".
+
+A mismatched save **loads anyway and says so**: under new rules with the run
+intact, or under rules that replay the decisions somewhere else, with the
+numbers. Refusing would leave the player nothing, because a deploy replaces the
+old build and there is nowhere left to play the old rules. A load is refused
+only when the file is not a save this build can read. The build commit and the
+date are in the file too, but only for the message.
+
+Save and load are **free play only**. A session is one game played once by the
+whole room, the server already keeps its runs, and a save would let a player try
+a branch from mid-run and go back.
+
+**Session scores have the same problem, and it is not fixed yet.** A tab opened
+before a deploy keeps playing the old rules for the whole four-hour window,
+while the Worker replays the run under the new ones. The end screen shows the
+local score and then the server's rank, and never compares the two, so the
+player sees one number and the board ranks another. Runs from before and after
+the deploy share one board, and stored scores are never replayed again. The
+debrief's timeline only lists commands, so it is not affected. The fix is a
+follow-up to slice 4, not part of it: the client sends `RULES_VERSION` with a
+run and the Worker refuses a mismatch with "reload". Until it lands, don't
+deploy during a session.
+
 ### The one architectural rule the design imposes
 
 `GameState` carries **two quality values per work item: `trueQuality` and `displayedQuality`** (design §4.6). The snapshot the UI subscribes to must expose *only* `displayedQuality`. `trueQuality` is readable by the sim and by the failure/postmortem screens, never by the live HUD.
@@ -134,7 +192,7 @@ about. Each slice is playable on its own.
 | 3d | **Presentation mode** — one seed and one length (4000 ticks) for the whole room, a live leaderboard, and a debrief of any player's run. The presenter opens `?present`, players join at `?join=CODE`. Score is quality-weighted shipped: every shipped item counts for the `trueQuality` it shipped at, so shipping stale work pays less than rebasing it. The Worker verifies every score by replaying it. See §7 | **built**, deployed 2026-09-27 at <https://flow-state.mschrenk.workers.dev>, presenter key set — not yet played in a room |
 | 3e | **Phone layout** — a room joins from the QR code on phones, and the game was laptop-only. Below 1000px the screen stacks: a two-row top bar (day, shipped, WIP, attention, and the controls), the board, a status line, and the panel as tabs (WIP, Team, Stale with a count badge, Flow). The status line carries the constraint headline and the stall alarm, so the news the panel leads with is never hidden behind the wrong tab. The board keeps its columns and picks a compact drawing when a column is narrower than 110px: short names, `occupancy/limit`, id-only tiles with two area chips, and the rows it has room for. A column still grows with its WIP limit, because that is the lesson. Considered and rejected: horizontal lanes, because they would turn that growth into length. Tapping an item shows what it is fighting. A phone held sideways is asked to turn upright rather than getting a third layout. Replaces the small-screen stopgap from PR #3, and fixes the phone laying the page out wider than the screen | **built**, deployed, and tried on a real phone 2026-09-27 |
 | 3b | **Context decay** — split out of slice 3, which already had three mechanics and this one had no measurement behind it. Agent output waiting for Review loses context, and Review pays to rebuild it in attention: free for a shift, then 4 per shift, capped at 4. Measured first, and the measurement moved the mechanic: no charge without a grace could reach the player ignoring their agents without hitting the one who had backfilled properly. Five agents and nothing else go from +2.6% to −5% at the starting sliders; every cited number and both golden hashes hold, and a third golden pins it. See [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §7 | **built**, merged and deployed 2026-09-27 — not yet played |
-| 4 | **Save / load** from the command log — already a complete save file by construction; nothing but plumbing and a file picker | planned |
+| 4 | **Save / load** from the command log. The plan called it nothing but plumbing and a file picker, and for the run itself it was. It was not for versioning: a save replays under whatever rules are live, so it records `RULES_VERSION` and the fingerprint it was saved at, and a load says when either has changed. See §3, *Saves and the rules they were played under*. Free play only. The same versioning gap in session scores was found here and split into its own fix | **built** 2026-09-27 on `m1/save-load`, in review, not merged or deployed. Checked in Playwright's phone emulation, not yet on a real phone |
 | 5 | **Board building and placement** — the last of M1's original scope, and the only part that changes the shape of the pipeline rather than what runs through it | planned |
 
 Slice 1 notes, for whoever picks this up:
@@ -182,7 +240,7 @@ Fitting for the subject, the test strategy is the same lesson: **fast feedback b
 |---|---|
 | **Unit** | Each system in isolation — drift math, attention accounting, defect probability |
 | **Invariant / property** | Work items conserved (nothing vanishes or duplicates) · queues never negative · attention never below zero · Little's Law holds within tolerance across random runs |
-| **Golden replay** | `{ seed, commandLog } → hash(final metrics)`. Catches unintended balance changes instantly. **The most valuable test type here** — it makes an entire simulation refactor safe |
+| **Golden replay** | `{ seed, commandLog } → hash(final metrics)`. Catches unintended balance changes instantly. **The most valuable test type here** — it makes an entire simulation refactor safe. A golden that moves also moves the rules probe (`rules.test.ts`), which fails until `RULES_VERSION` is bumped, because old saves now replay differently (§3) |
 | **Sweeps** | Headless runs; assert the *shape* of results, not point values. Four lessons are asserted as tests: **lower WIP beats higher WIP** at fixed capacity *(built, `flow.test.ts`)*; **a worker at the constraint is worth many anywhere else, a second one is worth nothing, and retuning beats both** *(built, `staffing.test.ts`)*; **a high agent-review share raises escaped defects while displayed quality stays flat** *(M5)*; and **money cannot substitute for attention** — a run with unlimited budget and fixed attention plateaus *(M1 slice 3 / M2)*. If the sim stops teaching a lesson, the build fails |
 | **Smoke** | Playwright against a real browser: load, play, no console errors — plus one assertion per mechanic the unit suite structurally cannot see. Slower than everything else combined and worth it; it has caught three bugs that were green in every unit test |
 

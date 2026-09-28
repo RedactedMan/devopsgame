@@ -51,7 +51,10 @@ If these constants change, update this table and the `agenda` and `play` slides.
 
 - The game is live at <https://flow-state.mschrenk.workers.dev>. Every push to
   `main` deploys, so don't merge anything on the day of the talk that you haven't
-  played. The presenter key is set. Rotate it with `wrangler secret put
+  played. Don't deploy during a session either. A tab opened before the deploy
+  keeps playing the old rules, the server scores the run under the new ones, and
+  nothing says so yet (IMPLEMENTATION_PLAN §3, found 2026-09-27, fix to follow).
+  The presenter key is set. Rotate it with `wrangler secret put
   PRESENTER_KEY` (see the README).
 - Attendees can play on **laptops or phones**, held upright. The phone layout was
   tried on a real phone on 2026-09-27. A laptop still shows the whole board at

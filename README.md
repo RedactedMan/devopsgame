@@ -62,7 +62,11 @@ playable on its own:
    the board. Every score
    on the board was replayed on the server before it got there. See
    [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §7.
-4. **Save / load** from the command log.
+4. **Save / load** from the command log: Save downloads the run as a small
+   JSON file, and Load replays it. A save records the rules it was played
+   under, and loading an older one says whether today's rules still replay it
+   to the same place. Free play only. Built 2026-09-27, in review. See
+   [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §3.
 5. **Board building and placement.**
 
 - [Game Design Document](docs/GAME_DESIGN.md) — mechanics, campaign, pedagogy

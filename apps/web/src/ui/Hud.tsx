@@ -4,6 +4,7 @@ import type { Snapshot } from '@flow/sim'
 import type { SimHandle } from '../bridge/useSim.js'
 import { SPEEDS } from '../bridge/useSim.js'
 import { Chart } from './Chart.js'
+import { SaveLoad } from './SaveLoad.js'
 import { cssAreaColor, cssDriftColor } from '../render/theme.js'
 
 const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
@@ -128,6 +129,14 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
             </button>
           )}
         </div>
+        {/* Free play only: see SaveLoad for why a session has no save. Its own
+            group so a phone can put it on the stats row, where there is room
+            (styles.css). */}
+        {!session && (
+          <div className="controls controls--file">
+            <SaveLoad sim={sim} />
+          </div>
+        )}
       </header>
 
       {/* A phone has no room for the whole panel, so it shows one tab of it
