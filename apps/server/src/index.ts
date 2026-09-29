@@ -1,4 +1,10 @@
-import { SESSION_DEFAULT_SEED, SESSION_TICKS, parseCommandLog, verifyRun } from '@flow/sim'
+import {
+  SESSION_DEFAULT_SEED,
+  SESSION_RULES_VERSION,
+  SESSION_TICKS,
+  parseCommandLog,
+  verifyRun,
+} from '@flow/sim'
 import { Session } from './session.js'
 
 export { Session }
@@ -10,8 +16,8 @@ export { Session }
  *   GET  /api/health
  *   POST /api/sessions                     { seed?, ticks? }          → session
  *   GET  /api/sessions/:code                                          → session + counts
- *   POST /api/sessions/:code/join          { playerId, name }
- *   POST /api/sessions/:code/results       { playerId, name, commands } → verified score, rank
+ *   POST /api/sessions/:code/join          { playerId, name, rules }
+ *   POST /api/sessions/:code/results       { playerId, name, rules, commands } → verified score, rank
  *   GET  /api/sessions/:code/results                                  → the board
  *   GET  /api/sessions/:code/results/:id                              → one run, for the debrief
  *
@@ -62,6 +68,7 @@ export default {
         if (info === null) return json({ error: 'no such session' }, 404)
         if (Date.now() >= info.closesAt) return closed()
         const body = await readBody(request)
+        if (!sameRules(body)) return staleRules()
         const player = parsePlayer(body)
         if (typeof player === 'string') return json({ error: player }, 400)
         if (!(await stub.join(player.playerId, player.name))) return closed()
@@ -117,6 +124,9 @@ async function submit(request: Request, stub: DurableObjectStub<Session>): Promi
   if (Date.now() >= info.closesAt) return closed()
 
   const body = await readBody(request)
+  // Before replaying: a run from another version of the game would be scored
+  // under rules it was not played under.
+  if (!sameRules(body)) return staleRules()
   const player = parsePlayer(body)
   if (typeof player === 'string') return json({ error: player }, 400)
   const log = parseCommandLog((body as { commands?: unknown }).commands, info.ticks)
@@ -145,6 +155,20 @@ async function isPresenter(request: Request, env: Env): Promise<boolean> {
 
 function closed(): Response {
   return json({ error: 'this session has closed' }, 410)
+}
+
+function sameRules(body: unknown): boolean {
+  return (body as { rules?: unknown } | null)?.rules === SESSION_RULES_VERSION
+}
+
+function staleRules(): Response {
+  return json(
+    {
+      error: 'the game was updated while this page was open. Reload to play the current version',
+      rules: SESSION_RULES_VERSION,
+    },
+    409,
+  )
 }
 
 function parsePlayer(body: unknown): { playerId: string; name: string } | string {

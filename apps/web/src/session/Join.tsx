@@ -16,7 +16,7 @@ const TICKS_PER_HOUR = DEFAULT_TUNING.ticksPerHour
 export function Join({ code: initialCode }: { code: string | null }) {
   const [code, setCode] = useState((initialCode ?? '').toUpperCase())
   const [name, setName] = useState(rememberedName)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<{ message: string; stale: boolean } | null>(null)
   const [busy, setBusy] = useState(false)
   const [joined, setJoined] = useState<{ session: SessionStatus; player: Player } | null>(null)
   const [id] = useState(playerId)
@@ -37,7 +37,11 @@ export function Join({ code: initialCode }: { code: string | null }) {
       window.history.replaceState(null, '', `?join=${upper}`)
       setJoined({ session, player })
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err))
+      setError({
+        message: err instanceof Error ? err.message : String(err),
+        // This page is an older game than the server's. Only a reload fixes it.
+        stale: err instanceof ApiError && err.status === 409,
+      })
     } finally {
       setBusy(false)
     }
@@ -75,7 +79,19 @@ export function Join({ code: initialCode }: { code: string | null }) {
             required
           />
         </label>
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="error">
+            {error.message}
+            {error.stale && (
+              <>
+                {' '}
+                <button type="button" className="btn btn--sm" onClick={() => location.reload()}>
+                  Reload
+                </button>
+              </>
+            )}
+          </p>
+        )}
         <button type="submit" className="btn btn--primary" disabled={busy}>
           {busy ? 'Joining…' : 'Play'}
         </button>
@@ -99,7 +115,7 @@ function SessionGame({ session, player }: { session: SessionStatus; player: Play
 type Submission =
   | { state: 'sending' }
   | { state: 'sent'; outcome: SubmitOutcome }
-  | { state: 'failed'; error: string; closed: boolean }
+  | { state: 'failed'; error: string; refused: 'closed' | 'stale' | null }
 
 /**
  * The whistle. The score is shown from the local run at once; the rank arrives
@@ -128,8 +144,13 @@ function EndScreen({
         setSubmission({
           state: 'failed',
           error: err instanceof Error ? err.message : String(err),
-          // Retrying a closed session only gets the same answer.
-          closed: err instanceof ApiError && err.status === 410,
+          // Retrying either of these only gets the same answer.
+          refused:
+            err instanceof ApiError && err.status === 410
+              ? 'closed'
+              : err instanceof ApiError && err.status === 409
+                ? 'stale'
+                : null,
         }),
       )
   }
@@ -179,10 +200,20 @@ function EndScreen({
         <div className="end__rank" role="status">
           {submission.state === 'sending' && 'Checking your run…'}
           {submission.state === 'failed' &&
-            (submission.closed ? (
+            (submission.refused === 'closed' ? (
               <span className="error">
                 The session has closed, so this run is not on the board.
               </span>
+            ) : submission.refused === 'stale' ? (
+              <>
+                <span className="error">
+                  The game was updated while this page was open, so this run was played under
+                  old rules and cannot be scored.
+                </span>{' '}
+                <button type="button" className="btn btn--sm" onClick={() => location.reload()}>
+                  Reload
+                </button>
+              </>
             ) : (
               <>
                 <span className="error">Could not reach the leaderboard: {submission.error}</span>{' '}

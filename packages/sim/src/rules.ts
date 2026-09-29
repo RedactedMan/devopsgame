@@ -38,9 +38,10 @@ export const RULES_PROBE = '58f16988'
  * session tuning, the win line, the free-play goldens and the session golden
  * (`test/rules.test.ts`); the same rule applies, bump and re-record.
  *
- * Nothing sends it yet. The session-deploy fix IMPLEMENTATION_PLAN §3 calls
- * for, where the client sends its rules and the Worker refuses a mismatch, is
- * what it is for.
+ * A session page sends it with its join and with its run, and the Worker
+ * refuses a mismatch with 409 and "reload" (2026-09-28), because a tab opened
+ * before a deploy plays the old game while the Worker replays under the new
+ * one. IMPLEMENTATION_PLAN §3.
  *
  * History, newest first.
  *

@@ -1,10 +1,11 @@
-import type {
-  BoardEntry,
-  BoardRun,
-  LoggedCommand,
-  SessionInfo,
-  SessionStatus,
-  SubmitOutcome,
+import {
+  SESSION_RULES_VERSION,
+  type BoardEntry,
+  type BoardRun,
+  type LoggedCommand,
+  type SessionInfo,
+  type SessionStatus,
+  type SubmitOutcome,
 } from '@flow/sim'
 
 /**
@@ -14,7 +15,10 @@ import type {
 
 export type Player = { playerId: string; name: string }
 
-/** A refusal from the API, with its status, so a caller can tell "closed" from "offline". */
+/**
+ * A refusal from the API, with its status, so a caller can tell "closed" (410)
+ * from "this page is an older game than the server" (409) from "offline".
+ */
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -53,9 +57,15 @@ export const api = {
     call<SessionInfo>('', { method: 'POST', body: { seed }, key }),
   status: (code: string) => call<SessionStatus>(`/${code}`),
   join: (code: string, player: Player) =>
-    call<SessionStatus>(`/${code}/join`, { method: 'POST', body: player }),
+    call<SessionStatus>(`/${code}/join`, {
+      method: 'POST',
+      body: { ...player, rules: SESSION_RULES_VERSION },
+    }),
   submit: (code: string, player: Player, commands: LoggedCommand[]) =>
-    call<SubmitOutcome>(`/${code}/results`, { method: 'POST', body: { ...player, commands } }),
+    call<SubmitOutcome>(`/${code}/results`, {
+      method: 'POST',
+      body: { ...player, rules: SESSION_RULES_VERSION, commands },
+    }),
   board: (code: string) => call<{ entries: BoardEntry[] }>(`/${code}/results`),
   run: (code: string, playerId: string) => call<BoardRun>(`/${code}/results/${playerId}`),
 }

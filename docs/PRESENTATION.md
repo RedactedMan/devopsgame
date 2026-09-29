@@ -55,8 +55,9 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
 - The game is live at <https://flow-state.mschrenk.workers.dev>. Every push to
   `main` deploys, so don't merge anything on the day of the talk that you haven't
   played. Don't deploy during a session either. A tab opened before the deploy
-  keeps playing the old rules, the server scores the run under the new ones, and
-  nothing says so yet (IMPLEMENTATION_PLAN §3, found 2026-09-27, fix to follow).
+  keeps playing the old rules. Since 2026-09-28 the server refuses that run
+  rather than scoring it under the new ones and tells the player to reload,
+  but the player still loses the run (IMPLEMENTATION_PLAN §3).
   The change that made the session winnable (2026-09-28) is exactly that kind of
   change: deploy it well before the talk, and have the room load the page fresh.
   The presenter key is set. Rotate it with `wrangler secret put

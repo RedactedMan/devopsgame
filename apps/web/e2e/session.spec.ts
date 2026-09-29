@@ -125,6 +125,30 @@ test('joining a session that does not exist says so', async ({ page }) => {
   await expect(page.locator('.error')).toContainText(/no such session/i)
 })
 
+test('a page playing other rules is told to reload, not scored', async ({ request }) => {
+  // A tab opened before a deploy keeps the old game. The Worker replays under
+  // the new one, so its score would be a number the player never saw.
+  const created = await request.post('/api/sessions', {
+    data: { ticks: SHORT_TICKS },
+    headers: { authorization: `Bearer ${PRESENTER_KEY}` },
+  })
+  const { code } = (await created.json()) as { code: string }
+  const player = { playerId: 'e2e-stale-rules', name: 'Stale' }
+
+  for (const rules of [undefined, 0, 999]) {
+    const join = await request.post(`/api/sessions/${code}/join`, { data: { ...player, rules } })
+    expect(join.status(), `join with rules ${rules}`).toBe(409)
+    expect(((await join.json()) as { error: string }).error).toMatch(/reload/i)
+    const run = await request.post(`/api/sessions/${code}/results`, {
+      data: { ...player, rules, commands: [] },
+    })
+    expect(run.status(), `run with rules ${rules}`).toBe(409)
+  }
+
+  const board = await request.get(`/api/sessions/${code}/results`)
+  expect(((await board.json()) as { entries: unknown[] }).entries).toEqual([])
+})
+
 test('only the presenter can start a session', async ({ request }) => {
   // Every run is replayed on the server, and CPU is billed without a cap. A
   // stranger who could create sessions could make the Worker replay anything.
