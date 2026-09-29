@@ -600,8 +600,9 @@ it, because each is a mechanic with its own measurement to do:
   boundary — a second human on one station's WIP, an agent's output reviewed by
   someone who did not spec it. For a five-station line this makes the cost a
   function of humans *per station*, not roster size. Best-evidenced of
-  anything in this document; belongs with board building (slice 5), which is
-  where stations get shape.
+  anything in this document; belonged with board building (slice 5), which is
+  where stations get shape. Slice 5 was removed from the plan on 2026-09-28
+  (IMPLEMENTATION_PLAN §4), so this is unbuilt and has no slice.
 - **Onboarding transient.** *(Built in §8, for moves rather than hires.)* A
   newly hired person draws on a veteran's attention for a few shifts and
   supplies less meanwhile. This is Brooks's

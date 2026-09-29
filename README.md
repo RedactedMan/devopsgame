@@ -11,7 +11,7 @@ decays against a moving trunk: the more you start, the less you finish.
 
 ## Status
 
-**M1 in progress — the constraint moves.** A fixed five-station pipeline,
+**M1 built — the constraint moves.** A fixed five-station pipeline,
 rectangles and text, drift implemented and visible. On top of M0's WIP sliders,
 the line now has a *roster*: workers stand at stations, the sim reports rolling
 utilisation, it names the bottleneck out loud, and the player can move people to
@@ -26,8 +26,8 @@ asserted in `packages/sim/test/flow.test.ts`; the human half was played on
 question M0 existed to answer.
 
 M1's headline is the moving constraint: capacity and WIP policy are coupled
-levers, and neither is solvable alone. It is being built in slices, each
-playable on its own:
+levers, and neither is solvable alone. It was built in slices, each playable
+on its own:
 
 1. **The moving constraint** — built. The roster, `assignWorker`, rolling
    utilisation, and the bottleneck named on the board.
@@ -75,7 +75,11 @@ playable on its own:
    to the same place. Free play only. Built 2026-09-27, merged and deployed
    2026-09-28 (PR #9). See
    [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §3.
-5. **Board building and placement.**
+
+Board building and placement was the fifth slice. It was removed from the plan
+on 2026-09-28: the workshop's lessons land on the fixed five-station line, and
+building it would have re-opened every number the session was measured on. See
+[IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §4.
 
 - [Game Design Document](docs/GAME_DESIGN.md) — mechanics, campaign, pedagogy
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md) — architecture, milestones, testing

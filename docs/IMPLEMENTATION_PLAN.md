@@ -178,7 +178,7 @@ If that fails, the design is wrong and no amount of Pixi will save it. Fix the d
 
 **Result: passed.** The design is sound enough to build on. Two things were fixed on the way to it, both found by playing rather than by testing, and both worth remembering as a pattern: the board could not distinguish a *blocked* station from a *busy* one, and the dashboard's lead time — averaging only what shipped — improved as the line died. Neither was a simulation bug. Both were the game failing to say what it already knew, which is the failure mode to watch for in every milestone after this one.
 
-### M1 — Agency *(in progress)*
+### M1 — Agency *(built 2026-09-28, board building removed from scope)*
 
 **The moving constraint is the milestone's headline** — see
 [CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md). Staffing relocates
@@ -191,6 +191,9 @@ the optimum moves because of what the player did rather than because of dice.
 M1 is being built in slices rather than as one drop, because the milestone is
 large enough that a single branch would be the thing this project keeps warning
 about. Each slice is playable on its own.
+
+Board building and placement, the first item on M1's original list, was taken
+out on 2026-09-28 (slice 5 below). The pipeline stays the fixed five stations.
 
 | # | Slice | State |
 |---|---|---|
@@ -205,7 +208,7 @@ about. Each slice is playable on its own.
 | 4 | **Save / load** from the command log. The plan called it nothing but plumbing and a file picker, and for the run itself it was. It was not for versioning: a save replays under whatever rules are live, so it records `RULES_VERSION` and the fingerprint it was saved at, and a load says when either has changed. See §3, *Saves and the rules they were played under*. Free play only. The same versioning gap in session scores was found here and split into its own fix, built 2026-09-28: a session page sends its rules and the Worker refuses a mismatch with "reload" (§3) | **built** 2026-09-27, merged to `main` 2026-09-28 (PR #9), deployed 2026-09-28: the *Workers Builds* check is green on `87ccd24`, the PR #10 merge, which carries it. Checked in Playwright's phone emulation, not yet on a real phone |
 | 3f | **Removing an agent, and a Rebase button that says why it will not** — found playing the deployed game on 2026-09-28. `removeAgent` takes an agent off the roster (a busy one finishes its item first); people still cannot be removed. The line that found it had fallen into the re-brief spiral, and measured from inside it the sliders are still the stronger fix (1.0 → 4.2 a day) than removing agents (→ 1.8). Rebase was being refused for want of attention 1,458 times in that run with the button still live; it now shows its cost and goes dead when the shift cannot pay. No golden moved. See [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §9 | **built**, merged to `main` 2026-09-28 (PR #10) and deployed 2026-09-28: the *Workers Builds* check is green on `87ccd24`, the PR #10 merge — not yet played in a room |
 | 3g | **A session that can be won** — free play keeps five arrivals a day and stays unwinnable; the session plays `SESSION_TUNING` at four, and a run is won with 10 or fewer items unfinished (backlog *and* in flight, because the backlog alone can be emptied by opening the sliders). Measured at day-10 decisions over 12 seeds: every good play wins on every seed, every play that leaves Review alone loses. Its own rules version and probe, and a fourth golden that plays a whole session. The debrief's numbers were re-measured at the session's rate. See [HIRING_AND_ATTENTION.md](./HIRING_AND_ATTENTION.md) §10 | **built**, merged to `main` 2026-09-28 (PR #10) and deployed 2026-09-28: the *Workers Builds* check is green on `87ccd24`, the PR #10 merge — not yet played in a room |
-| 5 | **Board building and placement** — the last of M1's original scope, and the only part that changes the shape of the pipeline rather than what runs through it | planned |
+| 5 | ~~**Board building and placement**~~ — the last of M1's original scope, and the only part that changes the shape of the pipeline rather than what runs through it | **removed** from the plan 2026-09-28. Its whole design was one line (GAME_DESIGN §3.2, "placed on a grid, connected by queues"), with nothing measured. The workshop teaches WIP, drift, the moving constraint and attention on the fixed five-station line, and playtesting the game with the talk showed those lessons land without it. Building it would have re-opened the session tuning, the win line, the goldens and every number the debrief cites. Not planned for a later milestone either |
 
 Slice 1 notes, for whoever picks this up:
 
