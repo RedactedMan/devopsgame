@@ -84,6 +84,8 @@ type WorkItem = {
 
 Placed on a grid, connected by queues. Each has WIP slots, a service-time distribution, and a staffing model.
 
+> **Not built, and no longer planned (2026-09-28).** The game is a fixed line of five stations (Spec, Implement, Review, CI, Deploy), and the player does not place them. Board building was M1 slice 5 and was removed from the plan: the workshop teaches WIP, drift, the moving constraint and attention on the fixed line, and playing it with the talk showed those lessons land without a layout to build. See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) §4.
+
 - **Groom / Spec** — converts vague asks into sized items. Under-investing here inflates rework downstream.
 - **Implement** — where humans or agents do the work.
 - **Review** — the attention bottleneck. Only humans can staff it.
