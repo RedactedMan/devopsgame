@@ -92,11 +92,24 @@ best line ships only so much more, and its gain shows up as lead time.
 - Agents: +8 with nobody moved to Review, −14% (−13%); one person moved to
   Review plus four agents, +13% shipped (+35%) and lead time from 38h to 13h;
   two implementers moved with no backfill, −28% (−27%).
+- Measured 2026-09-28 for the deck review, same harness and seeds (the
+  starting-team rows reproduce §10 exactly). They back three lines on the `wip`
+  and `agents` slides that §10's table does not carry:
+  - WIP at 0.2× and 0.3× ships 134 and 135, against 168 at 0.4× and 121
+    untouched, so it gives back about 70% of the gain.
+  - Doubling WIP from the starting limits takes rebases from 14 a run to 71
+    while rework stays flat (63, 62). What grows is stale work, not rework.
+    The notes said "more than doubles rework" until this check.
+  - One person moved to Review, then agents at Implement, at 0.75×: 193, 197,
+    193, 193 shipped at 2 to 5 agents, 172 at 6, 79 at 8. So "past about four
+    agents it turns down again" holds.
 - Agent review and the defect classes (GAME_DESIGN §4.6). This is **not built
   yet** (M5), and the deck says so.
 
 ## Still to fill in
 
-The deck has bracketed placeholders: your name, event and date, the deployed URL
-(<https://flow-state.mschrenk.workers.dev>), and the `mine` slide, which is for
-your own team's experience this year.
+The deck has bracketed placeholders: your name, event and date on `cover`, your
+name and contact on `close`, the session code on `join` (the presenter tab
+shows it), and the `mine` slide, which is for your own team's experience this
+year. The notes on `changed` and `amazon` each have one bracketed note to act
+on. The deployed URL is already in (checked 2026-09-28).
