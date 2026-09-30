@@ -1,0 +1,38 @@
+<section id="lessons" data-transition="fade" style="background:#14191a; color:#d9e0df; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:48px">
+<div style="display:flex; flex-direction:column; gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; letter-spacing:2px">THE DEBRIEF</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:72px; font-weight:700; line-height:1.1; color:#f2f4f1">What the game was showing you</h2>
+</div>
+<div style="display:flex; flex-direction:column; gap:24px">
+<div style="display:flex; gap:40px; align-items:start; background:#1c2325; border:1px solid #2b3538; padding:36px 48px; border-radius:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:56px; font-weight:700; color:#2fa39a; width:64px">1</p>
+<div style="flex:1; display:flex; flex-direction:column; gap:8px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:40px; font-weight:700; color:#f2f4f1">Less in flight, more shipped</h3>
+<p style="font-size:28px; line-height:1.4; color:#bfc9c7">Opening the limits felt productive. It made more work go stale, and less of it shipped.</p>
+</div>
+</div>
+<div style="display:flex; gap:40px; align-items:start; background:#1c2325; border:1px solid #2b3538; padding:36px 48px; border-radius:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:56px; font-weight:700; color:#d8973c; width:64px">2</p>
+<div style="flex:1; display:flex; flex-direction:column; gap:8px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:40px; font-weight:700; color:#f2f4f1">The bottleneck moved to Review</h3>
+<p style="font-size:28px; line-height:1.4; color:#bfc9c7">Adding people or agents anywhere else changed nothing, or made it worse.</p>
+</div>
+</div>
+<div style="display:flex; gap:40px; align-items:start; background:#1c2325; border:1px solid #2b3538; padding:36px 48px; border-radius:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:56px; font-weight:700; color:#e0563a; width:64px">3</p>
+<div style="flex:1; display:flex; flex-direction:column; gap:8px">
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:40px; font-weight:700; color:#f2f4f1">Agents paid off only once review could keep up</h3>
+<p style="font-size:28px; line-height:1.4; color:#bfc9c7">Idle agents meant a review problem, not a capacity one. A person moved to Review is what let them work.</p>
+</div>
+</div>
+</div>
+<aside>This is what the runs we just looked at have in common. Use the players' own words from the leaderboard where you can; the slide is the summary, not the evidence.
+
+1. Less in flight. Same nine people, same work arriving. The players who tightened their WIP limits shipped more and faster; the ones who opened them up when the backlog grew watched more work go amber and rust. Every deploy moves trunk, and the more that's in flight, the more of it drifts and needs a rebase. Too tight starves the line too: there's a right amount, and it's lower than it feels. Ask: who felt the urge to open the limits when the backlog grew? That's the same urge that says "spin up ten agents".
+
+2. The moving constraint. After day 10 the board named the bottleneck, and for most runs it was Review. Anything added elsewhere just queued up in front of it.
+
+3. Agents. Agents can't staff Review. Hover over Review's staffing row and the game says: "Agents can produce the work. They cannot be the judgment about it." Every agent also draws on the attention budget, because a person has to read what it wrote. So agents added with nobody moved to Review made the line worse. Move one person to Review first, then add a few agents, and the line keeps up. And you can over-correct: move too many implementers and nobody is left to do the work. The order you do things in is the whole decision. Ask: who saw "my agents aren't doing anything"? What did you do about it?
+
+The game is a demonstration of these ideas, not a study, so don't quote its numbers as findings. If someone asks, the measurements behind each point are in the repo's docs.</aside>
+</section>

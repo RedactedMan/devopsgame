@@ -19,7 +19,7 @@ nothing to install.
 | Ctrl/Cmd+P | A PDF, one slide a page |
 
 It loads its typefaces from Google Fonts and falls back to system fonts
-offline. `deck.html#agents` opens at a slide.
+offline. `deck.html#lessons` opens at a slide.
 
 ## Where it lives
 
@@ -47,17 +47,18 @@ above. They go up at the same paths. If the deck was edited in claude.ai
 instead, ask for its files to be pulled into `docs/deck/project/`, and run
 `pnpm deck`.
 
-Numbers on the slides come from the sims, and they move when the tuning
-does. The debrief slides (`wip`, `agents`) cite the session's rate, four
-items a day, from [HIRING_AND_ATTENTION.md](../HIRING_AND_ATTENTION.md) §10.
-Free play's figures, where the work never runs out, are in the speaker notes
-for comparison. `agenda` and `play` quote the run length, and they change
-with `SESSION_TICKS`.
+The slides carry no numbers measured from the game (since 2026-09-29, see
+[PRESENTATION.md](../PRESENTATION.md) *What the debrief cites*). The debrief
+slide, `lessons`, states what the sims show in words, so a tuning change can
+still make it false: check it against HIRING_AND_ATTENTION §10 when the
+balance moves. `agenda` and `play` quote the run length, and they change with
+`SESSION_TICKS`.
 
 ## Still to fill in
 
-The bracketed placeholders are yours: `[Your name]`, `[Event]` and `[Date]`
-on `cover`, `[Your name]` and `[contact]` on `close`, and the three prompts on
+The bracketed placeholders are yours. `cover` is filled in (2026-09-29: Matthew
+Schrenk, the 2026 LSEG St. Louis Technology Unconference, October 2, 2026).
+Still open: `[contact]` on `close`, and the three prompts on
 `mine`, which is for your own team's experience this year. The speaker notes
 on `changed` and `amazon` each have one bracketed note to act on before
 quoting. `[CODE]` on `join` is the session code, which the presenter tab
