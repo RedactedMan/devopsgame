@@ -20,11 +20,13 @@ import type {
  */
 
 /**
- * How long a session accepts players and runs. A talk is under an hour; this
- * leaves room for a late start and a second round. After it, the session costs
- * nothing: every request that could trigger a replay is refused before one runs.
+ * How long a session accepts players and runs. A talk is under an hour, but
+ * the presenter sets the session up the night before (24 hours since
+ * 2026-09-29; it was four). After it, the session costs nothing: every
+ * request that could trigger a replay is refused before one runs. Measured
+ * from creation, so a session made before the change got the longer window too.
  */
-export const SUBMIT_WINDOW_MS = 4 * 60 * 60 * 1000
+export const SUBMIT_WINDOW_MS = 24 * 60 * 60 * 1000
 
 /** The board outlives the talk, for the write-up. A week later nobody is coming back for it. */
 const EXPIRE_AFTER_MS = 7 * 24 * 60 * 60 * 1000

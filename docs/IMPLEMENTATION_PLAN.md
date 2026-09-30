@@ -131,7 +131,7 @@ a branch from mid-run and go back.
 
 **Session scores had the same problem** (found 2026-09-27, fixed
 2026-09-28). A tab opened before a deploy keeps playing the old rules for the
-whole four-hour window, while the Worker replays the run under the new ones.
+whole session window (24 hours since 2026-09-29), while the Worker replays the run under the new ones.
 The end screen showed the local score and then the server's rank without
 comparing the two, so the player saw one number and the board ranked another.
 
@@ -285,7 +285,7 @@ One Cloudflare Worker (`apps/server`) serves both halves: the static build from 
 
 **Leaderboards: yes, for a session in a room. Still no global ladder.** *Changed 2026-09-23.* The game's target use became a 30–45 minute workshop that ends on a leaderboard (HIRING_AND_ATTENTION §8), so presentation mode has one: a Durable Object per session code, holding each player's best run. A submitted score is never trusted. The Worker re-plays `{ seed, commands }` with `@flow/sim` and ranks what the replay produces. *Since 2026-09-28* it replays under `SESSION_TUNING`, the session's own tuning, which arrives four items a day rather than free play's five so that a run can be won (HIRING_AND_ATTENTION §10). That takes 40–70 ms of CPU for a real run and under a second for the worst log the parser accepts, which **needs the Workers paid plan**, because the free plan's 10 ms CPU limit cannot replay a game.
 
-Paid-plan CPU is billed with no hard cap, so the replay is closed to strangers. *Added 2026-09-27.* Starting a session needs the presenter key, a Worker secret (`wrangler secret put PRESENTER_KEY`), and with none set nobody can start one. A session takes players and runs for four hours, then refuses both before any replay. Its board stays readable for a week, after which the session deletes itself. Before this, anyone could create a session and submit the most expensive command log the parser accepts (~0.65 s of CPU each), which at 100 requests a second is about $110 a day. Per-IP rate limiting and a smaller command cap were considered and left out. With the key and the window, what's left exposed is a code on a projector for a few hours.
+Paid-plan CPU is billed with no hard cap, so the replay is closed to strangers. *Added 2026-09-27.* Starting a session needs the presenter key, a Worker secret (`wrangler secret put PRESENTER_KEY`), and with none set nobody can start one. A session takes players and runs for 24 hours, then refuses both before any replay. *Changed 2026-09-29 from four hours*, so the presenter can start the session the night before the talk. The cost of that is a longer exposure: a code that leaks from the projector can be replayed against for a day rather than an afternoon, so the worst case above is about $110 per leaked code rather than about $18. Accepted, because it needs someone to find the code and target it, and the key still controls who can make one. Its board stays readable for a week, after which the session deletes itself. Before this, anyone could create a session and submit the most expensive command log the parser accepts (~0.65 s of CPU each), which at 100 requests a second is about $110 a day. Per-IP rate limiting and a smaller command cap were considered and left out. With the key and the window, what's left exposed is a code on a projector for a day.
 
 ---
 
