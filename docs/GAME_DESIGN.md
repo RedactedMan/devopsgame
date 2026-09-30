@@ -228,6 +228,12 @@ This preserves the attention constraint without banning the obvious move. Agents
 
 ## 5. Campaign arc
 
+> **Not planned (2026-09-30).** No levels will be built. The game is free
+> play and the workshop session, and the workshop is its use; playtesting it
+> with the talk showed the fixed five-station line teaches the First Way and
+> the attention constraint without a campaign. The arc below is kept as the
+> design record, not a plan. See IMPLEMENTATION_PLAN §4.
+
 Structured on the DevOps Handbook's Three Ways, with a fourth act that is this game's original contribution.
 
 ### Act I — Flow

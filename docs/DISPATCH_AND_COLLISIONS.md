@@ -7,6 +7,9 @@ collisions visible. Written after measuring the idea rather than before, which
 changed the answer: **the visibility half belongs in M1, the decision half
 cannot work until M2.** Section 3 is why.
 
+*2026-09-30: M2 is no longer planned (IMPLEMENTATION_PLAN §4, the note above
+M2), so the decision half is not scheduled. The visibility half is built.*
+
 ---
 
 ## 1. The problem this is meant to solve
