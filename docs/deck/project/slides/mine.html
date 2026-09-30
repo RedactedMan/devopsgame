@@ -1,24 +1,27 @@
-<section id="mine" data-transition="fade" style="background:#14191a; color:#d9e0df; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:48px">
+<section id="mine" data-transition="fade" style="background:#14191a; color:#d9e0df; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px; display:flex; flex-direction:column; gap:40px">
 <div style="display:flex; flex-direction:column; gap:16px">
 <p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; letter-spacing:2px">FROM MY OWN TEAMS</p>
 <h2 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:72px; font-weight:700; line-height:1.1; color:#f2f4f1">What I've changed this year</h2>
 </div>
-<div style="display:flex; flex-direction:column; gap:24px">
-<div style="display:flex; gap:32px; align-items:center; background:#1c2325; border:1px dashed #7c8b8a; padding:32px 40px; border-radius:16px">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; width:220px">PLANNING</p>
-<p style="flex:1; font-size:32px; line-height:1.4; color:#d9e0df">[What you now require before an agent starts work]</p>
+<div style="display:flex; flex-direction:column; gap:20px">
+<div style="display:flex; gap:32px; align-items:start; background:#1c2325; border:1px solid #2b3538; padding:28px 40px; border-radius:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; line-height:1.6; color:#2fa39a; width:180px">PLANNING</p>
+<p style="flex:1; font-size:28px; line-height:1.4; color:#d9e0df">Talk with the team and make a decision on what we want to accomplish. Make a plan with the AI on what the goal is, and record the plan in an md file for larger changes.</p>
 </div>
-<div style="display:flex; gap:32px; align-items:center; background:#1c2325; border:1px dashed #7c8b8a; padding:32px 40px; border-radius:16px">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; width:220px">REVIEW</p>
-<p style="flex:1; font-size:32px; line-height:1.4; color:#d9e0df">[The moment you realized review was your bottleneck]</p>
+<div style="display:flex; gap:32px; align-items:start; background:#1c2325; border:1px solid #2b3538; padding:28px 40px; border-radius:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; line-height:1.6; color:#d8973c; width:180px">REVIEW</p>
+<p style="flex:1; font-size:28px; line-height:1.4; color:#d9e0df">Get a basic understanding of the change and how risky it is before going in depth with the AI on a code review. AI code reviews are often focused on the trees (mechanical issues) and not the forest (why these changes are being done). Did implementing the plan reveal new information? Should we start over with a new plan, or clean up the existing MR and land on main?</p>
 </div>
-<div style="display:flex; gap:32px; align-items:center; background:#1c2325; border:1px dashed #7c8b8a; padding:32px 40px; border-radius:16px">
-<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; width:220px">A MISS</p>
-<p style="flex:1; font-size:32px; line-height:1.4; color:#d9e0df">[A change an agent got confidently wrong, and who caught it]</p>
+<div style="display:flex; gap:32px; align-items:start; background:#1c2325; border:1px solid #2b3538; padding:28px 40px; border-radius:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; line-height:1.6; color:#e0563a; width:180px">A MISS</p>
+<p style="flex:1; font-size:28px; line-height:1.4; color:#d9e0df">Spending significant time, tokens, and discussion on work that is lower priority or not needed at all. The AI often will flag things that are tangentially related to the work we are trying to get done. Don't let it distract you, or let it drive how you are spending your time.</p>
 </div>
 </div>
-<aside>[Placeholder for your own experience, 1–2 minutes. This is where the talk stops being a literature review. Three prompts, one sentence each is plenty:
-- Planning: what you now write down before an agent starts. A spec, acceptance criteria, what it's not allowed to touch?
-- Review: when and how you noticed review had become the constraint. PR queue age? Reviewers burning out?
-- A miss: a change that passed every automated check and was still wrong. What kind of defect was it: design, integration, or mechanical?]</aside>
+<aside>This is where the talk stops being a literature review. One to two minutes, in your own words.
+
+Planning: the decision about what we're trying to accomplish is a team conversation first. Then plan with the AI, and for larger changes write the plan down in a markdown file so it outlives the chat. That's the left end of the ends slide coming up.
+
+Review: skim first. Understand what changed and how risky it is before going deep with the AI. AI review is good at the trees, the mechanical issues, and weak on the forest, why the change is being made at all. And ask whether building it taught you something: sometimes the right move is a new plan, not polishing the merge request.
+
+A miss: the cost that doesn't show up on any dashboard. The AI flags things tangential to the goal, and it's easy to spend hours, tokens and meetings on them. Don't let it set your priorities. That's attention, the scarce resource, spent on the wrong thing.</aside>
 </section>

@@ -60,8 +60,8 @@ balance moves. `agenda` and `play` quote the run length, and they change with
 
 The bracketed placeholders are yours. `cover` is filled in (2026-09-29: Matthew
 Schrenk, the 2026 LSEG St. Louis Technology Unconference, October 2, 2026),
-and `close` has no contact line. Still open: the three prompts on
-`mine`, which is for your own team's experience this year. The speaker notes
+`close` has no contact line, and `mine` has your own experience (2026-09-30).
+The speaker notes
 on `changed` and `amazon` each have one bracketed note to act on before
 quoting. `[CODE]` on `join` is the session code, which the presenter tab
 shows.
