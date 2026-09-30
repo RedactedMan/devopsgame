@@ -1,0 +1,27 @@
+<section id="dex" data-transition="fade" style="background:#14191a; color:#d9e0df; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:48px">
+<div style="display:flex; flex-direction:column; gap:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#d8973c; letter-spacing:2px">CASE · 2025 · HUMANLAYER</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:72px; font-weight:700; line-height:1.1; color:#f2f4f1">"Nobody read the code"</h2>
+</div>
+<div style="display:flex; gap:64px; align-items:start">
+<ul style="flex:1; font-size:32px; line-height:1.5; color:#d9e0df">
+<li>Dex Horthy's team stopped reading agent-written code. Agents handled tickets, crashes and code review.</li>
+<li>About three months in, production broke. No amount of prompting got Opus 4.1 to find the root cause.</li>
+<li>Days of digging by hand found a primary key routed through the whole codebase that needed its own table. Then three weeks re-onboarding to code no one had read.</li>
+</ul>
+<div style="width:560px; display:flex; flex-direction:column; gap:16px; background:#1c2325; border-left:6px solid #2fa39a; padding:40px; border-radius:0px 16px 16px 0px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; letter-spacing:2px">WHAT CHANGED</p>
+<p style="font-size:30px; line-height:1.4; color:#d9e0df">"None of these things have intuition for software architecture." He no longer thinks skipping review pays off, now that agents write 10x to 100x more code.</p>
+</div>
+</div>
+<p style="position:absolute; left:128px; bottom:64px; width:1664px; font-size:24px; color:#7c8b8a">Dex Horthy, "Context engineering with Dex Horthy", The Pragmatic Engineer, 15 Jul 2026, 44:01 to 45:39</p>
+<aside>This one is about review itself. Dex Horthy's team turned the lights off: if a user complained, an agent got it; if something crashed, an agent got it; and because humans couldn't keep up with the volume, they replaced PR review with agentic testing and agentic code review. In his words, "none of these things have intuition for software architecture because we haven't trained it in yet."
+
+About three months in, production broke, and no amount of expert prompting got Opus 4.1 to find the root cause. It took several days of people digging through the code to find it: a primary key routed through the whole system that needed to become a different kind of object with its own table. That's a design defect, the class on the agent review slide that agents miss. Then three weeks re-onboarding to a codebase nobody had read.
+
+At the time he thought it was still worth it. He doesn't anymore, because the amount of code agents write now is "like 10x or 100x", and the problem is getting worse.
+
+This is why the game doesn't let agents staff Review. Our own reviewers use AI tools and they catch a lot, but whether a change is right is still a person's call, going by these cases and what I've seen on my own teams.
+
+He says three months in the episode; the episode summary says four. The slide goes with his own words.</aside>
+</section>

@@ -2,7 +2,7 @@
   "v": 4,
   "createdOnFiles": {"v": 1, "at": "2026-09-27T12:00:00Z"},
   "title": "Flow State: DevOps in the Age of Agents",
-  "order": ["cover", "agenda", "join", "threeways", "flow", "constraint", "feedback", "learning", "dora", "question", "howto", "play", "leaderboard", "lessons", "attention", "changed", "evidence", "replit", "kiro", "amazon", "mine", "ends", "rubber", "checklist", "close", "sources"],
+  "order": ["cover", "agenda", "join", "threeways", "flow", "constraint", "feedback", "learning", "dora", "question", "howto", "play", "leaderboard", "lessons", "attention", "changed", "evidence", "replit", "kiro", "amazon", "dex", "mine", "ends", "rubber", "checklist", "close", "sources"],
   "sections": {
     "s1": {"description": "Welcome, the session plan, and getting everyone into the game", "start": "cover"},
     "s2": {"description": "The core principles of DevOps: the Three Ways and the DORA keys", "start": "threeways"},
