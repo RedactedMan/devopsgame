@@ -1,21 +1,34 @@
-<section id="rubber" data-transition="fade" style="background:#14191a; color:#d9e0df; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:48px">
+<section id="rubber" data-transition="fade" style="background:#14191a; color:#d9e0df; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px; display:flex; flex-direction:column; gap:48px">
 <div style="display:flex; flex-direction:column; gap:16px">
 <p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; letter-spacing:2px">AGENT REVIEW</p>
-<h2 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:72px; font-weight:700; line-height:1.1; color:#f2f4f1">Useful, and partial</h2>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:72px; font-weight:700; line-height:1.1; color:#f2f4f1">Agents check the code. People check the decision.</h2>
 </div>
-<table style="font-size:32px; color:#d9e0df">
-<tr><th style="width:34%; text-align:left; color:#7c8b8a">Defect class</th><th style="width:22%; text-align:left; color:#7c8b8a">Human review</th><th style="width:22%; text-align:left; color:#7c8b8a">Agent review</th><th style="width:22%; text-align:left; color:#7c8b8a">CI</th></tr>
-<tr><td><b>Mechanical</b>: bugs, missed cases</td><td>Yes</td><td style="color:#2fa39a">Yes</td><td>If covered</td></tr>
-<tr><td><b>Design</b>: wrong abstraction, misread ask</td><td>Yes</td><td style="color:#e0563a">No</td><td>No</td></tr>
-<tr><td><b>Integration</b>: clashes with other work</td><td>Often</td><td style="color:#e0563a">No</td><td>With good coverage</td></tr>
-</table>
-<p style="font-size:34px; line-height:1.4; color:#bfc9c7; width:1560px">Let agents clear the mechanical majority. Keep a person on the rest. A quality metric is only as trustworthy as whatever produced it.</p>
-<p style="position:absolute; left:128px; bottom:64px; width:1664px; font-size:24px; color:#7c8b8a">The design model behind Flow State's planned "Rubber Stamp" level · docs/GAME_DESIGN.md §4.6</p>
-<aside>This is the model the game uses for agent review, and it's a planned level. It isn't in today's version.
+<div style="display:flex; gap:32px">
+<div style="flex:1; display:flex; flex-direction:column; gap:20px; background:#1c2325; border:2px solid #2fa39a; padding:48px; border-radius:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#2fa39a; letter-spacing:2px">MECHANICAL FIXES</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:40px; font-weight:700; line-height:1.2; color:#f2f4f1">Let agent review clear them</h3>
+<ul style="font-size:30px; line-height:1.5; color:#bfc9c7">
+<li>Bugs and missed edge cases</li>
+<li>Error handling, style, tests</li>
+<li>Everything needed is in the diff</li>
+</ul>
+</div>
+<div style="flex:1; display:flex; flex-direction:column; gap:20px; background:#1c2325; border:2px solid #d8973c; padding:48px; border-radius:16px">
+<p style="font-family:'JetBrains Mono', 'Courier New', monospace; font-size:24px; color:#d8973c; letter-spacing:2px">DESIGN DECISIONS</p>
+<h3 style="font-family:'Space Grotesk', Arial, sans-serif; font-size:40px; font-weight:700; line-height:1.2; color:#f2f4f1">Keep a person on them</h3>
+<ul style="font-size:30px; line-height:1.5; color:#bfc9c7">
+<li>Is this the right change at all?</li>
+<li>The right abstraction, the right reading of the ask</li>
+<li>How it fits the other work in flight</li>
+</ul>
+</div>
+</div>
+<p style="font-size:34px; line-height:1.4; color:#bfc9c7; width:1560px">An agent's approval says the code is correct. It can't say the change is right, because the intent isn't in the diff.</p>
+<aside>Agent review is real and worth having. It's good at the mechanical fixes: bugs, missed edge cases, error handling, style. Those are most of the volume, and everything needed to find them is in the diff in front of it. Let it clear them, so your reviewers aren't spending their attention there.
 
-Agent review is real and worth having. It catches the mechanical defects, which are most of the volume. What it misses are design defects, the wrong abstraction or a misread requirement, and integration defects, where one change collides with other work in flight. Those are the ones that cause outages.
+What it can't judge is the decision behind the change. Is this the right thing to build? Is it the right abstraction? Did we read the requirement correctly? Does it collide with what someone else is doing this week? None of that is in the diff. It lives in the heads of people who know why the change exists and what else is going on. Those are the defects that cause outages, and CI doesn't catch them either: the tests were written from the same understanding as the code.
 
-The trap: an agent-approved change looks verified, so it skips the human queue. Displayed quality goes up and true quality doesn't, and a few weeks later the change failure rate tells you. That's Goodhart's Law: approval counts can be satisfied cheaply, so they will be.
+The trap: an agent-approved change looks verified, so it skips the human queue. The dashboard says quality went up. It didn't; a few weeks later the change failure rate tells you. That's Goodhart's Law: approval counts can be satisfied cheaply, so they will be.
 
-The table is the game's design model, not a measured study. Present it as a way of thinking, and note the CodeRabbit finding that logic and correctness issues were the biggest category.</aside>
+So split the work: agents on the mechanical pass, a person on the decision. This is a way of thinking about review, not a measured study.</aside>
 </section>

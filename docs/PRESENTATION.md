@@ -119,8 +119,14 @@ shows up as lead time.
   - One person moved to Review, then agents at Implement, at 0.75×: 193, 197,
     193, 193 shipped at 2 to 5 agents, 172 at 6, 79 at 8. So "past about four
     agents it turns down again" holds.
-- Agent review and the defect classes (GAME_DESIGN §4.6). This is **not built
-  yet** (M5), and the deck says so.
+- Agent review and the defect classes (GAME_DESIGN §4.6) are **not in the
+  game**. *Changed 2026-09-30:* the `rubber` slide no longer shows §4.6's
+  defect-class table or calls it a planned level, because no more levels are
+  planned. It now splits review into mechanical fixes (agents) and design
+  decisions (a person), and its notes present that as a way of thinking, not
+  a measurement. The table's CI column is gone; the notes keep the one point
+  from it, that tests written from the same understanding as the code do not
+  catch a design defect.
 
 ## Still to fill in
 
