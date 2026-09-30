@@ -4,7 +4,7 @@ Companion to [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) §7, which is th
 presentation mode this talk runs on.
 
 **Deck:** [`docs/deck/`](./deck/README.md) — *Code is cheap now. Attention
-isn't.* 27 slides with speaker notes. Open `docs/deck/deck.html` to present it.
+isn't.* 26 slides with speaker notes. Open `docs/deck/deck.html` to present it.
 In the repo since 2026-09-28, which is the copy of record. It was written as a
 claude.ai Slides artifact, <https://claude.ai/artifact/USk8xhe7uwjvDmVEsbfB2G>,
 private until shared from its Share menu, and the two hold the same files.
@@ -89,18 +89,27 @@ every seed measured, and leaving Review alone loses on every one
 
 ## What the debrief cites from this repo
 
-The room plays the session, so these are the session's numbers (four items a
-day, 12 seeds × 4000 ticks, HIRING_AND_ATTENTION §10). The free-play figures
-the deck used before 2026-09-28 are in brackets. The `wip` and `agents` slides
-carry these, with the free-play figures in their speaker notes. With less work arriving, the
-best line ships only so much more, and its gain shows up as lead time.
+*Changed 2026-09-29: the deck no longer shows these numbers.* The `wip` and
+`agents` slides put sweep percentages on screen with a footnote on how they
+were measured. The game is a demonstration of the ideas, not a case study, so
+a percentage from it has no meaning a room can take away, and the footnote
+told the audience nothing useful. Both slides were replaced by one, `lessons`
+(*What the game was showing you*), which states the three patterns in words
+and leaves the evidence to the players' own runs on the leaderboard. Its notes
+tell the presenter not to quote the game's numbers as findings.
+
+The numbers below stay as the backing for each of those statements, and for
+answering a question about them. They are the session's (four items a day, 12
+seeds × 4000 ticks, HIRING_AND_ATTENTION §10), with free play's in brackets.
+With less work arriving, the best line ships only so much more, and its gain
+shows up as lead time.
 
 - WIP: 0.4× ships 39% more at 39% lower lead time than 1× (was 43% and 26%).
 - Agents: +8 with nobody moved to Review, −14% (−13%); one person moved to
   Review plus four agents, +13% shipped (+35%) and lead time from 38h to 13h;
   two implementers moved with no backfill, −28% (−27%).
 - Measured 2026-09-28 for the deck review, same harness and seeds (the
-  starting-team rows reproduce §10 exactly). They back three lines on the `wip`
+  starting-team rows reproduce §10 exactly). They backed three lines on the old `wip`
   and `agents` slides that §10's table does not carry:
   - WIP at 0.2× and 0.3× ships 134 and 135, against 168 at 0.4× and 121
     untouched, so it gives back about 70% of the gain.
