@@ -229,6 +229,17 @@ Slice 1 notes, for whoever picks this up:
   third time on this project (see
   [CONSTRAINT_AND_CAPACITY.md](./CONSTRAINT_AND_CAPACITY.md) §8).
 
+> **No more levels (decided 2026-09-30).** The campaign will not be built:
+> no tutorial levels, no Acts I–IV, no level-based objectives. The game is
+> what is built now, free play and the workshop session, and M1 is its last
+> milestone. The workshop is its use, and playtesting it with the talk showed
+> the fixed line teaches WIP, drift, the moving constraint and attention
+> without levels. M3, M4 and M5 are organised around authoring the campaign,
+> so none of them is planned. M2's mechanics (CI, defects, DORA, money) were
+> not decided separately; nothing is scheduled for them either. The
+> milestones below are kept as the design record of what the full game would
+> have been, not as a plan. GAME_DESIGN §5 carries the same note.
+
 ### M2 — Feedback
 CI station with coverage/speed dials · **defect classes** · defect injection and escapes · production incidents and preemption · **DORA dashboard** (reading displayed quality only) · the money/revenue loop · **dispatch as a player decision** (see [DISPATCH_AND_COLLISIONS.md](./DISPATCH_AND_COLLISIONS.md) §5 — gated on item value and deadlines, which is why it is here and not in M1).
 
@@ -243,7 +254,7 @@ Kaizen tree · Acts II and III · morale · codex with Handbook citations · hea
 ### M5 — The point
 **Act IV: agents.** Fleet management, **agent review and the true/displayed quality divergence**, attention economics, context rot, the Trunk endgame. Then audio, art pass, onboarding polish, and public release.
 
-Ship M0–M3 publicly and gather feedback before committing to M4–M5. The campaign is the expensive part; do not author it against an unvalidated sim.
+Ship M0–M3 publicly and gather feedback before committing to M4–M5. The campaign is the expensive part; do not author it against an unvalidated sim. *(Superseded 2026-09-30: no campaign is planned; see the note above M2.)*
 
 ---
 

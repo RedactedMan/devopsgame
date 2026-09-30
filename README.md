@@ -11,13 +11,15 @@ decays against a moving trunk: the more you start, the less you finish.
 
 ## Status
 
-**M1 built — the constraint moves.** A fixed five-station pipeline,
+**M1 built, and the last milestone — the constraint moves.** A fixed five-station pipeline,
 rectangles and text, drift implemented and visible. On top of M0's WIP sliders,
 the line now has a *roster*: workers stand at stations, the sim reports rolling
 utilisation, it names the bottleneck out loud, and the player can move people to
 it. Drift's other half is on the screen too — items show which areas of the
 codebase they touch, and the board shows which of those areas are crowded. No
-building mode, no campaign, no art.
+building mode, no campaign, no art, and none planned: on 2026-09-30 the
+campaign was dropped, because the workshop is the game's use and the game as
+built already carries it (IMPLEMENTATION_PLAN §4).
 
 M0's gate was that an unbriefed playtester over-fills WIP, gets measurably worse
 results, and can explain *why* without being told. The mechanical half is
