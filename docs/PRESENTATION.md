@@ -125,8 +125,8 @@ shows up as lead time.
 ## Still to fill in
 
 The speaker, event and date are in (2026-09-29): Matthew Schrenk, the 2026 LSEG
-St. Louis Technology Unconference, October 2, 2026. Still bracketed: your
-contact on `close`, the session code on `join` (the presenter tab
+St. Louis Technology Unconference, October 2, 2026. `close` has no contact line
+(removed 2026-09-29). Still bracketed: the session code on `join` (the presenter tab
 shows it), and the `mine` slide, which is for your own team's experience this
 year. The notes on `changed` and `amazon` each have one bracketed note to act
 on. The deployed URL is already in (checked 2026-09-28).
