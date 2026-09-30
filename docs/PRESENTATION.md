@@ -71,8 +71,9 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
 - Attendees can play on **laptops or phones**, held upright. The phone layout was
   tried on a real phone on 2026-09-27. A laptop still shows the whole board at
   once, which makes the debrief easier to follow.
-- Start the session at `?present` no more than an hour or two ahead. It takes
-  players for four hours.
+- Start the session at `?present` the night before, or any time in the 24 hours
+  before the talk. It takes players and runs for 24 hours from when it is
+  started (four until 2026-09-29), and its board stays readable for a week.
 
 ## Winning
 

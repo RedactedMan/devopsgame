@@ -30,7 +30,7 @@ export { Session }
  * secret, `wrangler secret put PRESENTER_KEY`), so the only sessions that exist
  * are ones the presenter started. And a session stops taking players and runs
  * `SUBMIT_WINDOW_MS` after it starts, refused before any replay. What is left
- * is a code on a projector for a few hours.
+ * is a code on a projector for a day.
  */
 
 type Env = {
