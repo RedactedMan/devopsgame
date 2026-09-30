@@ -43,7 +43,9 @@ versioned alongside the game it describes and checked by the same rules
 Edit the slide files here, run `pnpm deck`, and commit both. Merging to
 `main` also updates the copy at `/deck/`. **The repo is the copy of record.** To bring the claude.ai deck up to date, ask Claude Code
 to publish the changed files in `docs/deck/project/` to the artifact URL
-above. They go up at the same paths. If the deck was edited in claude.ai
+above. They go up at the same paths. The `dex` slide (Dex Horthy's team, added 2026-09-30) and
+the matching `ends` and `sources` edits were made here, so the claude.ai copy
+lacks them until it is republished. If the deck was edited in claude.ai
 instead, ask for its files to be pulled into `docs/deck/project/`, and run
 `pnpm deck`.
 
