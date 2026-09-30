@@ -279,7 +279,7 @@ Keep the full suite under 60 seconds. If it gets slow, that's an Act II lesson a
 
 ## 7. Deployment
 
-One Cloudflare Worker (`apps/server`) serves both halves: the static build from `apps/web/dist` through the assets binding, and the presentation-mode leaderboard at `/api/*`. The game itself still needs no backend. Free play is fully static.
+One Cloudflare Worker (`apps/server`) serves both halves: the static build from `apps/web/dist` through the assets binding, and the presentation-mode leaderboard at `/api/*`. The game itself still needs no backend. Free play is fully static. The talk's deck is served at `/deck/`: a Vite plugin copies `docs/deck/deck.html` into the build (added 2026-09-29), so the deck is presentable from any browser and is whatever `main` holds.
 
 **Live at <https://flow-state.mschrenk.workers.dev> since 2026-09-27, and every push to `main` deploys.** Cloudflare Workers Builds is connected to the GitHub repository. It builds each commit on `main` and deploys it, and it reports as the *Workers Builds: flow-state* check on the commit. Merging is shipping. That is trunk-based delivery with continuous deployment, which is what the game teaches, and it means a PR is not done until it is fit to be in front of a room. `pnpm deploy` builds and runs `wrangler deploy` by hand. It is a fallback, not the path.
 

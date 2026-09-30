@@ -110,7 +110,9 @@ Locally the presenter key is `dev`.
 <https://flow-state.mschrenk.workers.dev>. Cloudflare Workers Builds is connected
 to this repository, builds each commit on `main`, and deploys it. The build shows
 up on the commit as the *Workers Builds: flow-state* check. Merging a PR is
-shipping it. `pnpm deploy` does the same thing by hand and is only needed without
+shipping it. The talk's deck is served beside the game at
+<https://flow-state.mschrenk.workers.dev/deck/> (since 2026-09-29), copied from
+`docs/deck/deck.html` at build time. `pnpm deploy` does the same thing by hand and is only needed without
 the GitHub integration.
 
 The Worker runs on the **Workers paid plan**, because each submitted score is

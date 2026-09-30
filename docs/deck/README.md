@@ -5,8 +5,11 @@ game: principles, a full run for the room, then a debrief built on what they
 just did. [PRESENTATION.md](../PRESENTATION.md) is the plan for the session
 itself, its timings and what to check beforehand.
 
-**To present it:** open [`deck.html`](./deck.html) in a browser. It is one
-file with nothing to install.
+**To present it:** open <https://flow-state.mschrenk.workers.dev/deck/>, the
+copy served beside the game (since 2026-09-29). Offline, open
+[`deck.html`](./deck.html) from a checkout instead: paste its full path as a
+`file://` URL, or run `xdg-open docs/deck/deck.html`. It is one file with
+nothing to install.
 
 | Key | Does |
 |---|---|
@@ -37,8 +40,8 @@ versioned alongside the game it describes and checked by the same rules
 
 ## Changing it
 
-Edit the slide files here, run `pnpm deck`, and commit both. **The repo is
-the copy of record.** To bring the claude.ai deck up to date, ask Claude Code
+Edit the slide files here, run `pnpm deck`, and commit both. Merging to
+`main` also updates the copy at `/deck/`. **The repo is the copy of record.** To bring the claude.ai deck up to date, ask Claude Code
 to publish the changed files in `docs/deck/project/` to the artifact URL
 above. They go up at the same paths. If the deck was edited in claude.ai
 instead, ask for its files to be pulled into `docs/deck/project/`, and run
