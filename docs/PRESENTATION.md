@@ -62,6 +62,12 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
   change: deploy it well before the talk, and have the room load the page fresh.
   The presenter key is set. Rotate it with `wrangler secret put
   PRESENTER_KEY` (see the README).
+- The deck is at <https://flow-state.mschrenk.workers.dev/deck/> (since
+  2026-09-29), so any machine with a browser can present it. Keep a local
+  `docs/deck/deck.html` as the fallback if the venue's network is poor. It
+  falls back to system fonts offline. A change that only touches the deck
+  deploys the Worker too, but it does not change the session rules version,
+  so players mid-session are not refused.
 - Attendees can play on **laptops or phones**, held upright. The phone layout was
   tried on a real phone on 2026-09-27. A laptop still shows the whole board at
   once, which makes the debrief easier to follow.

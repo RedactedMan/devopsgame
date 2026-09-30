@@ -43,6 +43,13 @@ const statValue = (page: Page, label: string) =>
 
 const readDay = async (page: Page) => Number(await statValue(page, 'Day').innerText())
 
+test('serves the talk deck at /deck/', async ({ request }) => {
+  // The deck is presented from the live site, so a build that drops it breaks the talk.
+  const response = await request.get('/deck/')
+  expect(response.status()).toBe(200)
+  expect(await response.text()).toContain('<title>Flow State: DevOps in the Age of Agents</title>')
+})
+
 test('loads, plays, and keeps its console clean', async ({ page }) => {
   const problems = watchForErrors(page)
 
