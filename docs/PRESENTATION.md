@@ -77,6 +77,11 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
 - Start the session at `?present` the night before, or any time in the 24 hours
   before the talk. It takes players and runs for 24 hours from when it is
   started (four until 2026-09-29), and its board stays readable for a week.
+- A player's game opens paused, with a *Start* card over the board
+  (*added 2026-10-01*; before that it ran as soon as they joined). The room
+  joins during the `join` slide and presses Start together at `play`. While
+  waiting they can look at the board and set WIP limits; each of those costs
+  one tick, as any decision made while paused does.
 
 ## Winning
 

@@ -728,6 +728,20 @@ body {
   z-index: 10;
 }
 
+/* In the board's cell, at its top, rather than over the whole screen: a
+   player waiting to start can still use the panel, the status line and the
+   controls, and set their WIP limits before the clock runs. */
+.waiting {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+  justify-self: center;
+  z-index: 5;
+  width: min(360px, calc(100% - 32px));
+  margin-top: 16px;
+  text-align: center;
+}
+
 .end {
   width: min(440px, 100%);
   text-align: center;
@@ -1061,6 +1075,10 @@ body {
   .board {
     grid-area: board;
     min-height: 0;
+  }
+
+  .waiting {
+    grid-area: board;
   }
 
   .statusline {
