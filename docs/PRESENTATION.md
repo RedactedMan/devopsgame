@@ -9,6 +9,12 @@ In the repo since 2026-09-28, which is the copy of record. It was written as a
 claude.ai Slides artifact, <https://claude.ai/artifact/USk8xhe7uwjvDmVEsbfB2G>,
 private until shared from its Share menu, and the two hold the same files.
 
+**Script:** [SPEAKER_NOTES.md](./SPEAKER_NOTES.md) (*added 2026-10-01*) is what
+to say on each slide, timed to come in under each segment below. It adds two
+things the slides' notes don't carry: *The Phoenix Project* on `threeways` and
+`constraint`, and how the DORA keys differ from older metrics on `dora`.
+Print [SPEAKER_NOTES.pdf](./SPEAKER_NOTES.pdf), rebuilt by `pnpm notes`.
+
 The talk teaches the core principles of DevOps, then has the room play one run of
 Flow State, then uses the room's own results to make the argument that human
 attention is now the constraint on software delivery, and that planning and review

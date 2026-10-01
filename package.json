@@ -10,6 +10,7 @@
     "build": "pnpm --filter @flow/web build",
     "sweep": "tsx packages/headless/src/cli.ts",
     "deck": "node docs/deck/build.mjs",
+    "notes": "node docs/notes.mjs",
     "test:e2e": "playwright test",
     "dev:server": "pnpm --filter @flow/server dev",
     "deploy": "pnpm build && pnpm --filter @flow/server deploy"
