@@ -101,12 +101,33 @@ export function Join({ code: initialCode }: { code: string | null }) {
 }
 
 function SessionGame({ session, player }: { session: SessionStatus; player: Player }) {
-  const sim = useSim(session.seed, { endTick: session.ticks, tuning: SESSION_TUNING })
+  const sim = useSim(session.seed, {
+    endTick: session.ticks,
+    tuning: SESSION_TUNING,
+    startPaused: true,
+  })
+  // The room joins during the talk and starts together. Once the player has
+  // started, a pause is their own and needs no explaining.
+  const [started, setStarted] = useState(false)
+  useEffect(() => {
+    if (!sim.paused) setStarted(true)
+  }, [sim.paused])
   return (
     <div className="app">
       <Hud sim={sim} session={{ code: session.code, name: player.name }} />
       <Board latest={sim.latest} />
       <TurnUpright />
+      {!started && (
+        <div className="card waiting" role="dialog" aria-label="Waiting to start">
+          <p>
+            The game is paused. Everyone starts together, so wait for the presenter, then press
+            Start.
+          </p>
+          <button type="button" className="btn btn--primary" onClick={() => sim.setPaused(false)}>
+            Start
+          </button>
+        </div>
+      )}
       {sim.finished && <EndScreen sim={sim} session={session} player={player} />}
     </div>
   )

@@ -75,9 +75,16 @@ test('a player joins a session, finishes, and lands on the presenter board', asy
 
   await expect(presenter.locator('.present__counts')).toContainText('1 joined')
 
+  // The room starts together: the clock waits for the player.
+  const waiting = player.getByRole('dialog', { name: 'Waiting to start' })
+  await expect(waiting).toBeVisible()
+  await player.waitForTimeout(1_000)
+  await expect(dayStat(player)).toHaveText('0.0 / 5')
+
   // Make a decision, so the board has a run to debrief, then run the clock out.
   await player.locator('.wip').filter({ hasText: 'Implement' }).locator('input').fill('3')
   await player.getByRole('button', { name: '4×', exact: true }).click()
+  await expect(waiting).toBeHidden()
 
   const end = player.getByRole('dialog', { name: 'Run finished' })
   await expect(end).toBeVisible({ timeout: 60_000 })

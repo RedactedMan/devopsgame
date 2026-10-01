@@ -84,6 +84,11 @@ export type SimOptions = {
   endTick?: number
   /** Presentation mode plays `SESSION_TUNING`. Free play uses the defaults. */
   tuning?: Tuning
+  /**
+   * Open paused. Presentation mode sets it: the room joins during the talk
+   * and starts together, so the clock must not run before the player says so.
+   */
+  startPaused?: boolean
 }
 
 export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle {
@@ -99,7 +104,7 @@ export function useSim(initialSeed: number, options: SimOptions = {}): SimHandle
   const [runId, setRunId] = useState(0)
   const latest = useRef<Snapshot>(snapshot(stateRef.current))
   const [snap, setSnap] = useState<Snapshot>(latest.current)
-  const [paused, setPaused] = useState(false)
+  const [paused, setPaused] = useState(options.startPaused ?? false)
   const [speed, setSpeed] = useState<Speed>(1)
 
   const seedRef = useRef(seed)
