@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSim } from './bridge/useSim.js'
 import { Board } from './render/Board.js'
 import { Hud } from './ui/Hud.js'
@@ -22,9 +23,10 @@ export function App() {
 
 function FreePlay() {
   const sim = useSim(20260830)
+  const [touring, setTouring] = useState(false)
   return (
     <div className="app">
-      <Hud sim={sim} />
+      <Hud sim={sim} touring={touring} onTour={setTouring} />
       <Board latest={sim.latest} />
       <TurnUpright />
     </div>

@@ -51,6 +51,19 @@ test.describe('on a phone held upright', () => {
     await page.getByRole('button', { name: 'Play' }).tap()
     await expect(page.locator('.board canvas')).toBeVisible()
 
+    // The walkthrough opens on joining. A thumb can get through it, and the
+    // steps that live in the panel open their tab first.
+    const tour = page.getByRole('dialog', { name: 'How to play' })
+    await expect(tour).toBeVisible()
+    for (let step = 1; step <= 7; step++) {
+      const box = await tour.boundingBox()
+      expect(box!.x + box!.width, `step ${step} fits the screen`).toBeLessThanOrEqual(PHONE.width)
+      expect(box!.y + box!.height, `step ${step} fits the screen`).toBeLessThanOrEqual(PHONE.height)
+      if (step === 4) await expect(page.locator('.staff').first()).toBeVisible()
+      await tour.getByRole('button', { name: step === 7 ? 'Done' : 'Next' }).tap()
+    }
+    await expect(tour).toBeHidden()
+
     // Nothing overflows sideways, and the parts a phone relies on are on screen.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(PHONE.width)
     await expectOnScreen(page, '.board')

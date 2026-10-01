@@ -109,23 +109,36 @@ function SessionGame({ session, player }: { session: SessionStatus; player: Play
   // The room joins during the talk and starts together. Once the player has
   // started, a pause is their own and needs no explaining.
   const [started, setStarted] = useState(false)
+  // A player in a session has usually never seen the game, so the walkthrough
+  // opens on joining, while the clock is still waiting for Start.
+  const [touring, setTouring] = useState(true)
   useEffect(() => {
     if (!sim.paused) setStarted(true)
   }, [sim.paused])
   return (
     <div className="app">
-      <Hud sim={sim} session={{ code: session.code, name: player.name }} />
+      <Hud
+        sim={sim}
+        session={{ code: session.code, name: player.name }}
+        touring={touring}
+        onTour={setTouring}
+      />
       <Board latest={sim.latest} />
       <TurnUpright />
-      {!started && (
+      {!started && !touring && (
         <div className="card waiting" role="dialog" aria-label="Waiting to start">
           <p>
             The game is paused. Everyone starts together, so wait for the presenter, then press
             Start.
           </p>
-          <button type="button" className="btn btn--primary" onClick={() => sim.setPaused(false)}>
-            Start
-          </button>
+          <div className="waiting__actions">
+            <button type="button" className="btn" onClick={() => setTouring(true)}>
+              How to play
+            </button>
+            <button type="button" className="btn btn--primary" onClick={() => sim.setPaused(false)}>
+              Start
+            </button>
+          </div>
         </div>
       )}
       {sim.finished && <EndScreen sim={sim} session={session} player={player} />}

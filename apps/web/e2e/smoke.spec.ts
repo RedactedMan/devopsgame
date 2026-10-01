@@ -220,3 +220,25 @@ test('a stalled line says so instead of reporting a good lead time', async ({ pa
   const day = await readDay(page)
   expect(day).toBeGreaterThan(TICKS_PER_DAY / TICKS_PER_DAY)
 })
+
+test('the walkthrough stops the clock while it talks and gives it back', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.locator('.board canvas')).toBeVisible()
+  // Free play starts running and does not open the walkthrough by itself.
+  const tour = page.getByRole('dialog', { name: 'How to play' })
+  await expect(tour).toHaveCount(0)
+  await expect.poll(() => readDay(page)).toBeGreaterThan(1)
+
+  await page.getByRole('button', { name: 'How to play' }).click()
+  await expect(tour).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Resume' })).toBeVisible()
+  const day = await readDay(page)
+  await page.waitForTimeout(1_000)
+  expect(await readDay(page)).toBe(day)
+
+  await tour.getByRole('button', { name: 'Next' }).click()
+  await expect(tour).toContainText('2 of 7')
+  await page.keyboard.press('Escape')
+  await expect(tour).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Pause' })).toBeVisible()
+})
