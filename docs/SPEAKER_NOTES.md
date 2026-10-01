@@ -6,6 +6,10 @@ October 2, 2026. The slides' own notes (press N in the deck) are the
 presenter's instructions: what to switch to and what not to give away. This
 is what to *say*.
 
+**To print:** [SPEAKER_NOTES.pdf](./SPEAKER_NOTES.pdf), US Letter, large type,
+each slide kept on one page. It is built from this file by `pnpm notes`
+(`docs/notes.mjs`), so rebuild and commit it whenever this file changes.
+
 Every segment is written to come in under its slot in
 [PRESENTATION.md](./PRESENTATION.md) *Timing*. The **spoken** times assume
 110 words a minute, a slow, paused pace, and come from a word count of the

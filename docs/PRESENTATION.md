@@ -13,6 +13,7 @@ private until shared from its Share menu, and the two hold the same files.
 to say on each slide, timed to come in under each segment below. It adds two
 things the slides' notes don't carry: *The Phoenix Project* on `threeways` and
 `constraint`, and how the DORA keys differ from older metrics on `dora`.
+Print [SPEAKER_NOTES.pdf](./SPEAKER_NOTES.pdf), rebuilt by `pnpm notes`.
 
 The talk teaches the core principles of DevOps, then has the room play one run of
 Flow State, then uses the room's own results to make the argument that human
