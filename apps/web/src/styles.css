@@ -742,6 +742,61 @@ body {
   text-align: center;
 }
 
+.waiting__actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* The walkthrough. The spotlight's shadow dims everything but its target,
+   and the layer under the card takes the clicks, so nothing moves while it
+   talks. */
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+
+.tour__spot {
+  position: fixed;
+  border: 2px solid var(--flow);
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgb(10 14 15 / 0.66);
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.tour__card {
+  position: fixed;
+  padding: 18px;
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.5);
+}
+
+.tour__count {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tour__title {
+  margin: 4px 0 8px;
+  font-size: 16px;
+}
+
+.tour__body {
+  margin: 0 0 14px;
+}
+
+.tour__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.tour__spacer {
+  flex: 1;
+}
+
 .end {
   width: min(440px, 100%);
   text-align: center;

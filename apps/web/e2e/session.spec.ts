@@ -75,6 +75,17 @@ test('a player joins a session, finishes, and lands on the presenter board', asy
 
   await expect(presenter.locator('.present__counts')).toContainText('1 joined')
 
+  // A first-time player gets the walkthrough, one lever at a time, each
+  // pointing at something on screen.
+  const tour = player.getByRole('dialog', { name: 'How to play' })
+  await expect(tour).toBeVisible()
+  for (let step = 1; step <= 7; step++) {
+    await expect(tour).toContainText(`${step} of 7`)
+    await expect(player.locator('.tour__spot')).toBeVisible()
+    await tour.getByRole('button', { name: step === 7 ? 'Done' : 'Next' }).click()
+  }
+  await expect(tour).toBeHidden()
+
   // The room starts together: the clock waits for the player.
   const waiting = player.getByRole('dialog', { name: 'Waiting to start' })
   await expect(waiting).toBeVisible()

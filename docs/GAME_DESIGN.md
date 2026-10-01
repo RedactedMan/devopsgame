@@ -233,6 +233,10 @@ This preserves the attention constraint without banning the obvious move. Agents
 > with the talk showed the fixed five-station line teaches the First Way and
 > the attention constraint without a campaign. The arc below is kept as the
 > design record, not a plan. See IMPLEMENTATION_PLAN §4.
+>
+> *2026-10-01:* the game has a seven-step walkthrough of the screen and the
+> levers (IMPLEMENTATION_PLAN §4, slice 3h). It stands in for none of the
+> levels below; it sets no objective.
 
 Structured on the DevOps Handbook's Three Ways, with a fourth act that is this game's original contribution.
 

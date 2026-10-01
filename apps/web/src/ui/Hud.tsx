@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Tour, type PanelTab } from './Tour.js'
 import {
   STATION_LABELS,
   DEFAULT_TUNING,
@@ -42,7 +43,18 @@ const CONSTRAINT_NEWS_TICKS = TICKS_PER_DAY
 /** Present when the run belongs to a presentation session rather than free play. */
 export type HudSession = { code: string; name: string }
 
-export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) {
+export function Hud({
+  sim,
+  session,
+  touring,
+  onTour,
+}: {
+  sim: SimHandle
+  session?: HudSession
+  /** The walkthrough is open. Its owner decides when it first opens. */
+  touring: boolean
+  onTour: (open: boolean) => void
+}) {
   const { snapshot: snap, dispatch } = sim
   const stale = snap.items.filter((it) => it.stale)
   const inFlight = snap.items.filter((i) => i.location.where !== 'backlog').length
@@ -142,6 +154,15 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
               {s}×
             </button>
           ))}
+          <button
+            type="button"
+            className="btn"
+            aria-label="How to play"
+            title="How to play"
+            onClick={() => onTour(true)}
+          >
+            ?
+          </button>
           <button type="button" className="btn" onClick={() => sim.reset(sim.seed)}>
             {session ? 'Restart' : 'Restart seed'}
           </button>
@@ -186,6 +207,18 @@ export function Hud({ sim, session }: { sim: SimHandle; session?: HudSession }) 
           </button>
         ))}
       </nav>
+
+      {touring && (
+        <Tour
+          sim={sim}
+          session={session !== undefined}
+          onTab={setTab}
+          onClose={() => {
+            onTour(false)
+            setTab('wip')
+          }}
+        />
+      )}
 
       <aside className={`panel panel--${tab}`}>
         {stalled && (
@@ -444,7 +477,6 @@ function WipSlider({
  * at the warmest one would send the player to staff a station that is already
  * idle a third of the time.
  */
-type PanelTab = 'flow' | 'wip' | 'team' | 'stale'
 
 const PANEL_TABS: { id: PanelTab; label: string }[] = [
   { id: 'wip', label: 'WIP' },
@@ -767,7 +799,7 @@ function Stat({
   secondary?: boolean
 }) {
   return (
-    <div className={secondary ? 'stat stat--secondary' : 'stat'}>
+    <div className={secondary ? 'stat stat--secondary' : 'stat'} data-stat={label.toLowerCase()}>
       <span className="stat__label">{label}</span>
       <span className={alarm ? 'stat__value stat__value--alarm' : 'stat__value'}>{value}</span>
     </div>
