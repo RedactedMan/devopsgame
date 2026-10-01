@@ -69,7 +69,10 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
   deploys the Worker too, but it does not change the session rules version,
   so players mid-session are not refused.
 - Attendees can play on **laptops or phones**, held upright. The phone layout was
-  tried on a real phone on 2026-09-27. A laptop still shows the whole board at
+  tried on a real phone on 2026-09-27. On 2026-09-30 a whole session was
+  played on the live site from a phone and a laptop, with the presenter screen
+  up on the laptop: both joined, both runs were scored, and the leaderboard
+  showed them with *Kept up* for one and not the other. A laptop still shows the whole board at
   once, which makes the debrief easier to follow.
 - Start the session at `?present` the night before, or any time in the 24 hours
   before the talk. It takes players and runs for 24 hours from when it is
