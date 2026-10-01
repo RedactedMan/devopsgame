@@ -138,7 +138,7 @@ function LiveSession({ code }: { code: string }) {
         </div>
         <div className="present__counts">
           <div>
-            <b>{status?.joined ?? '–'}</b> playing
+            <b>{status?.joined ?? '–'}</b> joined
           </div>
           <div>
             <b>{status?.finished ?? '–'}</b> finished

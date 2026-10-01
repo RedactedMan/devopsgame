@@ -73,7 +73,7 @@ test('a player joins a session, finishes, and lands on the presenter board', asy
   // One game for the whole room: nothing here offers a different one.
   await expect(player.getByRole('button', { name: 'New seed' })).toHaveCount(0)
 
-  await expect(presenter.locator('.present__counts')).toContainText('1 playing')
+  await expect(presenter.locator('.present__counts')).toContainText('1 joined')
 
   // Make a decision, so the board has a run to debrief, then run the clock out.
   await player.locator('.wip').filter({ hasText: 'Implement' }).locator('input').fill('3')
