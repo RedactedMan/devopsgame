@@ -3,7 +3,8 @@
 *Code is cheap now. Attention isn't.* The 45-minute talk that goes with the
 game: principles, a full run for the room, then a debrief built on what they
 just did. [PRESENTATION.md](../PRESENTATION.md) is the plan for the session
-itself, its timings and what to check beforehand.
+itself, its timings and what to check beforehand. [SPEAKER_NOTES.md](../SPEAKER_NOTES.md)
+is a spoken script for each slide; if you reorder or cut slides, update it too.
 
 **To present it:** open <https://flow-state.mschrenk.workers.dev/deck/>, the
 copy served beside the game (since 2026-09-29). Offline, open
