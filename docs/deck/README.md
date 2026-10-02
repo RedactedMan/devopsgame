@@ -64,5 +64,6 @@ Schrenk, the 2026 LSEG St. Louis Technology Unconference, October 2, 2026),
 `close` has no contact line, and `mine` has your own experience (2026-09-30).
 The speaker notes
 on `changed` and `amazon` each have one bracketed note to act on before
-quoting. `[CODE]` on `join` is the session code, which the presenter tab
-shows.
+quoting. `join` shows the 2026-10-02 session, GH59S: its code, link and a QR
+code drawn with `uqr`, the encoder the presenter tab uses. For another session,
+change all three.
