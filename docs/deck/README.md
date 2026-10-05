@@ -45,8 +45,9 @@ Edit the slide files here, run `pnpm deck`, and commit both. Merging to
 `main` also updates the copy at `/deck/`. **The repo is the copy of record.** To bring the claude.ai deck up to date, ask Claude Code
 to publish the changed files in `docs/deck/project/` to the artifact URL
 above. They go up at the same paths. The `dex` slide (Dex Horthy's team, added 2026-09-30) and
-the matching `ends` and `sources` edits were made here, so the claude.ai copy
-lacks them until it is republished. If the deck was edited in claude.ai
+the matching `ends` and `sources` edits were made here, and so was the
+free-play `join` slide (2026-10-05), so the claude.ai copy lacks them until it
+is republished. If the deck was edited in claude.ai
 instead, ask for its files to be pulled into `docs/deck/project/`, and run
 `pnpm deck`.
 
@@ -64,6 +65,8 @@ Schrenk, the 2026 LSEG St. Louis Technology Unconference, October 2, 2026),
 `close` has no contact line, and `mine` has your own experience (2026-09-30).
 The speaker notes
 on `changed` and `amazon` each have one bracketed note to act on before
-quoting. `join` shows the 2026-10-02 session, GH59S: its code, link and a QR
-code drawn with `uqr`, the encoder the presenter tab uses. For another session,
-change all three.
+quoting. `join` showed the 2026-10-02 session, GH59S. Since 2026-10-05, after the
+talk, it points at free play instead: the root link, a QR code for it drawn
+with `uqr` (the encoder and settings the presenter tab uses), and a note that
+free play cannot be kept up with. For another session, put its code, its
+`?join=` link and a QR code for that link back.
