@@ -57,6 +57,10 @@ this session is hands-on.
 leaderboard. It opens paused, with a short walkthrough. Click through it, but
 don't press Start yet. We'll all start together.
 
+*Since 2026-10-05 the `join` slide shows free play, not a session: the talk is
+over. To give it again, start a session at `?present` and put its code, link
+and QR code back on the slide first.*
+
 ---
 
 ## 0:03 Core principles (10 min, ~6:25 spoken)

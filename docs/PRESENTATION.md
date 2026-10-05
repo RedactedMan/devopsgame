@@ -149,7 +149,9 @@ shows up as lead time.
 The speaker, event and date are in (2026-09-29): Matthew Schrenk, the 2026 LSEG
 St. Louis Technology Unconference, October 2, 2026. `close` has no contact line
 (removed 2026-09-29). `mine` has your own planning, review and miss
-(2026-09-30). `join` carries the talk's session, GH59S, and its QR code
-(2026-10-02, started that morning, open 24 hours). A later session needs both
-changed. Nothing is left bracketed on the slides. The notes on `changed` and `amazon` each have one bracketed note to act
+(2026-09-30). `join` carried the talk's session, GH59S, and its QR code
+(2026-10-02, started that morning, open 24 hours). The talk is over, and since
+2026-10-05 `join` points at free play: its link, a QR code for it, and a note
+that free play cannot be kept up with (five items a day, HIRING_AND_ATTENTION
+§10). A later session needs its own code, link and QR code put back. Nothing is left bracketed on the slides. The notes on `changed` and `amazon` each have one bracketed note to act
 on. The deployed URL is already in (checked 2026-09-28).
