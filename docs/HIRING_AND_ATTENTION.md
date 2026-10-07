@@ -760,6 +760,12 @@ reshuffling people every shift and doing well out of it.
 
 ### The session (built 2026-09-23, slice 3d)
 
+*Retired from the live site on 2026-10-06, after the 2026-10-02 talk, so the
+site fits Cloudflare's free plan (IMPLEMENTATION_PLAN §7). The server and the
+join and presenter screens are gone. The session rules below are still in
+`packages/sim` and the sweeps and golden replays still measure them, so the
+numbers in this section stand.*
+
 - **Everyone plays the same game.** The presenter opens `?present` and starts
   a session. It gets a five-letter code and a seed, 20260830 unless the
   presenter picks another. Players join at `?join=CODE` and play that seed

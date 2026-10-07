@@ -4,12 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node -e \"require('fs').mkdirSync('../web/dist',{recursive:true})\" && wrangler dev --port 8787 --var PRESENTER_KEY:dev",
+    "dev": "node -e \"require('fs').mkdirSync('../web/dist',{recursive:true})\" && wrangler dev --port 8787",
     "deploy": "wrangler deploy"
-  },
-  "dependencies": {
-    "@flow/content": "workspace:*",
-    "@flow/sim": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260924.1",

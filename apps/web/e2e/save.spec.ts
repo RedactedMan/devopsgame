@@ -149,20 +149,6 @@ test('says so when a save was made under other rules, and refuses what is not a 
   expect(problems).toEqual([])
 })
 
-test('a session game has no save or load', async ({ page, request }) => {
-  const created = await request.post('/api/sessions', {
-    data: { ticks: 400 },
-    headers: { authorization: 'Bearer dev' },
-  })
-  const { code } = (await created.json()) as { code: string }
-  await page.goto(`/?join=${code}`)
-  await page.getByLabel(/your name/i).fill('NoSaves')
-  await page.getByRole('button', { name: 'Play' }).click()
-  await expect(page.locator('.board canvas')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0)
-  await expect(page.getByRole('button', { name: 'Load', exact: true })).toHaveCount(0)
-})
-
 test.describe('on a phone held upright', () => {
   test.use({ viewport: PHONE, isMobile: true, hasTouch: true })
 

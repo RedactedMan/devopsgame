@@ -58,8 +58,9 @@ leaderboard. It opens paused, with a short walkthrough. Click through it, but
 don't press Start yet. We'll all start together.
 
 *Since 2026-10-05 the `join` slide shows free play, not a session: the talk is
-over. To give it again, start a session at `?present` and put its code, link
-and QR code back on the slide first.*
+over. Presentation mode was retired on 2026-10-06 (IMPLEMENTATION_PLAN §7), so
+giving it again means bringing that back, then putting a session's code, link
+and QR code back on the slide.*
 
 ---
 

@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { SESSION_WIN_UNFINISHED } from '@flow/content'
 import type { SimHandle } from '../bridge/useSim.js'
 
 /** A tab of the panel, which a phone shows one at a time. */
@@ -20,24 +19,18 @@ type Step = {
  * set them to — the deck's `howto` slide holds the same line, and finding the
  * settings is the game.
  */
-function steps(session: boolean): Step[] {
+function steps(): Step[] {
   return [
     {
       target: '.board',
       title: 'The line',
       body: 'Work arrives in the backlog and flows through five stations: Spec, Implement, Review, CI and Deploy. Every deploy moves trunk on, and anything still in flight drifts behind it. Teal is healthy, amber is drifting, rust is stale.',
     },
-    session
-      ? {
-          target: '[data-stat="unfinished"]',
-          title: 'Keeping up',
-          body: `You keep up if ${SESSION_WIN_UNFINISHED} or fewer items are unfinished, waiting or in flight, when the clock stops. Your score is what you shipped, each item counted at the quality it actually shipped with, so stale work counts for less.`,
-        }
-      : {
-          target: '[data-stat="shipped"]',
-          title: 'Free play',
-          body: 'Free play has no end and no win line. Work keeps arriving faster than the starting line can finish it. Watch what ships, how long it takes, and what goes stale on the way.',
-        },
+    {
+      target: '[data-stat="shipped"]',
+      title: 'Free play',
+      body: 'Free play has no end and no win line. Work keeps arriving faster than the starting line can finish it. Watch what ships, how long it takes, and what goes stale on the way.',
+    },
     {
       target: 'section[data-tab="wip"]',
       tab: 'wip',
@@ -64,9 +57,7 @@ function steps(session: boolean): Step[] {
     {
       target: '.controls',
       title: 'The clock',
-      body: session
-        ? 'Pausing is free: the clock stops and you can think as long as you like. Change speed here. When the presenter says go, press Start.'
-        : 'Pausing is free: the clock stops and you can think as long as you like. Change speed here, and restart the same seed to try again.',
+      body: 'Pausing is free: the clock stops and you can think as long as you like. Change speed here, and restart the same seed to try again.',
     },
   ]
 }
@@ -93,16 +84,14 @@ function measure(selector: string): Rect | null {
 
 export function Tour({
   sim,
-  session,
   onTab,
   onClose,
 }: {
   sim: SimHandle
-  session: boolean
   onTab: (tab: PanelTab) => void
   onClose: () => void
 }) {
-  const all = steps(session)
+  const all = steps()
   const [index, setIndex] = useState(0)
   const step = all[index]!
   const last = index === all.length - 1
@@ -111,7 +100,7 @@ export function Tour({
   const [cardHeight, setCardHeight] = useState(0)
 
   // The clock stops while the tour talks, and goes back to what it was: a
-  // session player waiting for Start is still waiting afterwards.
+  // player who had paused is still paused afterwards.
   const wasPaused = useRef(sim.paused)
   useEffect(() => {
     sim.setPaused(true)

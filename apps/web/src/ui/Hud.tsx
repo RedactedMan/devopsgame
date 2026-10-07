@@ -3,7 +3,6 @@ import { Tour, type PanelTab } from './Tour.js'
 import {
   STATION_LABELS,
   DEFAULT_TUNING,
-  SESSION_WIN_UNFINISHED,
   type StationId,
 } from '@flow/content'
 import type { Snapshot } from '@flow/sim'
@@ -40,17 +39,12 @@ const STARTUP_GRACE_TICKS = TICKS_PER_DAY * 5
  */
 const CONSTRAINT_NEWS_TICKS = TICKS_PER_DAY
 
-/** Present when the run belongs to a presentation session rather than free play. */
-export type HudSession = { code: string; name: string }
-
 export function Hud({
   sim,
-  session,
   touring,
   onTour,
 }: {
   sim: SimHandle
-  session?: HudSession
   /** The walkthrough is open. Its owner decides when it first opens. */
   touring: boolean
   onTour: (open: boolean) => void
@@ -76,14 +70,7 @@ export function Hud({
     <>
       <header className="topbar">
         <div className="brand">
-          Flow State{' '}
-          {session ? (
-            <span className="brand__tag" title={`Playing as ${session.name}`}>
-              {session.code} · {session.name}
-            </span>
-          ) : (
-            <span className="brand__tag">M1</span>
-          )}
+          Flow State <span className="brand__tag">M1</span>
         </div>
 
         <Stat
@@ -111,19 +98,8 @@ export function Hud({
           value={`${(snap.oldestInFlightTicks / TICKS_PER_HOUR).toFixed(0)}h`}
           alarm={stalled}
         />
-        <Stat label="WIP" value={inFlight} secondary={session !== undefined} />
+        <Stat label="WIP" value={inFlight} />
         <Stat label="Backlog" value={snap.backlog} secondary />
-        {session && (
-          // The session's win line, where the player can watch it. It counts
-          // what is in flight as well as what is waiting, so a loose WIP
-          // limit cannot hit it by pulling the backlog onto the board. On a
-          // phone it takes WIP's place in the top bar.
-          <Stat
-            label="Unfinished"
-            value={`${snap.backlog + inFlight} / ≤${SESSION_WIN_UNFINISHED}`}
-            alarm={snap.backlog + inFlight > SESSION_WIN_UNFINISHED}
-          />
-        )}
         <Stat
           label="Attention"
           // The only scarcity in M1. Money buys capacity, attention buys
@@ -164,23 +140,17 @@ export function Hud({
             ?
           </button>
           <button type="button" className="btn" onClick={() => sim.reset(sim.seed)}>
-            {session ? 'Restart' : 'Restart seed'}
+            Restart seed
           </button>
-          {/* A session is one game for the whole room. A new seed would be a different one. */}
-          {!session && (
-            <button type="button" className="btn" onClick={() => sim.reset()}>
-              New seed
-            </button>
-          )}
+          <button type="button" className="btn" onClick={() => sim.reset()}>
+            New seed
+          </button>
         </div>
-        {/* Free play only: see SaveLoad for why a session has no save. Its own
-            group so a phone can put it on the stats row, where there is room
-            (styles.css). */}
-        {!session && (
-          <div className="controls controls--file">
-            <SaveLoad sim={sim} />
-          </div>
-        )}
+        {/* Its own group so a phone can put it on the stats row, where there
+            is room (styles.css). */}
+        <div className="controls controls--file">
+          <SaveLoad sim={sim} />
+        </div>
       </header>
 
       {/* A phone has no room for the whole panel, so it shows one tab of it
@@ -211,7 +181,6 @@ export function Hud({
       {touring && (
         <Tour
           sim={sim}
-          session={session !== undefined}
           onTab={setTab}
           onClose={() => {
             onTour(false)
@@ -369,12 +338,6 @@ export function Hud({
 
         <footer className="seed" data-tab="flow">
           seed {sim.seed}
-          {!session && (
-            <>
-              {' · '}
-              <a href="?present">presentation mode</a>
-            </>
-          )}
         </footer>
       </aside>
     </>

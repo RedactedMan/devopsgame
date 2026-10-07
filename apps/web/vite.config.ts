@@ -24,8 +24,7 @@ function buildId(): string | null {
  * The talk's deck, served beside the game at `/deck/` so it can be presented
  * from any machine with a browser. The file is `docs/deck/deck.html`, built by
  * `pnpm deck` and checked in; this copies it as it is, so the deck is whatever
- * `main` holds. A deck-only deploy does not move `SESSION_RULES_VERSION`, so it
- * is safe during a session.
+ * `main` holds.
  */
 function deck(): Plugin {
   const source = r('../../docs/deck/deck.html')
@@ -48,10 +47,6 @@ export default defineConfig({
   base: './',
   plugins: [react(), deck()],
   define: { __BUILD__: JSON.stringify(buildId()) },
-  server: {
-    // The leaderboard API. Run `pnpm dev:server` alongside `pnpm dev`.
-    proxy: { '/api': 'http://localhost:8787' },
-  },
   resolve: {
     alias: {
       '@flow/sim': r('../../packages/sim/src/index.ts'),

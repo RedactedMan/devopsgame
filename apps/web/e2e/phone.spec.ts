@@ -1,8 +1,9 @@
 import { expect, test, type ConsoleMessage, type Page } from '@playwright/test'
 
 /**
- * A room joins on phones, from the QR code. This plays a whole session on one:
- * join, switch tabs, set a limit, move a person, finish, and see the score.
+ * Free play on a phone: the walkthrough, switching tabs, setting a limit, and
+ * moving a person. Until 2026-10-06 this played a whole presentation session
+ * on a phone, joined from the QR code; the session is gone, the layout is not.
  *
  * `isMobile` is not optional here. A real phone lays the page out at the width
  * of its widest content, which a narrow desktop window does not — that is how
@@ -11,7 +12,6 @@ import { expect, test, type ConsoleMessage, type Page } from '@playwright/test'
  */
 
 const PHONE = { width: 390, height: 844 }
-const PRESENTER_KEY = 'dev'
 const ENVIRONMENT_NOISE = [/^\[\.WebGL-/, /GL Driver Message/]
 
 function watchForErrors(page: Page) {
@@ -38,21 +38,15 @@ async function expectOnScreen(page: Page, selector: string) {
 test.describe('on a phone held upright', () => {
   test.use({ viewport: PHONE, isMobile: true, hasTouch: true })
 
-  test('a player joins, plays with their thumbs, and sees their score', async ({ page, request }) => {
-    const created = await request.post('/api/sessions', {
-      data: { ticks: 400 },
-      headers: { authorization: `Bearer ${PRESENTER_KEY}` },
-    })
-    const { code } = (await created.json()) as { code: string }
+  test('a player plays with their thumbs', async ({ page }) => {
     const problems = watchForErrors(page)
 
-    await page.goto(`/?join=${code}`)
-    await page.getByLabel(/your name/i).fill('Thumbs')
-    await page.getByRole('button', { name: 'Play' }).tap()
+    await page.goto('/')
     await expect(page.locator('.board canvas')).toBeVisible()
 
-    // The walkthrough opens on joining. A thumb can get through it, and the
-    // steps that live in the panel open their tab first.
+    // A thumb can get through the walkthrough, and the steps that live in the
+    // panel open their tab first.
+    await page.getByRole('button', { name: 'How to play' }).tap()
     const tour = page.getByRole('dialog', { name: 'How to play' })
     await expect(tour).toBeVisible()
     for (let step = 1; step <= 7; step++) {
@@ -69,7 +63,8 @@ test.describe('on a phone held upright', () => {
     await expectOnScreen(page, '.board')
     await expectOnScreen(page, '.statusline')
     await expectOnScreen(page, '.tabs')
-    await expectOnScreen(page, '.controls')
+    await expectOnScreen(page, '.controls:not(.controls--file)')
+    await expectOnScreen(page, '.controls--file')
 
     // One tab of the panel at a time, starting on WIP.
     const tab = (name: string) => page.getByRole('tab', { name: new RegExp(`^${name}`, 'i') })
@@ -91,12 +86,6 @@ test.describe('on a phone held upright', () => {
     await page.locator('.statusline').tap()
     await expect(tab('Flow')).toHaveAttribute('aria-selected', 'true')
     await expect(page.locator('.constraint')).toBeVisible()
-
-    await page.getByRole('button', { name: '4×', exact: true }).tap()
-    const end = page.getByRole('dialog', { name: 'Run finished' })
-    await expect(end).toBeVisible({ timeout: 60_000 })
-    await expectOnScreen(page, '.overlay .card')
-    await expect(end.locator('.end__rank')).toContainText('#1 of 1', { timeout: 15_000 })
 
     expect(problems, problems.join('\n')).toEqual([])
   })

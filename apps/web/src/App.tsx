@@ -2,22 +2,13 @@ import { useState } from 'react'
 import { useSim } from './bridge/useSim.js'
 import { Board } from './render/Board.js'
 import { Hud } from './ui/Hud.js'
-import { Join } from './session/Join.js'
-import { Presenter } from './session/Presenter.js'
 import { TurnUpright } from './ui/Sideways.js'
 
 /**
- * Three ways in, chosen by the URL so a link is all anyone needs:
- *
- *   /               free play, the playtest build
- *   /?present       presentation mode: start a session, show the room its code,
- *                   and run the leaderboard (`?present=CODE` resumes one)
- *   /?join=CODE     a player in that session: same seed, fixed length, scored
+ * Free play. Presentation mode (`?present`, `?join=CODE`) was retired on
+ * 2026-10-06 so the site fits Cloudflare's free plan; old links land here.
  */
 export function App() {
-  const params = new URLSearchParams(window.location.search)
-  if (params.has('present')) return <Presenter code={params.get('present') || null} />
-  if (params.has('join')) return <Join code={params.get('join') || null} />
   return <FreePlay />
 }
 

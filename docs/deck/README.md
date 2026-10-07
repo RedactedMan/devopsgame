@@ -67,6 +67,7 @@ The speaker notes
 on `changed` and `amazon` each have one bracketed note to act on before
 quoting. `join` showed the 2026-10-02 session, GH59S. Since 2026-10-05, after the
 talk, it points at free play instead: the root link, a QR code for it drawn
-with `uqr` (the encoder and settings the presenter tab uses), and a note that
-free play cannot be kept up with. For another session, put its code, its
-`?join=` link and a QR code for that link back.
+with `uqr` (the encoder and settings the presenter tab used), and a note that
+free play cannot be kept up with. Presentation mode was retired on 2026-10-06
+(IMPLEMENTATION_PLAN §7), so another session means bringing it back first,
+then putting its code, its `?join=` link and a QR code for that link back.

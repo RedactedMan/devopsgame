@@ -15,15 +15,12 @@ type Notice =
   | { kind: 'refused'; error: string }
 
 /**
- * Save and Load, free play only (M1 slice 4).
+ * Save and Load (M1 slice 4).
  *
  * A save is a file the player keeps, not something the browser remembers for
  * them: it is the bug-report format too (plan §1), and a file can be sent to
  * someone. Loading always says what it found, because a save replays under
  * today's rules and those may not be the rules it was played under.
- *
- * Not offered in a session. The room plays one game once, the server keeps the
- * runs, and a save would let a player try a branch from mid-run and go back.
  */
 export function SaveLoad({ sim }: { sim: SimHandle }) {
   const [notice, setNotice] = useState<Notice | null>(null)
