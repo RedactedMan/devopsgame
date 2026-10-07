@@ -64,8 +64,8 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
 
 ## Before the session
 
-*As it stood for the 2026-10-02 talk. Since 2026-10-06 there is no presenter
-key, no session to start, and the deck and free play are all that is live.*
+*As it stood for the 2026-10-02 talk. Since 2026-10-06 there is no session to
+start, and the deck and free play are all that is live.*
 
 - The game is live at <https://flow-state.mschrenk.workers.dev>. Every push to
   `main` deploys, so don't merge anything on the day of the talk that you haven't
@@ -75,8 +75,8 @@ key, no session to start, and the deck and free play are all that is live.*
   but the player still loses the run (IMPLEMENTATION_PLAN §3).
   The change that made the session winnable (2026-09-28) is exactly that kind of
   change: deploy it well before the talk, and have the room load the page fresh.
-  The presenter key was set until 2026-10-06, when it was deleted with
-  presentation mode.
+  The presenter key was set for the talk. Nothing reads it since presentation
+  mode was retired on 2026-10-06, and it is to be deleted after that deploy.
 - The deck is at <https://flow-state.mschrenk.workers.dev/deck/> (since
   2026-09-29), so any machine with a browser can present it. Keep a local
   `docs/deck/deck.html` as the fallback if the venue's network is poor. It

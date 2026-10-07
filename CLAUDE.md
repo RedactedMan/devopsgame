@@ -2,7 +2,8 @@
 
 A game about DevOps flow: WIP, drift, the moving constraint, and attention as
 the scarce currency once agents are cheap. Its target use is a 30–45 minute
-workshop that ends on a leaderboard. The docs in `docs/` are the design record,
+workshop that ends on a leaderboard. It was given once, on 2026-10-02, and its
+presentation mode was retired on 2026-10-06; the live site is free play. The docs in `docs/` are the design record,
 and the README is the front door.
 
 ## Every merge to `main` is a production deploy
@@ -55,7 +56,7 @@ take a screenshot before calling a slice done.
 ```sh
 pnpm test        # unit, invariant, golden replay
 pnpm typecheck
-pnpm test:e2e    # Playwright; starts the dev servers itself
+pnpm test:e2e    # Playwright; starts the dev server itself
 pnpm sweep       # headless balance sweep
 pnpm deck        # rebuild the talk's deck.html from docs/deck/project/
 ```

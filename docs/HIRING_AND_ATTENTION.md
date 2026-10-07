@@ -969,8 +969,10 @@ two are comparable. What moves:
   hashes the session tuning, the win line, and a fourth golden,
   `GOLDEN_SESSION` = `bc06fb23`. That golden is the first to play a whole
   session: the good play at day 10, rebasing every 20 ticks, and it wins.
-  A session page sends it with its join and its run, and the Worker refuses
-  a mismatch with 409 (2026-09-28, IMPLEMENTATION_PLAN §3).
+  A session page sent it with its join and its run, and the Worker refused
+  a mismatch with 409 (2026-09-28, IMPLEMENTATION_PLAN §3), until
+  presentation mode was retired on 2026-10-06. The version and the golden
+  are still in `packages/sim` and still tested.
 - The line is set for a full 4000-tick session. The API still accepts a
   shorter one (400 ticks and up) for the end-to-end test, and a run that
   short can keep up by accident, because only about 20 items have arrived.

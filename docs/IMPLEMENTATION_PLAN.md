@@ -125,11 +125,14 @@ old build and there is nowhere left to play the old rules. A load is refused
 only when the file is not a save this build can read. The build commit and the
 date are in the file too, but only for the message.
 
-Save and load are **free play only**. A session is one game played once by the
-whole room, the server already keeps its runs, and a save would let a player try
-a branch from mid-run and go back.
+Save and load were **free play only** while presentation mode existed. A
+session is one game played once by the whole room, the server already kept its
+runs, and a save would have let a player try a branch from mid-run and go back.
+Since presentation mode was retired (2026-10-06, §7), free play is all there is.
 
-**Session scores had the same problem** (found 2026-09-27, fixed
+**Session scores had the same problem** *(retired with presentation mode on
+2026-10-06, §7: the Worker, the 409, and the e2e test that pinned it are gone.
+Kept as the record.)* (found 2026-09-27, fixed
 2026-09-28). A tab opened before a deploy keeps playing the old rules for the
 whole session window (24 hours since 2026-09-29), while the Worker replays the run under the new ones.
 The end screen showed the local score and then the server's rank without
@@ -300,7 +303,7 @@ One Cloudflare Worker (`apps/server`) serves the static build from `apps/web/dis
 
 **Live at <https://flow-state.mschrenk.workers.dev> since 2026-09-27, and every push to `main` deploys.** Cloudflare Workers Builds is connected to the GitHub repository. It builds each commit on `main` and deploys it, and it reports as the *Workers Builds: flow-state* check on the commit. Merging is shipping. That is trunk-based delivery with continuous deployment, which is what the game teaches, and it means a PR is not done until it is fit to be in front of a room. `pnpm deploy` builds and runs `wrangler deploy` by hand. It is a fallback, not the path.
 
-**Presentation mode retired, 2026-10-06. The site is back on the Workers free plan.** The talk it was built for ran on 2026-10-02 (§4, 3d). After that, the paid plan was paying for a leaderboard with no session coming. Free play never used the Worker, so it needs only the free plan. The `v2` migration in `apps/server/wrangler.jsonc` deletes the `Session` Durable Object, and every board with it. `GH59S` was exported first, to a file kept outside this public repository because it has players' names. `limits.cpu_ms` and the `PRESENTER_KEY` secret went too. The session rules (`SESSION_TUNING`, `SESSION_TICKS`, `verifyRun`) stay in `packages/sim`, because the golden replays and the sweep use them, and because they are what bringing it back would need. The reasoning below is kept as the record of why it was built the way it was. To bring it back, restore `apps/server/src` and `apps/web/src/session` from before this date, add a migration that creates the class again under a new tag, and go back to the paid plan.
+**Presentation mode retired, 2026-10-06. The site now fits the Workers free plan.** The talk it was built for ran on 2026-10-02 (§4, 3d). After that, the paid plan was paying for a leaderboard with no session coming. Free play never used the Worker, so it needs only the free plan. The `v2` migration in `apps/server/wrangler.jsonc` deletes the `Session` Durable Object, and every board with it. `GH59S` was exported first, to a file kept outside this public repository because it has players' names. `limits.cpu_ms` went too. The `PRESENTER_KEY` secret is deleted after that deploy, and the account moves to the free plan after that, both from the Cloudflare side. Neither had happened when this was written. The session rules (`SESSION_TUNING`, `SESSION_TICKS`, `verifyRun`) stay in `packages/sim`, because the golden replays and the sweep use them, and because they are what bringing it back would need. The reasoning below is kept as the record of why it was built the way it was. To bring it back, restore `apps/server/src` and `apps/web/src/session` from before this date, add a migration that creates the class again under a new tag, and go back to the paid plan.
 
 **Leaderboards: yes, for a session in a room. Still no global ladder.** *Changed 2026-09-23. Retired 2026-10-06, above.* The game's target use became a 30–45 minute workshop that ends on a leaderboard (HIRING_AND_ATTENTION §8), so presentation mode has one: a Durable Object per session code, holding each player's best run. A submitted score is never trusted. The Worker re-plays `{ seed, commands }` with `@flow/sim` and ranks what the replay produces. *Since 2026-09-28* it replays under `SESSION_TUNING`, the session's own tuning, which arrives four items a day rather than free play's five so that a run can be won (HIRING_AND_ATTENTION §10). That takes 40–70 ms of CPU for a real run and under a second for the worst log the parser accepts, which **needs the Workers paid plan**, because the free plan's 10 ms CPU limit cannot replay a game.
 
