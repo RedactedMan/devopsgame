@@ -1,5 +1,9 @@
 # Flow State
 
+**Complete as of 2026-10-06.** The name *Flow State* is final, and no further
+work is expected. If work resumes, start by updating this line and the README's
+*Status*.
+
 A game about DevOps flow: WIP, drift, the moving constraint, and attention as
 the scarce currency once agents are cheap. Its target use is a 30–45 minute
 workshop that ends on a leaderboard. It was given once, on 2026-10-02, and its
