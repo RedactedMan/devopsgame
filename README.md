@@ -112,7 +112,7 @@ shipping it. The talk's deck is served beside the game at
 `docs/deck/deck.html` at build time. `pnpm deploy` does the same thing by hand and is only needed without
 the GitHub integration.
 
-Since 2026-10-06 the site needs only the **Workers free plan**. The game is
+Since 2026-10-06 the site runs on the **Workers free plan**. The game is
 static files, and the Worker is a stub that answers `/api/*` with 410 Gone. It
 has no bindings, reads no secrets, and sets no CPU limit. Until then it ran on the paid
 plan, because presentation mode replayed each submitted score on the server and
