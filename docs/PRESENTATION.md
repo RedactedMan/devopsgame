@@ -76,7 +76,7 @@ start, and the deck and free play are all that is live.*
   The change that made the session winnable (2026-09-28) is exactly that kind of
   change: deploy it well before the talk, and have the room load the page fresh.
   The presenter key was set for the talk. Nothing reads it since presentation
-  mode was retired on 2026-10-06, and it is to be deleted after that deploy.
+  mode was retired on 2026-10-06, and it was deleted after that deploy.
 - The deck is at <https://flow-state.mschrenk.workers.dev/deck/> (since
   2026-09-29), so any machine with a browser can present it. Keep a local
   `docs/deck/deck.html` as the fallback if the venue's network is poor. It
