@@ -3,20 +3,22 @@
   "name": "flow-state",
   "main": "src/index.ts",
   "compatibility_date": "2026-09-01",
-  // One deploy serves both halves: the static game from apps/web/dist, and the
-  // leaderboard API. `/api/*` reaches the Worker; everything else is a file.
+  // The static game from apps/web/dist. `/api/*` reaches the Worker, which
+  // only says presentation mode is gone; everything else is a file.
   "assets": {
     "directory": "../web/dist",
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]
   },
-  "durable_objects": {
-    "bindings": [{ "name": "SESSIONS", "class_name": "Session" }]
-  },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Session"] }],
-  // Every submission is re-played to check its score: 40–70ms for a real run,
-  // under a second for the worst log the parser accepts. That needs the Workers
-  // paid plan — the free plan's 10ms CPU limit cannot replay a game.
-  "limits": { "cpu_ms": 5000 },
+  // `Session` was presentation mode's Durable Object, one per session code.
+  // Retired 2026-10-06: v2 deletes the class and every board it held (GH59S
+  // was exported first). Both entries stay: wrangler applies migrations in
+  // order and needs v1 to know what v2 deletes. The replays it existed for
+  // needed `limits.cpu_ms: 5000` and so the paid plan; the free plan's 10ms
+  // is plenty for this stub.
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Session"] },
+    { "tag": "v2", "deleted_classes": ["Session"] }
+  ],
   "observability": { "enabled": true }
 }

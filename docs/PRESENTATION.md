@@ -1,7 +1,13 @@
 # The presentation
 
 Companion to [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) §7, which is the
-presentation mode this talk runs on.
+presentation mode this talk ran on.
+
+**The talk was given on 2026-10-02 (session `GH59S`). Presentation mode was
+retired on 2026-10-06** so the site fits Cloudflare's free plan. The live site
+is free play only, and `?present` and `?join=` links open free play. This doc
+is kept as the record of the talk. Giving it again means bringing presentation
+mode back first (IMPLEMENTATION_PLAN §7), and then the steps below hold again.
 
 **Deck:** [`docs/deck/`](./deck/README.md) — *Code is cheap now. Attention
 isn't.* 26 slides with speaker notes. Open `docs/deck/deck.html` to present it.
@@ -58,6 +64,9 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
 
 ## Before the session
 
+*As it stood for the 2026-10-02 talk. Since 2026-10-06 there is no session to
+start, and the deck and free play are all that is live.*
+
 - The game is live at <https://flow-state.mschrenk.workers.dev>. Every push to
   `main` deploys, so don't merge anything on the day of the talk that you haven't
   played. Don't deploy during a session either. A tab opened before the deploy
@@ -66,8 +75,8 @@ in `docs/deck/project/slides/`, then run `pnpm deck`.
   but the player still loses the run (IMPLEMENTATION_PLAN §3).
   The change that made the session winnable (2026-09-28) is exactly that kind of
   change: deploy it well before the talk, and have the room load the page fresh.
-  The presenter key is set. Rotate it with `wrangler secret put
-  PRESENTER_KEY` (see the README).
+  The presenter key was set for the talk. Nothing reads it since presentation
+  mode was retired on 2026-10-06, and it is to be deleted after that deploy.
 - The deck is at <https://flow-state.mschrenk.workers.dev/deck/> (since
   2026-09-29), so any machine with a browser can present it. Keep a local
   `docs/deck/deck.html` as the fallback if the venue's network is poor. It

@@ -61,20 +61,19 @@ on its own:
    A line that hired past its reviewers can fall into a spiral where every
    review costs five attention; tightening the WIP limits gets it out faster
    than removing agents does. See §9.
-   **Presentation mode** is built for the session this is for: a short talk,
-   everyone plays the same seed for 50 days, then a leaderboard. The session
-   can be won and free play cannot: a session arrives four items a day rather
-   than five, and a player who ends with 10 or fewer unfinished kept up
-   (HIRING_AND_ATTENTION §10). Open
-   `?present` to start one and put the join link and its QR code on the
-   projector. It plays on a phone held upright: the panel becomes tabs under
-   the board. Every score
-   on the board was replayed on the server before it got there. See
+   **Presentation mode** was built for the talk (2026-10-02): everyone
+   played the same seed for 50 days, then a leaderboard whose every score was
+   replayed on the server. It was **retired on 2026-10-06** so the site fits
+   Cloudflare's free plan, since the replays were what needed the paid one.
+   Free play is unchanged, and still plays on a phone held upright: the panel
+   becomes tabs under the board. The session rules (four arrivals a day, a
+   win line of 10 unfinished, HIRING_AND_ATTENTION §10) are still in
+   `packages/sim`, which the sweeps and golden replays use. See
    [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §7.
 4. **Save / load** from the command log: Save downloads the run as a small
    JSON file, and Load replays it. A save records the rules it was played
    under, and loading an older one says whether today's rules still replay it
-   to the same place. Free play only. Built 2026-09-27, merged and deployed
+   to the same place. Built 2026-09-27, merged and deployed
    2026-09-28 (PR #9). See
    [IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) §3.
 
@@ -101,12 +100,8 @@ pnpm test:e2e   # Playwright smoke test: load it, play it, fail on console noise
 pnpm typecheck
 pnpm sweep      # headless balance sweep: WIP settings, then staffing
 pnpm deck       # rebuild docs/deck/deck.html, the talk, from its slide files
-pnpm dev:server # the leaderboard API (wrangler dev, :8787); pnpm dev proxies /api to it
 pnpm deploy     # manual deploy; normally unnecessary, since every push to main deploys
 ```
-
-Presentation mode needs `pnpm dev:server` running alongside `pnpm dev`.
-Locally the presenter key is `dev`.
 
 **Every push to `main` is a production deploy.** The game is live at
 <https://flow-state.mschrenk.workers.dev>. Cloudflare Workers Builds is connected
@@ -117,14 +112,14 @@ shipping it. The talk's deck is served beside the game at
 `docs/deck/deck.html` at build time. `pnpm deploy` does the same thing by hand and is only needed without
 the GitHub integration.
 
-The Worker runs on the **Workers paid plan**, because each submitted score is
-re-played on the server and that takes more than the free plan's 10 ms of CPU.
-The presenter key is a Worker secret, and it is set in production. To rotate it:
-`cd apps/server && npx wrangler secret put PRESENTER_KEY`. Without it, nobody can
-start a session.
+Since 2026-10-06 the site needs only the **Workers free plan**. The game is
+static files, and the Worker is a stub that answers `/api/*` with 410 Gone. It
+has no bindings, reads no secrets, and sets no CPU limit. Until then it ran on the paid
+plan, because presentation mode replayed each submitted score on the server and
+that took more than the free plan's 10 ms of CPU.
 
 `pnpm test:e2e` uses a browser already on the machine rather than downloading
-its own, and starts the dev servers itself. On a laptop that is Google Chrome.
+its own, and starts the dev server itself. On a laptop that is Google Chrome.
 In the Claude Code cloud environment, which has no Chrome, it is the Chromium
 at `$PLAYWRIGHT_BROWSERS_PATH/chromium` (supported since 2026-09-28).
 `PLAYWRIGHT_CHROMIUM=/path/to/chrome` picks one by hand. A fresh clone does not
@@ -215,7 +210,7 @@ for why each of those is load-bearing.
 | `packages/content` | Stations and tuning, as zod-validated data |
 | `packages/headless` | Balance sweeps with no browser involved |
 | `apps/web` | PixiJS board, React HUD, and the bridge between them |
-| `apps/server` | Cloudflare Worker + Durable Object: presentation-mode sessions and the verified leaderboard |
+| `apps/server` | Cloudflare Worker config. The Worker is a stub since presentation mode was retired (2026-10-06) |
 
 ## License
 
