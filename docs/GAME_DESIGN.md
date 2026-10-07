@@ -1,8 +1,10 @@
 # Flow State — Game Design Document
 
-*Working title. A real-time pipeline simulation game about lean flow in software delivery, built for the era of AI agents.*
+*A real-time pipeline simulation game about lean flow in software delivery, built for the era of AI agents.*
 
 Status: **draft v0.1** — design not yet validated by playtest. Nothing here is load-bearing until M0 proves the core loop is fun.
+
+**Complete, 2026-10-06.** The name is final: *Flow State* (it was a working title until then). The project is finished for now, and no further work is planned. The live site stays up as free play, on the Workers free plan. This document is kept as the design record. M1 is the last milestone built. The rest of it was never built, and none of it is planned (IMPLEMENTATION_PLAN §4).
 
 ---
 

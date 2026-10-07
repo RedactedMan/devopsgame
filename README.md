@@ -1,4 +1,4 @@
-# Flow State *(working title)*
+# Flow State
 
 A web-based, real-time pipeline simulation game that teaches the practices of DevOps
 and lean flow — built for the era of AI agents.
@@ -10,6 +10,8 @@ decays against a moving trunk: the more you start, the less you finish.
 *Satisfactory, but the widgets rot on the conveyor belt.*
 
 ## Status
+
+**Complete, 2026-10-06.** The name is final: *Flow State*. The project is finished for now, and no further work is planned. The live site stays up as free play, on the Workers free plan.
 
 **M1 built, and the last milestone — the constraint moves.** A fixed five-station pipeline,
 rectangles and text, drift implemented and visible. On top of M0's WIP sliders,

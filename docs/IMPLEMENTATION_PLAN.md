@@ -2,6 +2,8 @@
 
 Companion to [GAME_DESIGN.md](./GAME_DESIGN.md). Covers architecture, milestones, and working method.
 
+**Complete, 2026-10-06.** The name is final: *Flow State*. The project is finished for now, and no further work is planned. The live site stays up as free play, on the Workers free plan. M1 is the last milestone. The slice table in §4 records where each slice was left.
+
 ---
 
 ## 1. Architectural principle
